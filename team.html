@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MotorsportDB</title>
+    <title>Team - MotorsportDB</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script defer src="assets/common.js"></script>
-    <script defer src="assets/main.js"></script>
+    <script defer src="assets/team.js"></script>
 </head>
-<body>
-    <main class="bg-gray-900 text-white flex items-center justify-center h-screen">
-        <div class="container mx-auto p-5 text-center">
-            <h1 class="text-4xl font-bold mb-6">MotorsportDB</h1>
-            <input type="text" id="searchBox" placeholder="Search for a driver, team, or championship..." 
-                class="w-full p-3 text-black rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
-            <div id="searchResults" class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-        </div>
-    </main>
-    <footer class="bg-gray-900 text-white text-center py-4 border-t border-gray-700">
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-5">
+        <a href="index.html" class="text-blue-400">← Back</a>
+        <div id="teamDetail" class="flex items-center bg-gray-800 p-5 rounded-lg shadow-lg"></div>
+        <h2 class="text-2xl font-bold mt-6">Results</h2>
+        <div id="resultsContainer" class="mt-4"></div>
+    </div>
+    <footer class="bg-gray-900 text-white text-center py-4 mt-6 border-t border-gray-700">
         <p class="text-sm">MotorsportDB is an open-source project. Help us improve it!</p>
         <a href="https://github.com/Motorsport-DB" target="_blank" class="flex justify-center items-center gap-2 mt-2 text-blue-400 hover:text-blue-500 transition">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">

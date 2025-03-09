@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Driver - MotorsportDB</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script defer src="assets/common.js"></script>
     <script defer src="assets/driver.js"></script>
 </head>
 <body class="bg-gray-900 text-white">
@@ -12,16 +13,16 @@
         <a href="index.html" class="text-blue-400">← Back</a>
         
         <!-- Driver Header Section -->
-        <div class="flex items-center bg-gray-800 p-5 rounded-lg shadow-lg">
-            <img id="driverImage" src="" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Driver Image">
+        <div id="driverDetail" class="flex items-center bg-gray-800 p-5 rounded-lg shadow-lg">
+            <img id="driverImage" src="drivers/picture/default.png" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Driver Image">
             <div>
-                <h1 id="driverName" class="text-3xl font-bold"></h1>
+                <h1 id="driverName" class="text-3xl font-bold">firstName lastName</h1>
                 <p id="driverNickname" class="text-lg text-gray-300"></p>
                 <p id="driverBirth" class="text-lg"></p>
                 <p id="driverDeath" class="text-lg"></p>
                 <p id="driverAge" class="text-lg font-semibold"></p>
                 <div class="flex items-center mt-2">
-                    <img id="countryFlag" src="" class="w-8 h-6 mr-2 rounded" alt="Country Flag">
+                    <img id="countryFlag" src="assets/flags/default.png" class="w-8 h-6 mr-2 rounded" alt="Country Flag">
                     <span id="driverCountry" class="text-lg font-semibold"></span>
                 </div>
             </div>
@@ -30,5 +31,14 @@
         <h2 class="text-2xl font-bold mt-6">Results</h2>
         <div id="resultsContainer" class="mt-4"></div>
     </div>
+    <footer class="bg-gray-900 text-white text-center py-4 mt-6 border-t border-gray-700">
+        <p class="text-sm">MotorsportDB is an open-source project. Help us improve it!</p>
+        <a href="https://github.com/Motorsport-DB" target="_blank" class="flex justify-center items-center gap-2 mt-2 text-blue-400 hover:text-blue-500 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0C5.37 0 0 5.38 0 12.04c0 5.32 3.438 9.84 8.207 11.44.6.113.793-.263.793-.584 0-.288-.01-1.05-.016-2.06-3.338.724-4.043-1.63-4.043-1.63-.546-1.393-1.332-1.76-1.332-1.76-1.087-.758.083-.743.083-.743 1.204.085 1.84 1.24 1.84 1.24 1.07 1.86 2.81 1.32 3.5 1.004.107-.784.42-1.32.763-1.62-2.666-.304-5.467-1.36-5.467-6.05 0-1.34.465-2.437 1.236-3.297-.125-.303-.536-1.52.117-3.167 0 0 1.007-.328 3.3 1.26a11.45 11.45 0 013-.414c1.02.005 2.047.14 3 .414 2.29-1.59 3.293-1.26 3.293-1.26.657 1.648.247 2.864.12 3.167.774.86 1.233 1.956 1.233 3.297 0 4.7-2.807 5.744-5.478 6.04.432.377.817 1.126.817 2.27 0 1.64-.016 2.96-.016 3.363 0 .325.19.705.8.584C20.56 21.87 24 17.36 24 12.04 24 5.38 18.63 0 12 0z"/>
+            </svg>
+            <span>Contribute on GitHub</span>
+        </a>
+    </footer>
 </body>
 </html>
