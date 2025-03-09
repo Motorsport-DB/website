@@ -3,37 +3,26 @@ header('Content-Type: application/json');
 
 $driversDir = 'drivers/';
 
-if (isset($_GET['driver'])) {
-    $driverId = $_GET['driver'];
-    $driverFile = $driversDir . $driverId . ".json";
+if (isset($_GET['id'])) {
+    $driverId = $_GET['id'];
 
-    if (file_exists($driverFile)) {
-        $data = json_decode(file_get_contents($driverFile), true);
-        echo json_encode([$data]); 
+    if (preg_match('/[^a-zA-Z0-9_-]/', $driverId)) {
+        echo json_encode(["error" => "Invalid driver ID"]);
+        exit;
+    }
+
+    $driverFile = realpath($driversDir . $driverId . ".json");
+
+    if ($driverFile && str_starts_with($driverFile, realpath($driversDir))) {
+        if (file_exists($driverFile)) {
+            $data = json_decode(file_get_contents($driverFile), true);
+            echo json_encode([$data]);
+        } else {
+            echo json_encode(["error" => "Driver not found"]);
+        }
     } else {
-        echo json_encode(["error" => "Driver not found"]);
+        echo json_encode(["error" => "Unauthorized access"]);
     }
-    exit;
-}
-
-if (isset($_GET['allDrivers'])) {
-    $drivers = [];
-
-    foreach (glob($driversDir . "*.json") as $filename) {
-        $data = json_decode(file_get_contents($filename), true);
-        $drivers[] = [
-            "id" => pathinfo($filename, PATHINFO_FILENAME),
-            "firstName" => $data["firstName"] ?? "Unknown",
-            "lastName" => $data["lastName"] ?? "Unknown",
-            "nickname" => $data["Nickname"] ?? "N/A",
-            "dateOfBirth" => $data["dateOfBirth"] ?? "Unknown",
-            "dateOfDeath" => $data["dateOfDeath"] ?? null,
-            "country" => $data["country"] ?? "Unknown",
-            "picture" => $data["picture"] ?? "default.jpg",
-            "seasons" => $data["seasons"] ?? []
-        ];
-    }
-    echo json_encode($drivers);
     exit;
 }
 

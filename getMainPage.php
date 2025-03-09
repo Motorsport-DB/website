@@ -14,7 +14,7 @@ if ($query === '') {
 
 $results = [];
 
-// Fonction pour rechercher dans un dossier sans ouvrir les fichiers JSON
+
 function searchInDirectory($directory, $type, $baseUrl) {
     global $query;
     $matches = [];
@@ -25,7 +25,7 @@ function searchInDirectory($directory, $type, $baseUrl) {
         if (stripos($filename, $query) !== false) {
             $matches[] = [
                 "name" => ucfirst(str_replace("_", " ", $filename)),
-                "image" => file_exists("$directory/picture/$filename.jpg") ? "$directory/picture/$filename.jpg" : "$directory/picture/default.png",
+                "image" => file_exists("$directory/picture/$filename.png") ? "$directory/picture/$filename.png" : "$directory/picture/default.png",
                 "url" => "$baseUrl.html?id=" . urlencode($filename)
             ];
         }
@@ -33,15 +33,48 @@ function searchInDirectory($directory, $type, $baseUrl) {
     return $matches;
 }
 
-// Rechercher parmi les pilotes
+
+function searchChampionships($baseDir) {
+    global $query;
+    $matches = [];
+
+
+    foreach (glob($baseDir . '/*', GLOB_ONLYDIR) as $championshipDir) {
+        $championship = basename($championshipDir);
+
+        if (stripos($championship, $query) !== false) {
+            $latestYear = null;
+            
+
+            foreach (glob($championshipDir . '/*.json') as $jsonFile) {
+                $year = basename($jsonFile, ".json");
+                if (is_numeric($year) && ($latestYear === null || $year > $latestYear)) {
+                    $latestYear = $year;
+                }
+            }
+            $filename = pathinfo($jsonFile, PATHINFO_DIRNAME);
+            $filename = str_replace($baseDir, '', $filename);
+            if ($latestYear !== null) {
+                $matches[] = [
+                    "name" => ucfirst(str_replace("_", " ", $championship)) . " ($latestYear)",
+                    "image" => file_exists("races/picture/$filename.png") ? "races/picture/$filename.png" : "races/picture/default.png",
+                    "url" => "race.html?id=" . urlencode($championship) . "&year=" . urlencode($latestYear)
+                ];
+            }
+        }
+    }
+    return $matches;
+}
+
+
 $results = array_merge($results, searchInDirectory($driversDir, "driver", "driver"));
 
-// Rechercher parmi les équipes
+
 $results = array_merge($results, searchInDirectory($teamsDir, "team", "team"));
 
-// Rechercher parmi les championnats
-$results = array_merge($results, searchInDirectory($racesDir, "race", "championship"));
 
-// Limite à un maximum de 10 résultats
+$results = array_merge($results, searchChampionships($racesDir));
+
+
 echo json_encode(array_slice($results, 0, 10));
 ?>
