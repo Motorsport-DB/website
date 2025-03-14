@@ -19,12 +19,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function displayTeamInfo(team) {
+    if (team.country == undefined) {
+        team.country = "default.png";
+    } else {
+        team.country = team.country.toLowerCase + ".png"
+    }
+    if (team.picture == undefined) {
+        team.picture = "default.png";
+    }
     document.getElementById("teamDetail").innerHTML = `
-        <img src="teams/picture/${team.picture || "default.png"}" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Picture of ${team.name}">
+        <img src="teams/picture/${team.picture}" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Picture of ${team.name}">
         <div>
             <h1 class="text-3xl font-bold">${team.name}</h1>
             <div class="flex items-center mt-2">
-                <img src="assets/flags/${team.country.toLowerCase()+".png" || "default.png"}" class="w-8 h-6 mr-2 rounded" alt="Country Flag">
+                <img src="assets/flags/${team.country}" class="w-8 h-6 mr-2 rounded" alt="Country Flag">
             </div>
         </div>
     `;
