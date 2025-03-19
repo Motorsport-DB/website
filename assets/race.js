@@ -24,7 +24,7 @@ function displayMainRaceInfo(race) {
     }
 
     document.getElementById("raceDetail").innerHTML = `
-        <img src="races/picture/${race.picture}" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Picture of ${race.name}">
+        <img src="races/picture/${race.picture}" class="w-40 h-40 object-contain rounded-lg mr-6" alt="Picture of ${race.name}">
         <div>
             <h1 class="text-3xl font-bold">${race.name}</h1>
             <p class="text-lg text-gray-300">${race.nickname ? `Nickname: ${race.nickname}` : ""}</p>
