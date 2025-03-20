@@ -2,3 +2,6 @@ drivers/
 races/
 teams/
 script/
+
+changelog.json
+sitemap.xml
