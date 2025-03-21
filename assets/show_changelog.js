@@ -3,12 +3,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         const response = await fetch("changelog.json");
-        if (!response.ok) throw new Error("Impossible de charger le changelog.");
+        if (!response.ok) throw new Error("Unable to load the changelog.");
 
         const data = await response.json();
 
         let allCommits = [];
-
 
         Object.entries(data).forEach(([categoryName, categoryData]) => {
             let categoryCommits = [];
@@ -17,13 +16,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     categoryCommits.push({
                         id: commitId,
                         date: date,
-                        author: commitDetails.auteur,
-                        message: commitDetails.titre_commit,
-                        fullMessage: commitDetails.texte_commit
+                        author: commitDetails.author,
+                        message: commitDetails.commit_title,
+                        fullMessage: commitDetails.commit_text
                     });
                 });
             });
-
 
             categoryCommits.sort((a, b) => new Date(b.date) - new Date(a.date));
             if (categoryCommits.length > 0) {
@@ -34,10 +32,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         });
         if (allCommits.length === 0) {
-            container.innerHTML = "<p class='text-gray-500 text-center'>Aucun commit récent.</p>";
+            container.innerHTML = "<p class='text-gray-500 text-center'>No recent commits.</p>";
             return;
         }
-
 
         container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${allCommits.length} gap-6">
@@ -49,7 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             onclick="toggleMessage('${commit.id}')">
                             <p class="font-semibold text-mg text-gray-900">${commit.message}</p>
                             <p class="text-gray-600 text-sm">
-                                Par <span class="font-medium">${commit.author}</span> - ${new Date(commit.date).toLocaleDateString()}
+                                By <span class="font-medium">${commit.author}</span> - ${new Date(commit.date).toLocaleDateString()}
                             </p>
                             <p id="msg-${commit.id}" class="text-gray-700 text-sm mt-2 max-h-0 overflow-hidden opacity-0 transform translate-y-4 transition-all duration-500 ease-in-out">
                                 ${commit.fullMessage}
@@ -62,8 +59,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     `;
 
     } catch (error) {
-        console.error("Erreur lors du chargement des commits :", error);
-        container.innerHTML = "<p class='text-red-500 text-center'>Erreur lors du chargement des commits.</p>";
+        console.error("Error loading commits:", error);
+        container.innerHTML = "<p class='text-red-500 text-center'>Error loading commits.</p>";
     }
 });
 
