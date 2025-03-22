@@ -41,11 +41,12 @@ function displayMainRaceInfo(race) {
 
 function displayRaceResults(race) {
     const resultsContainer = document.getElementById("resultsContainer");
+    resultsContainer.innerHTML = ""; 
 
-    for (const event in race.events) {
+    Object.keys(race.events).sort().forEach(event => {
         let eventHTML = `<h2 class="text-xl font-bold mt-6">${event}</h2>`;
 
-        for (const session in race.events[event]) {
+        Object.keys(race.events[event]).sort().forEach(session => {
             let sessionHTML = `<h3 class="text-lg font-semibold mt-4">${session}</h3>`;
 
             sessionHTML += `<table class="w-full mt-2 bg-gray-800 text-white border border-gray-700">
@@ -61,8 +62,29 @@ function displayRaceResults(race) {
                                 </thead>
                                 <tbody>`;
 
-            for (const car in race.events[event][session]) {
-                const data = race.events[event][session][car];
+            let cars = Object.keys(race.events[event][session]).map(car => ({
+                car,
+                data: race.events[event][session][car]
+            }));
+
+            let classified = [];
+            let nonClassified = [];
+
+            cars.forEach(({ car, data }) => {
+                if (["NC", "DNF", "DNS", "DSQ"].includes(data.position)) {
+                    nonClassified.push({ car, data });
+                } else {
+                    classified.push({ car, data });
+                }
+            });
+
+
+            classified.sort((a, b) => (a.data.position ?? 9999) - (b.data.position ?? 9999));
+            nonClassified.sort((a, b) => (b.data.other_info?.Laps ?? 0) - (a.data.other_info?.Laps ?? 0));
+
+            let sortedCars = [...classified, ...nonClassified];
+
+            sortedCars.forEach(({ car, data }) => {
                 let position = data.position !== undefined ? `P${data.position}` : "N/A";
                 let fastestLap = data.fastest_lap !== undefined ? data.fastest_lap : "N/A";
                 let drivers = data.drivers ? data.drivers.join(", ") : "N/A";
@@ -84,16 +106,15 @@ function displayRaceResults(race) {
                             <span id="${rowId}" class="hidden ml-2">${otherInfoHTML || "No additional info"}</span>
                         </td>
                     </tr>`;
-            }
+            });
 
             sessionHTML += `</tbody></table>`;
             eventHTML += sessionHTML;
-        }
+        });
 
         resultsContainer.innerHTML += eventHTML;
-    }
+    });
 }
-
 
 function toggleDetails(rowId) {
     document.getElementById(rowId).classList.toggle("hidden");
