@@ -25,7 +25,7 @@ function searchInDirectory($directory, $type, $baseUrl) {
         if (stripos($filename, $query) !== false) {
             $matches[] = [
                 "name" => ucfirst(str_replace("_", " ", $filename)),
-                "image" => file_exists("$directory/picture/$filename.png") ? "$directory/picture/$filename.png" : "$directory/picture/default.png",
+                "image" => file_exists($directory . "picture/$filename.png") ? $directory . "picture/$filename.png" : (file_exists($directory . "picture/$filename.jpg") ? $directory . "picture/$filename.jpg" : $directory . "picture/default.png"),
                 "url" => "$baseUrl.html?id=" . urlencode($filename)
             ];
         }
