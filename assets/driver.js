@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("driverDetail").innerHTML = "<p class='text-red-500'>Driver not found.</p>";
         return;
     }
-
     driver.age = getAge(driver.dateOfBirth, driver.dateOfDeath);
     displayMainDriverInfo(driver);
     displayDriverResults(driver);
@@ -21,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function displayMainDriverInfo(driver) {
     document.getElementById("driverDetail").innerHTML = `
-        <img src="drivers/picture/${driver.picture || "default.png"}" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Picture of ${driver.firstName} ${driver.lastName}">
+        <img src="${driver.picture}" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Picture of ${driver.firstName} ${driver.lastName}">
         <div>
             <h1 class="text-3xl font-bold">${driver.firstName} ${driver.lastName}</h1>
             <p class="text-lg text-gray-300">${driver.Nickname ? `Nickname: ${driver.Nickname}` : ""}</p>
@@ -33,16 +32,17 @@ function displayMainDriverInfo(driver) {
         </div>
     `;
     if (driver.country) {
-        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/${driver.country.toLowerCase()+".png"}" class="w-8 h-6 mr-2 rounded" alt="Country Flag">`;
+        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/${driver.country.toLowerCase()+".png"}" class="w-8 aspect-[3/2] mr-2 rounded" alt="Country Flag">`;
     } else {
-        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/default.png" class="w-8 h-6 mr-2 rounded" alt="Country Flag">`;
+        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/default.png" class="w-8 aspect-[3/2] mr-2 rounded" alt="Country Flag">`;
     }
 }
 
 function displayDriverResults(driver) {
     const resultsContainer = document.getElementById("resultsContainer");
 
-    for (const season in driver.seasons) {
+    const seasonsInFileOrder = Object.keys(driver.seasons).sort((a, b) => b - a);
+    for (const season of seasonsInFileOrder) {
         for (const championship in driver.seasons[season]) {
             if (championship === "standing") continue;
     
@@ -61,15 +61,15 @@ function displayDriverResults(driver) {
                 }
             }
     
-            seasonHTML += `<table class="w-full mt-2 bg-gray-800 text-white border border-gray-700">
+            seasonHTML += `<table class="table-fixed w-full mt-2 bg-gray-800 text-white border border-gray-700">
                             <thead>
                                 <tr class="bg-gray-700">
-                                    <th class="p-2 border border-gray-600">Race</th>
-                                    <th class="p-2 border border-gray-600">Session</th>
-                                    <th class="p-2 border border-gray-600">Position</th>
-                                    <th class="p-2 border border-gray-600">Fastest Lap</th>
-                                    <th class="p-2 border border-gray-600">Team</th>
-                                    <th class="p-2 border border-gray-600">Other Info</th>
+                                    <th class="w-1/4 p-2 border border-gray-600">Race</th>
+                                    <th class="w-1/6 p-2 border border-gray-600">Session</th>
+                                    <th class="w-1/12 p-2 border border-gray-600">Position</th>
+                                    <th class="w-1/6 p-2 border border-gray-600">Fastest Lap</th>
+                                    <th class="w-1/6 p-2 border border-gray-600">Team</th>
+                                    <th class="w-1/6 p-2 border border-gray-600">Other Info</th>
                                 </tr>
                             </thead>
                             <tbody>`;
@@ -83,7 +83,7 @@ function displayDriverResults(driver) {
                     let team = data.team ?? "N/A";
 
                     let otherInfoHTML = Object.entries(data.other_info || {})
-                        .map(([key, value]) => `<span class="mr-2"><strong>${key.replace(/_/g, " ")}:</strong> ${value}</span>`)
+                        .map(([key, value]) => `<span class="mr-2"><strong>${key.replace(/_/g, " ")}:</strong>${value}</span>`)
                         .join("");
 
                     let rowId = `details-${season}-${championship}-${race}-${index}`;
@@ -97,7 +97,9 @@ function displayDriverResults(driver) {
                             <td class="p-2 border border-gray-600">${data.session}</td>
                             <td class="p-2 border border-gray-600">P${position}</td>
                             <td class="p-2 border border-gray-600">${fastestLap}</td>
-                            <td class="p-2 border border-gray-600">${team}</td>
+                            <td class="p-2 border border-gray-600">
+                                <a class="text-blue-400 underline focus:outline-none" href='team.html?id=${team}')">${team.replace("_", " ")}</a>
+                            </td>
                             <td class="p-2 border border-gray-600">
                                 <button class="text-blue-400 underline focus:outline-none" onclick="toggleDetails('${rowId}')">Show Details</button>
                                 <span id="${rowId}" class="hidden ml-2">${otherInfoHTML || "No additional info"}</span>

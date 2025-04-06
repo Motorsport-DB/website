@@ -21,7 +21,15 @@
 <body class="bg-gray-900 text-white">
     <div class="container mx-auto p-5">
         <a href="index.html" class="text-blue-400">← Back</a>
-        <div id="teamDetail" class="flex items-center bg-gray-800 p-5 rounded-lg shadow-lg"></div>
+        <div id="teamDetail" class="min-h-[200px] flex items-centers bg-gray-800 p-5 rounded-lg shadow-lg">
+            <!-- Skeleton loader -->
+            <div class="w-40 h-40 bg-gray-700 animate-pulse rounded-lg mr-6"></div>
+            <div class="flex-1 space-y-4">
+              <div class="w-1/2 h-6 bg-gray-700 animate-pulse rounded"></div>
+              <div class="w-1/4 h-6 bg-gray-700 animate-pulse rounded"></div>
+            </div>
+          </div>
+          
         <h2 class="text-2xl font-bold mt-6">Results</h2>
         <div id="resultsContainer" class="mt-4"></div>
     </div>

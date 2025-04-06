@@ -7,32 +7,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    let team = await fetchData("getTeams.php", teamId);
-    team = team[0];
+    const team = (await fetchData("getTeams.php", teamId))[0];
     if (!team) {
         document.getElementById("teamDetail").innerHTML = "<p class='text-red-500'>Team not found.</p>";
         return;
     }
+
+    const container = document.getElementById("teamDetail");
+    container.style.opacity = 0;
+    requestAnimationFrame(() => {
+      container.style.transition = "opacity 0.5s ease";
+      container.style.opacity = 1;
+    });
+
 
     displayTeamInfo(team);
     displayTeamResults(team);
 });
 
 function displayTeamInfo(team) {
-    if (team.country == undefined) {
-        team.country = "default.png";
-    } else {
-        team.country = team.country.toLowerCase + ".png"
-    }
-    if (team.picture == undefined) {
-        team.picture = "default.png";
-    }
+    team.country = team.country ? `${team.country.toLowerCase()}.png` : "default.png";
+    team.picture = team.picture || "default.png";
+
     document.getElementById("teamDetail").innerHTML = `
         <img src="teams/picture/${team.picture}" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Picture of ${team.name}">
         <div>
             <h1 class="text-3xl font-bold">${team.name}</h1>
             <div class="flex items-center mt-2">
-                <img src="assets/flags/${team.country}" class="w-8 h-6 mr-2 rounded" alt="Country Flag">
+                <img src="assets/flags/${team.country}" class="w-8 aspect-[3/2] mr-2 rounded" alt="Country Flag">
             </div>
         </div>
     `;
@@ -40,77 +42,73 @@ function displayTeamInfo(team) {
 
 function displayTeamResults(team) {
     const resultsContainer = document.getElementById("resultsContainer");
+    const seasonsInFileOrder = Object.keys(team.seasons).sort((a, b) => b - a);
 
-    for (const season in team.seasons) {
-        let seasonHTML = `<h2 class="text-xl font-bold mt-6">${season}</h2>`;
-        
-        for (const championship in team.seasons[season]) {
-            let standing = team.seasons[season][championship].standing;
-            let standingHTML = standing ? `<span class='text-blue-400'>Standing: P${standing.position} | Total Points: ${standing.points}</span>` : "";
+    resultsContainer.innerHTML = seasonsInFileOrder.map(season => {
+        return Object.entries(team.seasons[season]).map(([championship, data]) => {
+            const standing = data.standing;
+            const standingHTML = standing ? `<span class='text-blue-400'>Standing: P${standing.position} | Total Points: ${standing.points}</span>` : "";
 
-            seasonHTML += `<h3 class="text-lg font-semibold mt-4">${championship} ${standingHTML}</h3>`;
+            let seasonHTML = `<h3 class="text-lg font-semibold mt-4">${season} - ${championship} ${standingHTML}</h3>`;
 
-            for (const event in team.seasons[season][championship]) {
-                seasonHTML += `<h4 class="text-md font-semibold mt-2 text-gray-300">${event}</h4>`;
+            seasonHTML += Object.entries(data).filter(([key]) => key !== "standing").map(([event, sessions]) => {
+                let eventHTML = `<h4 class="text-md font-semibold mt-2 text-gray-300">${event}</h4>`;
+                const races = {};
 
-                let races = {};
-                for (const session in team.seasons[season][championship][event]) {
-                    for (const car in team.seasons[season][championship][event][session]) {
+                Object.entries(sessions).forEach(([session, cars]) => {
+                    Object.entries(cars).forEach(([car, details]) => {
                         if (!races[session]) races[session] = [];
-                        races[session].push({ car, ...team.seasons[season][championship][event][session][car] });
-                    }
-                }
-
-                seasonHTML += `<table class="w-full mt-2 bg-gray-800 text-white border border-gray-700">
-                                <thead>
-                                    <tr class="bg-gray-700">
-                                        <th class="p-2 border border-gray-600">Session</th>
-                                        <th class="p-2 border border-gray-600">Car #</th>
-                                        <th class="p-2 border border-gray-600">Position</th>
-                                        <th class="p-2 border border-gray-600">Fastest Lap</th>
-                                        <th class="p-2 border border-gray-600">Drivers</th>
-                                        <th class="p-2 border border-gray-600">Other Info</th>
-                                    </tr>
-                                </thead>
-                                <tbody>`;
-
-                for (const session in races) {
-                    let firstRow = true;
-                    let rowspan = races[session].length;
-
-                    races[session].forEach((data, index) => {
-                        let position = data.position ?? "N/A";
-                        let fastestLap = data.fastest_lap ?? "N/A";
-                        let drivers = data.drivers ? data.drivers.join(", ") : "N/A";
-
-                        let otherInfoHTML = Object.entries(data.other_info || {})
-                            .map(([key, value]) => `<span class="mr-2"><strong>${key.replace(/_/g, " ")}:</strong> ${value}</span>`)
-                            .join("");
-
-                        let rowId = `details-${season}-${championship}-${event}-${session}-${index}`;
-
-                        seasonHTML += `<tr class="border border-gray-700 cursor-pointer">`;
-                        if (firstRow) {
-                            seasonHTML += `<td class="p-2 border border-gray-600" rowspan="${rowspan}">${session}</td>`;
-                            firstRow = false;
-                        }
-                        seasonHTML += `
-                                <td class="p-2 border border-gray-600">${data.car}</td>
-                                <td class="p-2 border border-gray-600">P${position}</td>
-                                <td class="p-2 border border-gray-600">${fastestLap}</td>
-                                <td class="p-2 border border-gray-600">${drivers}</td>
-                                <td class="p-2 border border-gray-600">
-                                    <button class="text-blue-400 underline focus:outline-none" onclick="toggleDetails('${rowId}')">Show Details</button>
-                                    <span id="${rowId}" class="hidden ml-2">${otherInfoHTML || "No additional info"}</span>
-                                </td>
-                            </tr>`;
+                        races[session].push({ car, ...details });
                     });
-                }
+                });
 
-                seasonHTML += `</tbody></table>`;
-            }
-        }
-        resultsContainer.innerHTML += seasonHTML;
-    }
+                eventHTML += `
+                    <table class="table-fixed w-full mt-2 bg-gray-800 text-white border border-gray-700">
+                        <thead>
+                            <tr class="bg-gray-700">
+                                <th class="w-1/6 p-2 border border-gray-600">Session</th>
+                                <th class="w-1/12 p-2 border border-gray-600">Car #</th>
+                                <th class="w-1/12 p-2 border border-gray-600">Position</th>
+                                <th class="w-1/6 p-2 border border-gray-600">Fastest Lap</th>
+                                <th class="w-1/6 p-2 border border-gray-600">Drivers</th>
+                                <th class="w-1/6 p-2 border border-gray-600">Other Info</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(races).map(([session, raceData]) => {
+                                return raceData.map((data, index) => {
+                                    const position = data.position ?? "N/A";
+                                    const fastestLap = data.fastest_lap ?? "N/A";
+                                    const drivers = data.drivers ? data.drivers.join(", ") : "N/A";
+                                    const otherInfoHTML = Object.entries(data.other_info || {})
+                                        .map(([key, value]) => `<span class="mr-2"><strong>${key.replace(/_/g, " ")}:</strong> ${value}</span>`)
+                                        .join("");
+
+                                    const rowId = `details-${season}-${championship}-${event}-${session}-${index}`;
+                                    return `
+                                        <tr class="border border-gray-700 cursor-pointer">
+                                            ${index === 0 ? `<td class="p-2 border border-gray-600" rowspan="${raceData.length}">${session}</td>` : ""}
+                                            <td class="p-2 border border-gray-600">${data.car}</td>
+                                            <td class="p-2 border border-gray-600">P${position}</td>
+                                            <td class="p-2 border border-gray-600">${fastestLap}</td>
+                                            <td class="p-2 border border-gray-600">
+                                                <a class="text-blue-400 underline focus:outline-none" href="driver.html?id=${drivers}">${drivers.replace("_", " ")}</a>
+                                            </td>
+                                            <td class="p-2 border border-gray-600">
+                                                <button class="text-blue-400 underline focus:outline-none" onclick="toggleDetails('${rowId}')">Show Details</button>
+                                                <span id="${rowId}" class="hidden ml-2">${otherInfoHTML || "No additional info"}</span>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join("");
+                            }).join("")}
+                        </tbody>
+                    </table>
+                `;
+                return eventHTML;
+            }).join("");
+
+            return seasonHTML;
+        }).join("");
+    }).join("");
 }
-
