@@ -42,9 +42,9 @@ function displayTeamInfo(team) {
         </div>
     `;
     if (team.country) {
-        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/${team.country.toLowerCase()+".png"}" class="w-8 aspect-[3/2] mr-2 rounded" alt="Country Flag">`;
+        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/${team.country.toLowerCase()+".png"}" class="w-10 aspect-[3/2] rounded" alt="Country Flag">`;
     } else {
-        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/default.png" class="w-8 aspect-[3/2] mr-2 rounded" alt="Country Flag">`;
+        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/default.png" class="w-10 aspect-[3/2] rounded" alt="Country Flag">`;
     }
 
     const otherTeamsContainer = document.getElementById("other_teams");
