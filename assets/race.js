@@ -9,11 +9,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     let race = await fetchData("getRaces.php", raceId, year);
-    if (!race) {
+    if (race["error"]) {
         document.getElementById("raceDetail").innerHTML = "<p class='text-red-500'>Race not found.</p>";
         return;
     }
-
     displayMainRaceInfo(race);
     displayRaceResults(race);
 });
@@ -22,7 +21,6 @@ function displayMainRaceInfo(race) {
     if (race.picture == undefined) {
         race.picture = "default.png";
     }
-
     document.getElementById("raceDetail").innerHTML = `
         <img src="races/picture/${race.picture}" class="w-40 h-40 object-contain rounded-lg mr-6" alt="Picture of ${race.name}">
         <div>
