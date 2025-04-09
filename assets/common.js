@@ -4,9 +4,14 @@ async function fetchData(endpoint, id, year = null) {
 }
 
 function getAge(birthDate, deathDate) {
-    const birth = new Date(birthDate);
-    const death = deathDate ? new Date(deathDate) : new Date();
-    return death.getFullYear() - birth.getFullYear();
+    try {
+        const birth = new Date(birthDate);
+        const death = deathDate ? new Date(deathDate) : new Date();
+        return death.getFullYear() - birth.getFullYear();
+    } catch (Exception) {
+        const end = deathDate ? end : new Date().getFullYear();
+        return parseInt(birthDate) - parseInt(end);
+    }
 }
 
 function toggleDetails(rowId) {

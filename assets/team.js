@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    const team = (await fetchData("getTeams.php", teamId))[0];
+    let team = (await fetchData("getTeams.php", teamId))[0];
     if (!team) {
         document.getElementById("teamDetail").innerHTML = "<p class='text-red-500'>Team not found.</p>";
         return;
@@ -20,24 +20,67 @@ document.addEventListener("DOMContentLoaded", async () => {
       container.style.opacity = 1;
     });
 
-
+    team.age = getAge(team.creationDate, team.endDate)
     displayTeamInfo(team);
     displayTeamResults(team);
 });
 
 function displayTeamInfo(team) {
-    team.country = team.country ? `${team.country.toLowerCase()}.png` : "default.png";
-    team.picture = team.picture || "default.png";
-
     document.getElementById("teamDetail").innerHTML = `
-        <img src="teams/picture/${team.picture}" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Picture of ${team.name}">
+        <img src="${team.picture}" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Picture of ${team.name}">
         <div>
-            <h1 class="text-3xl font-bold">${team.name}</h1>
-            <div class="flex items-center mt-2">
-                <img src="assets/flags/${team.country}" class="w-8 aspect-[3/2] mr-2 rounded" alt="Country Flag">
+            <h1 class="text-3xl font-bold">${team.name.replace("_", " ")}</h1>
+            ${team.nickname ? `<p class="text-lg text-gray-300">${team.nickname}</p>` : ""}
+            ${team.creationDate ? `<p>Date of creation: ${team.creationDate} (Age: ${team.age})</p>` : ""}
+            ${team.endDate ? `<p>Date of end: ${team.endDate}</p>` : ""}
+            <div id="country_flag" class="flex items-center mt-2">
+                
+            </div>
+
+            <div id="other_teams">
             </div>
         </div>
     `;
+    if (team.country) {
+        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/${team.country.toLowerCase()+".png"}" class="w-8 aspect-[3/2] mr-2 rounded" alt="Country Flag">`;
+    } else {
+        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/default.png" class="w-8 aspect-[3/2] mr-2 rounded" alt="Country Flag">`;
+    }
+
+    const otherTeamsContainer = document.getElementById("other_teams");
+    if (team.previous && team.previous.length > 0) {
+        otherTeamsContainer.innerHTML += `
+            <div>
+                <h3 class="text-lg font-semibold mt-4">Previous Teams</h3>
+                <ul class="list-disc list-inside">
+                    ${team.previous.flat().map(previousTeam => `
+                        <li>
+                            <a href="team.html?id=${previousTeam}" class="text-blue-400 underline">
+                                ${previousTeam.replace("_", " ")}
+                            </a>
+                        </li>
+                    `).join("")}
+                </ul>
+            </div>
+        `;
+    }
+
+    if (team.next && team.next.length > 0) {
+        otherTeamsContainer.innerHTML += `
+            <div>
+                <h3 class="text-lg font-semibold mt-4">Next Teams</h3>
+                <ul class="list-disc list-inside">
+                    ${team.next.flat().map(nextTeam => `
+                        <li>
+                            <a href="team.html?id=${nextTeam}" class="text-blue-400 underline">
+                                ${nextTeam.replace("_", " ")}
+                            </a>
+                        </li>
+                    `).join("")}
+                </ul>
+            </div>
+        `;
+    }
 }
 
 function displayTeamResults(team) {
@@ -49,7 +92,7 @@ function displayTeamResults(team) {
             const standing = data.standing;
             const standingHTML = standing ? `<span class='text-blue-400'>Standing: P${standing.position} | Total Points: ${standing.points}</span>` : "";
 
-            let seasonHTML = `<h3 class="text-lg font-semibold mt-4">${season} - ${championship} ${standingHTML}</h3>`;
+            let seasonHTML = `<h3><a href="race.html?id=${championship}&year=${season}" class="text-lg font-semibold mt-4 text-blue-400 underline">${season} - ${championship.replace("_", " ")} ${standingHTML}</a></h3>`;
 
             seasonHTML += Object.entries(data).filter(([key]) => key !== "standing").map(([event, sessions]) => {
                 let eventHTML = `<h4 class="text-md font-semibold mt-2 text-gray-300">${event}</h4>`;

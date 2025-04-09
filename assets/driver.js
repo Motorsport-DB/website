@@ -49,7 +49,7 @@ function displayDriverResults(driver) {
             let standing = driver.seasons[season][championship].standing;
             let standingHTML = standing ? `<span class='text-blue-400'>Standing: P${standing.position} | Total Points: ${standing.points}</span>` : "";
     
-            let seasonHTML = `<h3 class="text-lg font-semibold mt-4">${season} - ${championship} ${standingHTML}</h3>`;
+            let seasonHTML = `<h3><a href="race.html?id=${championship}&year=${season}" class="text-lg font-semibold mt-4 text-blue-400 underline">${season} - ${championship.replace("_", " ")} ${standingHTML}</a></h3>`;
     
             let races = {};
             for (const race in driver.seasons[season][championship]) {
