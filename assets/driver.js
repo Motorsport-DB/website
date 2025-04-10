@@ -20,10 +20,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function displayMainDriverInfo(driver) {
     document.getElementById("driverDetail").innerHTML = `
-        <img src="${driver.picture}" class="w-40 h-40 object-cover rounded-lg mr-6" alt="Picture of ${driver.firstName} ${driver.lastName}">
+        <img src="${driver.picture}" class="w-40 h-40 object-contain aspect-[3/2] rounded-lg mr-6" alt="Picture of ${driver.firstName} ${driver.lastName}">
         <div>
             <h1 class="text-3xl font-bold">${driver.firstName} ${driver.lastName}</h1>
-            <p class="text-lg text-gray-300">${driver.Nickname ? `Nickname: ${driver.Nickname}` : ""}</p>
+            <p class="text-lg text-gray-300">${driver.nickname ? `Nickname: ${driver.nickname}` : ""}</p>
             ${driver.dateOfBirth ? `<p>Date of Birth: ${driver.dateOfBirth} (Age: ${driver.age})</p>` : ""}
             ${driver.dateOfDeath ? `<p>Date of Death: ${driver.dateOfDeath}</p>` : ""}
             <div id="country_flag" class="flex items-center mt-2">
