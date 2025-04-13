@@ -29,7 +29,7 @@ function displayTeamInfo(team) {
     document.getElementById("teamDetail").innerHTML = `
         <img src="${team.picture}" class="w-40 h-40 object-contain aspect-[3/2] rounded-lg mr-6" alt="Picture of ${team.name}">
         <div>
-            <h1 class="text-3xl font-bold">${team.name.replace("_", " ")}</h1>
+            <h1 class="text-3xl font-bold">${team.name.replaceAll("_", " ")}</h1>
             ${team.nickname ? `<p class="text-lg text-gray-300">${team.nickname}</p>` : ""}
             ${team.creationDate ? `<p>Date of creation: ${team.creationDate} (Age: ${team.age})</p>` : ""}
             ${team.endDate ? `<p>Date of end: ${team.endDate}</p>` : ""}

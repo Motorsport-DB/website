@@ -1,7 +1,12 @@
+# OTHER REPOSITORY
 drivers/
 races/
 teams/
 script/
 
+# AUTO-GENERATE BY OTHER SCRIPT
 changelog.json
 sitemap.xml
+
+# AUTO-GENERATE BY MOTORSPORTDB
+cards.json
