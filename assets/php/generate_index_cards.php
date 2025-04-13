@@ -6,9 +6,16 @@ $dataFile = "$root/cards.json";
 $maxAge = 86400; // 24 hours
 $year = date('Y');
 
-if (file_exists($dataFile) && (time() - filemtime($dataFile)) < $maxAge) {
+function returnCards($dataFile) {
     echo file_get_contents($dataFile);
-    exit;
+    return file_get_contents($dataFile);
+}
+
+if (file_exists($dataFile)) {
+    returnCards($dataFile);
+    if ((time() - filemtime($dataFile)) < $maxAge) {
+        exit;
+    }
 }
 
 function loadJsonObjects($dir, $json = false) {
@@ -38,19 +45,6 @@ function loadRaces($root) {
     return $races;
 }
 
-
-$drivers = loadJsonObjects("$root/drivers", true);
-$teams = loadJsonObjects("$root/teams", true);
-$races = loadRaces($root);
-
-$driver = getRandom($drivers);
-$team = getRandom($teams);
-$championship = getRandom($races);
-
-
-
-
-
 function getRandom($array) {
     return $array[array_rand($array)];
 }
@@ -65,6 +59,16 @@ function findImage($dir, $baseName) {
     }
     return null;
 }
+
+
+
+$drivers = loadJsonObjects("$root/drivers", true);
+$teams = loadJsonObjects("$root/teams", true);
+$races = loadRaces($root);
+
+$driver = getRandom($drivers);
+$team = getRandom($teams);
+$championship = getRandom($races);
 
 if (isset($driver['firstName']) && isset($driver['lastName'])) {
     $baseName = $driver['firstName'] . '_' . $driver['lastName'];
