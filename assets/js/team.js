@@ -2,11 +2,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const teamId = urlParams.get("id");
 
-    if (!teamId) {
-        document.getElementById("teamDetail").innerHTML = "<p class='text-red-500'>No team specified.</p>";
-        return;
-    }
-
     let team = (await fetchData("getTeams.php", teamId))[0];
     if (!team) {
         document.getElementById("teamDetail").innerHTML = "<p class='text-red-500'>Team not found.</p>";

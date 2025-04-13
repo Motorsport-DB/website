@@ -3,11 +3,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const raceId = urlParams.get("id");
     const year = urlParams.get("year");
 
-    if (!raceId || !year) {
-        document.getElementById("raceDetail").innerHTML = "<p class='text-red-500'>No race specified.</p>";
-        return;
-    }
-
     let race = await fetchData("getRaces.php", raceId, year);
     if (race["error"]) {
         document.getElementById("raceDetail").innerHTML = "<p class='text-red-500'>Race not found.</p>";

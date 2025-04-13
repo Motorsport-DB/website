@@ -2,11 +2,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const driverId = urlParams.get("id");
 
-    if (!driverId) {
-        document.getElementById("driverDetail").innerHTML = "<p class='text-red-500'>No driver specified.</p>";
-        return;
-    }
-
     let driver = await fetchData("getDrivers.php", driverId);
     driver = driver[0];
     if (!driver) {
