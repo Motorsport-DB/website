@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let team = (await fetchData("getTeams.php", teamId))[0];
     if (!team) {
-        document.getElementById("teamDetail").innerHTML = "<p class='text-red-500'>Team not found.</p>";
+        document.getElementById("teamDetail").innerHTML = "<p id='text_error' class='text-red-500'>Team not found.</p>";
         return;
     }
 

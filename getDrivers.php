@@ -6,7 +6,7 @@ $driversDir = 'drivers/';
 if (isset($_GET['id'])) {
     $driverId = $_GET['id'];
 
-    if (preg_match('/[^a-zA-Z0-9_ Áóáíìø\'-]/', $driverId)) {
+    if (preg_match('/[\/.~`$<>|]/', $driverId)) {
         http_response_code(401);
         echo json_encode(["error" => "Invalid driver ID"]);
         exit;

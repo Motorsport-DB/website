@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let driver = await fetchData("getDrivers.php", driverId);
     driver = driver[0];
     if (!driver) {
-        document.getElementById("driverDetail").innerHTML = "<p class='text-red-500'>Driver not found.</p>";
+        document.getElementById("driverDetail").innerHTML = "<p id='text_error' class='text-red-500'>Driver not found.</p>";
         return;
     }
     driver.age = getAge(driver.dateOfBirth, driver.dateOfDeath);
