@@ -50,7 +50,7 @@ function displayTeamInfo(team) {
             <ul class="list-disc list-inside">
                 ${team.previous.flat().map(previousTeam => `
                 <li>
-                    <a ${previousTeam == "?" ? 'href=#' : 'href="team.html?id=${previousTeam}"'} class="text-blue-400 underline">
+                    <a ${previousTeam == "?" ? 'href=#' : `href="team.html?id=${previousTeam}"`} class="text-blue-400 underline">
                         ${previousTeam.replace("_", " ")}
                     </a>
                 </li>
