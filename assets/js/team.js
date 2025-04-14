@@ -46,16 +46,16 @@ function displayTeamInfo(team) {
     if (team.previous && team.previous.length > 0) {
         otherTeamsContainer.innerHTML += `
             <div>
-                <h3 class="text-lg font-semibold mt-4">Previous Teams</h3>
-                <ul class="list-disc list-inside">
-                    ${team.previous.flat().map(previousTeam => `
-                        <li>
-                            <a href="team.html?id=${previousTeam}" class="text-blue-400 underline">
-                                ${previousTeam.replace("_", " ")}
-                            </a>
-                        </li>
-                    `).join("")}
-                </ul>
+            <h3 class="text-lg font-semibold mt-4">Previous Teams</h3>
+            <ul class="list-disc list-inside">
+                ${team.previous.flat().map(previousTeam => `
+                <li>
+                    <a ${previousTeam == "?" ? 'href=#' : 'href="team.html?id=${previousTeam}"'} class="text-blue-400 underline">
+                        ${previousTeam.replace("_", " ")}
+                    </a>
+                </li>
+                `).join("")}
+            </ul>
             </div>
         `;
     }
