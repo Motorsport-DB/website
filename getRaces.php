@@ -21,5 +21,6 @@ if (!file_exists($raceFile)) {
 }
 
 $data = json_decode(file_get_contents($raceFile), true);
+$data["picture"] = file_exists( "races/picture/$championship.png") ? "races/picture/$championship.png" : (file_exists( "races/picture/$championship.jpg") ? "races/picture/$championship.jpg" : "races/picture/default.png");
 
 echo json_encode($data);
