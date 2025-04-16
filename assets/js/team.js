@@ -67,7 +67,7 @@ function displayTeamInfo(team) {
                 <ul class="list-disc list-inside">
                     ${team.next.flat().map(nextTeam => `
                         <li>
-                            <a href="team.html?id=${nextTeam}" class="text-blue-400 underline">
+                            <a ${nextTeam == "?" ? 'href=#' : `href="team.html?id=${nextTeam}"`} class="text-blue-400 underline">
                                 ${nextTeam.replace("_", " ")}
                             </a>
                         </li>
