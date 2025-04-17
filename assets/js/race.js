@@ -95,7 +95,7 @@ function displayRaceResults(race) {
                             <a class="text-blue-400 underline focus:outline-none" href='team.html?id=${data.team}')">${data.team.replace("_", " ")}</a>
                         </td>
                         <td class="p-2 border border-gray-600">
-                            <a class="text-blue-400 underline focus:outline-none" href='team.html?id=${drivers}')">${drivers.replace("_", " ")}</a>
+                            <a class="text-blue-400 underline focus:outline-none" href='driver.html?id=${drivers}')">${drivers.replace("_", " ")}</a>
                         </td>
                         <td class="p-2 border border-gray-600">${fastestLap}</td>
                         <td class="p-2 border border-gray-600">
