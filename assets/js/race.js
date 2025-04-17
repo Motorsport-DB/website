@@ -80,7 +80,7 @@ function displayRaceResults(race) {
             sortedCars.forEach(({ car, data }) => {
                 let position = data.position !== undefined ? `P${data.position}` : "N/A";
                 let fastestLap = data.fastest_lap !== undefined ? data.fastest_lap : "N/A";
-                let drivers = data.drivers ? data.drivers.join(", ") : "N/A";
+                // let drivers = data.drivers ? data.drivers.join(", ") : "N/A";
 
                 let otherInfoHTML = Object.entries(data.other_info || {})
                     .map(([key, value]) => `<span class="mr-2"><strong>${key.replace(/_/g, " ")}:</strong> ${value}</span>`)
@@ -92,10 +92,10 @@ function displayRaceResults(race) {
                         <td class="p-2 border border-gray-600">${position}</td>
                         <td class="p-2 border border-gray-600">${car}</td>
                         <td class="p-2 border border-gray-600">
-                            <a class="text-blue-400 underline focus:outline-none" href='team.html?id=${data.team}')">${data.team.replace("_", " ")}</a>
+                            <a class="text-blue-400 underline focus:outline-none" href="team.html?id=${data.team}">${data.team.replace("_", " ")}</a>
                         </td>
                         <td class="p-2 border border-gray-600">
-                            <a class="text-blue-400 underline focus:outline-none" href='driver.html?id=${drivers}')">${drivers.replace("_", " ")}</a>
+                            ${data.drivers ? data.drivers.map(driver => `<a class="text-blue-400 underline focus:outline-none" href="driver.html?id=${driver}">${driver.replace("_", " ")}</a>`).join(", ") : "N/A"}
                         </td>
                         <td class="p-2 border border-gray-600">${fastestLap}</td>
                         <td class="p-2 border border-gray-600">

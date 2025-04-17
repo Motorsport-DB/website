@@ -117,7 +117,6 @@ function displayTeamResults(team) {
                                 return raceData.map((data, index) => {
                                     const position = data.position ?? "N/A";
                                     const fastestLap = data.fastest_lap ?? "N/A";
-                                    const drivers = data.drivers ? data.drivers.join(", ") : "N/A";
                                     const otherInfoHTML = Object.entries(data.other_info || {})
                                         .map(([key, value]) => `<span class="mr-2"><strong>${key.replace(/_/g, " ")}:</strong> ${value}</span>`)
                                         .join("");
@@ -130,7 +129,7 @@ function displayTeamResults(team) {
                                             <td class="p-2 border border-gray-600">P${position}</td>
                                             <td class="p-2 border border-gray-600">${fastestLap}</td>
                                             <td class="p-2 border border-gray-600">
-                                                <a class="text-blue-400 underline focus:outline-none" href="driver.html?id=${drivers}">${drivers.replace("_", " ")}</a>
+                                                ${data.drivers ? data.drivers.map(driver => `<a class="text-blue-400 underline focus:outline-none" href="driver.html?id=${driver}">${driver.replace("_", " ")}</a>`).join(", ") : "N/A"}
                                             </td>
                                             <td class="p-2 border border-gray-600">
                                                 <button class="text-blue-400 underline focus:outline-none" onclick="toggleDetails('${rowId}')">Show Details</button>
