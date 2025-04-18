@@ -61,9 +61,48 @@ function displayCards(cards) {
             }
             ${createCard("Championship of the day",
                         cards.championship.name || "Unknown",
-                        "race.html?id="+cards.championship.name+"&year="+cards.championship.date,
+                        "race.html?id="+cards.championship.name+"&year="+cards.championship.year,
                         cards.championship.picture || "races/picture/default.png"
                         )
             }
         `;
+    loadStatsAndDrawChart(cards.statistics);
 }
+
+async function loadStatsAndDrawChart(stats) {  
+    const ctx = document.getElementById('statsDonut').getContext('2d');
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Drivers', 'Teams', 'Championships'],
+        datasets: [{
+          label: 'Website stats',
+          data: [
+            stats.numbers_of_drivers,
+            stats.numbers_of_teams,
+            stats.numbers_of_championship
+          ],
+          backgroundColor: ['#3B82F6', '#10B981', '#F59E0B'],
+          borderColor: '#fff',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const label = ctx.label || '';
+                const value = ctx.raw || 0;
+                return `${label}: ${value}`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }

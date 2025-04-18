@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MotorsportDB</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="assets/js/common.js"></script>
     <script defer src="assets/js/main.js"></script>
     <script defer src="assets/js/show_changelog.js"></script>
@@ -20,7 +21,7 @@
     <meta property="og:type" content="website">
 </head>
 <body>
-    <main class="bg-gray-900 text-white flex flex-col items-center justify-center h-screen">
+    <main class="bg-gray-900 text-white flex flex-col items-center justify-center">
         <div class="container mx-auto p-5 text-center">
             <h1 class="text-4xl font-bold mb-6">MotorsportDB</h1>
             <input type="text" id="searchBox" placeholder="Search for a driver, team, or championship..." 
@@ -41,6 +42,9 @@
                 <img alt="${title}" class="animate-pulse w-16 h-16 object-contain rounded-lg mb-2">
             </div>
         </div>    
+        <div class="w-1/2 mx-auto my-8">
+            <canvas id="statsDonut"></canvas>
+        </div>          
     </main>
     <div id="commitsContainer"></div>
     <footer class="bg-gray-900 text-white text-center py-4 border-t border-gray-700">
