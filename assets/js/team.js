@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     team.age = getAge(team.creationDate, team.endDate)
     displayTeamInfo(team);
     displayTeamResults(team);
+    displayTeamPerformanceChart(team);
 });
 
 function displayTeamInfo(team) {
@@ -148,4 +149,114 @@ function displayTeamResults(team) {
             return seasonHTML;
         }).join("");
     }).join("");
+}
+
+function displayTeamPerformanceChart(team) {
+    const chartContainer = document.getElementById("chartContainer");
+    if (!chartContainer) return;
+
+    const seasonStats = {};
+
+    // Parcours des saisons
+    Object.entries(team.seasons).forEach(([season, championships]) => {
+        let totalPos = 0;
+        let count = 0;
+
+        // Pour chaque championnat de la saison
+        Object.entries(championships).forEach(([championship, data]) => {
+            Object.entries(data).forEach(([eventName, sessions]) => {
+                if (eventName === "standing") return;
+
+                Object.values(sessions).forEach(session => {
+                    Object.values(session).forEach(entry => {
+                        if (entry.position) {
+                            totalPos += parseInt(entry.position);
+                            count++;
+                        }
+                    });
+                });
+            });
+        });
+
+        if (count > 0) {
+            seasonStats[season] = {
+                avgPosition: totalPos / count
+            };
+        }
+    });
+
+    // Tri des saisons par ordre chronologique
+    const sortedSeasons = Object.keys(seasonStats).sort();
+    const maxPosition = Math.max(...Object.entries(team.seasons).flatMap(([_, championships]) => 
+        Object.entries(championships).flatMap(([_, data]) => 
+            Object.entries(data).flatMap(([eventName, sessions]) => {
+                if (eventName === "standing") return [];
+                return Object.values(sessions).flatMap(session => 
+                    Object.values(session).map(entry => entry.position ? parseInt(entry.position) : null).filter(pos => pos !== null)
+                );
+            })
+        )
+    ));
+
+    const labels = sortedSeasons;
+    const data = sortedSeasons.map(season => seasonStats[season].avgPosition.toFixed(2));
+
+    chartContainer.innerHTML = `
+        <h2 class="text-2xl font-semibold mt-8 mb-2">Average Driver Position per Season</h2>
+        <canvas id="teamChart" height="300"></canvas>
+    `;
+
+    new Chart(document.getElementById("teamChart"), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Average Position",
+                data: data,
+                borderColor: "rgb(59, 130, 246)",
+                backgroundColor: "rgb(147, 197, 253)",
+                tension: 0.3,
+                pointRadius: 5,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    min: 1,
+                    max: maxPosition,
+                    reverse: true,
+                    title: {
+                        display: true,
+                        text: 'Average Position'
+                    },
+                    ticks: {
+                        stepSize: 1 
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Season'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return `Avg Pos: P${context.raw}`;
+                        }
+                    }
+                },
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: "white"
+                    }
+                }
+            }
+        }
+    });
 }

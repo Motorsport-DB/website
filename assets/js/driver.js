@@ -11,6 +11,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     driver.age = getAge(driver.dateOfBirth, driver.dateOfDeath);
     displayMainDriverInfo(driver);
     displayDriverResults(driver);
+    displayDriverPerformanceChart(driver);
+    displayDriverPointsChart(driver);
 });
 
 function displayMainDriverInfo(driver) {
@@ -107,4 +109,161 @@ function displayDriverResults(driver) {
             resultsContainer.innerHTML += seasonHTML;
         }
     }
+}
+function displayDriverPerformanceChart(driver) {
+    const averageByYear = {};
+
+    for (const season of Object.keys(driver.seasons)) {
+        let totalPositions = 0;
+        let count = 0;
+
+        for (const championship of Object.keys(driver.seasons[season])) {
+            if (championship === "standing") continue;
+
+            const races = driver.seasons[season][championship];
+            for (const race of Object.keys(races)) {
+                if (race === "standing") continue;
+
+                for (const session of Object.keys(races[race])) {
+                    const sessionData = races[race][session];
+                    const position = parseInt(sessionData.position);
+
+                    if (!isNaN(position)) {
+                        totalPositions += position;
+                        count++;
+                    }
+                }
+            }
+        }
+
+        if (count > 0) {
+            averageByYear[season] = totalPositions / count;
+        }
+    }
+
+    const sortedYears = Object.keys(averageByYear).sort();
+    const averagePositions = sortedYears.map(year => averageByYear[year].toFixed(0));
+    const maxPosition = Math.max(...Object.values(averageByYear).map(pos => Math.ceil(pos)));
+
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: sortedYears,
+            datasets: [{
+                label: 'Average position',
+                data: averagePositions,
+                borderColor: "rgb(59, 130, 246)",
+                backgroundColor: "rgb(147, 197, 253)",
+                tension: 0.3,
+                pointRadius: 5,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    min: 1,
+                    max: maxPosition,
+                    reverse: true,
+                    title: {
+                        display: true,
+                        text: 'Average position'
+                    },
+                    ticks: {
+                        stepSize: 1 
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Season'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return `P${ctx.raw}`;
+                        }
+                    }
+                },
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: "white"
+                    }
+                }
+            }
+        }
+    });
+}
+
+function displayDriverPointsChart(driver) {
+    const pointsByYear = {};
+
+    for (const season of Object.keys(driver.seasons)) {
+        let totalPoints = 0;
+
+        for (const championship of Object.keys(driver.seasons[season])) {
+            if (championship === "standing") continue;
+
+            const standing = driver.seasons[season][championship]?.standing;
+            if (standing && !isNaN(parseFloat(standing.points))) {
+                totalPoints += parseFloat(standing.points);
+            }
+        }
+
+        pointsByYear[season] = totalPoints;
+    }
+    if (Object.values(pointsByYear).every(points => points === 0)) {
+        document.getElementById('pointsChart').style.display = 'none';
+        return;
+    }
+
+    const sortedYears = Object.keys(pointsByYear).sort();
+    const points = sortedYears.map(year => pointsByYear[year]);
+
+    const ctx = document.getElementById('pointsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: sortedYears,
+            datasets: [{
+                label: 'Points',
+                data: points,
+                borderColor: "rgb(59, 130, 246)",
+                backgroundColor: "rgb(147, 197, 253)",
+                tension: 0.3,
+                pointRadius: 5,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    min: 1,
+                    max: maxPosition,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Points'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Season'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
 }

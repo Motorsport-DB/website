@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Race Details</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="assets/js/common.js"></script>
     <script defer src="assets/js/race.js"></script>
 
@@ -32,6 +33,10 @@
               <div class="w-1/2 h-6 bg-gray-700 animate-pulse rounded"></div>
               <div class="w-1/4 h-6 bg-gray-700 animate-pulse rounded"></div>
             </div>
+        </div>        
+        <div  class="w-full md:w-2/3 mx-auto my-8">
+            <h2 class="text-xl font-bold mb-2 text-center">Average driver position for each event</h2>
+            <canvas id="driverComparisonChart" height="300"></canvas>
         </div>        
         <section id="resultsContainer" class="mt-6">
             <h2 class="text-xl font-bold">Results</h2>
