@@ -122,13 +122,26 @@ function getAveragePositionsPerEvent(race) {
         });
     });
 
-    const averageByDriver = {};
+    let averageByDriver = {};
     for (const driver in dataByDriver) {
         averageByDriver[driver] = sortedEvents.map(event => {
             const positions = dataByDriver[driver][event] || [];
             return positions.length ? parseFloat((positions.reduce((a, b) => a + b) / positions.length).toFixed(2)) : null;
         });
     }
+
+    const sortedDrivers = Object.keys(averageByDriver).sort((a, b) => {
+        const avgA = averageByDriver[a].filter(pos => pos !== null).reduce((sum, pos) => sum + pos, 0) / averageByDriver[a].filter(pos => pos !== null).length || Infinity;
+        const avgB = averageByDriver[b].filter(pos => pos !== null).reduce((sum, pos) => sum + pos, 0) / averageByDriver[b].filter(pos => pos !== null).length || Infinity;
+        return avgA - avgB;
+    });
+
+    const sortedAverageByDriver = {};
+    sortedDrivers.forEach(driver => {
+        sortedAverageByDriver[driver] = averageByDriver[driver];
+    });
+
+    averageByDriver = sortedAverageByDriver;
 
     return { averageByDriver, sortedEvents };
 }
@@ -181,6 +194,17 @@ function displayDriverComparisonChart(race) {
                         display: true,
                         text: "Events"
                     }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Events"
+                        },
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 768 ? 7 : 12 // Adjust font size for mobile
+                            }
+                        }
                 }
             },
             plugins: {
@@ -192,9 +216,13 @@ function displayDriverComparisonChart(race) {
                     }
                 },
                 legend: {
-                    position: "bottom",
+                    position: window.innerWidth < 768 ? "right" : "bottom",
                     labels: {
-                        color: "white"
+                        color: "white",
+                        boxWidth: 10, // Reduce box size for legend items
+                        font: {
+                            size: window.innerWidth < 768 ? 7 : 12 // Adjust font size for mobile
+                        }
                     }
                 }
             }

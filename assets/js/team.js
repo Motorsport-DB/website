@@ -169,8 +169,9 @@ function displayTeamPerformanceChart(team) {
 
                 Object.values(sessions).forEach(session => {
                     Object.values(session).forEach(entry => {
-                        if (entry.position) {
-                            totalPos += parseInt(entry.position);
+                        const position = parseInt(entry.position);
+                        if (!isNaN(position)) { // Vérifie que la position est un nombre
+                            totalPos += position;
                             count++;
                         }
                     });
@@ -192,12 +193,16 @@ function displayTeamPerformanceChart(team) {
             Object.entries(data).flatMap(([eventName, sessions]) => {
                 if (eventName === "standing") return [];
                 return Object.values(sessions).flatMap(session => 
-                    Object.values(session).map(entry => entry.position ? parseInt(entry.position) : null).filter(pos => pos !== null)
+                    Object.values(session)
+                        .map(entry => {
+                            const position = parseInt(entry.position);
+                            return isNaN(position) ? null : position;
+                        })
+                        .filter(pos => pos !== null)
                 );
             })
         )
     ));
-
     const labels = sortedSeasons;
     const data = sortedSeasons.map(season => seasonStats[season].avgPosition.toFixed(2));
 
@@ -205,7 +210,7 @@ function displayTeamPerformanceChart(team) {
         <h2 class="text-2xl font-semibold mt-8 mb-2">Average Driver Position per Season</h2>
         <canvas id="teamChart" height="300"></canvas>
     `;
-
+    console.log(data);
     new Chart(document.getElementById("teamChart"), {
         type: 'line',
         data: {

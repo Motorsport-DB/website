@@ -91,7 +91,11 @@ async function loadStatsAndDrawChart(stats) {
         responsive: true,
         plugins: {
           legend: {
-            position: 'bottom'
+            position: 'bottom',
+            align: 'start',
+            labels: {
+              color: "white"
+          }
           },
           tooltip: {
             callbacks: {
