@@ -155,17 +155,48 @@ function displayDriverComparisonChart(race) {
         "#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"
     ];
     const maxPosition = Math.max(...Object.values(averageByDriver).map(pos => Math.ceil(pos)));
-    const datasets = Object.entries(averageByDriver).map(([driver, data], i) => ({
-        label: driver.replaceAll("_", " "),
-        data,
-        borderColor: colors[i % colors.length],
-        backgroundColor: colors[i % colors.length],
-        tension: 0.3,
-        spanGaps: true,
-        pointRadius: 5,
-        pointHoverRadius: 6,
-        hidden: i >= 5
-    }));
+
+    // Group drivers by car and prepare datasets
+    const carGroups = {};
+    Object.entries(race.events).forEach(([event, sessions]) => {
+        Object.values(sessions).forEach(session => {
+            Object.entries(session).forEach(([car, data]) => {
+                if (!data.drivers) return;
+                if (!carGroups[car]) carGroups[car] = new Set();
+                data.drivers.forEach(driver => carGroups[car].add(driver));
+            });
+        });
+    });
+
+    const groupedDataByCar = {};
+    Object.entries(averageByDriver).forEach(([driver, positions]) => {
+        const car = Object.keys(carGroups).find(car => carGroups[car].has(driver));
+        if (!car) return;
+        if (!groupedDataByCar[car]) groupedDataByCar[car] = { drivers: new Set(), positions: Array(sortedEvents.length).fill(null) };
+        groupedDataByCar[car].drivers.add(driver);
+        positions.forEach((position, index) => {
+            if (position !== null) {
+                groupedDataByCar[car].positions[index] = groupedDataByCar[car].positions[index] === null
+                    ? position
+                    : (groupedDataByCar[car].positions[index] + position) / 2;
+            }
+        });
+    });
+
+    const datasets = Object.entries(groupedDataByCar).map(([car, data], i) => {
+        const driverNames = Array.from(data.drivers).map(driver => driver.replaceAll("_", " ")).join(", ");
+        return {
+            label: `[Car #${car}] - (${driverNames})`,
+            data: data.positions,
+            borderColor: colors[i % colors.length],
+            backgroundColor: colors[i % colors.length],
+            tension: 0.3,
+            spanGaps: true,
+            pointRadius: 5,
+            pointHoverRadius: 6,
+            hidden: i >= 5
+        };
+    });
 
     const ctx = document.getElementById("driverComparisonChart").getContext("2d");
     new Chart(ctx, {
@@ -186,25 +217,19 @@ function displayDriverComparisonChart(race) {
                         text: "Average position"
                     },
                     ticks: {
-                        stepSize: 1 
+                        stepSize: 1
                     }
                 },
                 x: {
                     title: {
                         display: true,
                         text: "Events"
-                    }
                     },
-                    x: {
-                        title: {
-                            display: true,
-                            text: "Events"
-                        },
-                        ticks: {
-                            font: {
-                                size: window.innerWidth < 768 ? 7 : 12 // Adjust font size for mobile
-                            }
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 7 : 12 // Adjust font size for mobile
                         }
+                    }
                 }
             },
             plugins: {
