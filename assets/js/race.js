@@ -183,7 +183,15 @@ function displayDriverComparisonChart(race) {
         });
     });
 
-    const datasets = Object.entries(groupedDataByCar).map(([car, data], i) => {
+    // Sort cars by their average position closest to 0 and take the top 5
+    const topCars = Object.entries(groupedDataByCar)
+        .sort(([, a], [, b]) => {
+            const avgA = a.positions.filter(pos => pos !== null).reduce((sum, pos) => sum + pos, 0) / a.positions.filter(pos => pos !== null).length || Infinity;
+            const avgB = b.positions.filter(pos => pos !== null).reduce((sum, pos) => sum + pos, 0) / b.positions.filter(pos => pos !== null).length || Infinity;
+            return avgA - avgB;
+        })
+
+    const datasets = topCars.map(([car, data], i) => {
         const driverNames = Array.from(data.drivers).map(driver => driver.replaceAll("_", " ")).join(", ");
         return {
             label: `[Car #${car}] - (${driverNames})`,
