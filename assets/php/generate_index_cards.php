@@ -3,8 +3,8 @@ header('Content-Type: application/json');
 
 $root = realpath(__DIR__ . '/../../');
 $dataFile = "$root/cards.json";
-$maxAge = 86400; // 24 hours
 $year = date('Y');
+$currentDate = date('Y-m-d');
 
 function returnCards($dataFile) {
     echo file_get_contents($dataFile);
@@ -12,9 +12,13 @@ function returnCards($dataFile) {
 }
 
 if (file_exists($dataFile)) {
-    returnCards($dataFile);
-    if ((time() - filemtime($dataFile)) < $maxAge) {
-        exit;
+    $existingData = json_decode(file_get_contents($dataFile), true);
+    if (isset($existingData['generated_at'])) {
+        $generatedDate = $existingData['generated_at']; // No need to substr anymore
+        if ($generatedDate === $currentDate) {
+            returnCards($dataFile);
+            exit;
+        }
     }
 }
 
@@ -36,7 +40,7 @@ function loadRaces($root) {
         $yearFiles = glob("$championshipDir/*.json");
         foreach ($yearFiles as $yearFile) {
             $year = basename($yearFile, '.json');
-            $content = json_decode(file_get_contents($yearFile), true);
+            $content = json_decode(file_get_contents($yearFile, false, null, 0, 1024 * 1024), true); // Limit read size to 1MB
             if ($content) {
                 $content['year'] = $year;
                 $content['championship_folder'] = $championshipName;
@@ -80,7 +84,7 @@ $driver = [
 ];
 if ($driver['firstName'] && $driver['lastName']) {
     $baseName = $driver['firstName'] . '_' . $driver['lastName'];
-    $driver['picture'] = findImage($root . "/drivers/picture", $baseName);
+    $driver['picture'] = findImage("$root/drivers/picture", $baseName);
 }
 
 $teamRaw = getRandom($teams);
@@ -90,7 +94,7 @@ $team = [
 ];
 if ($team['name']) {
     $baseName = str_replace(' ', '_', $team['name']);
-    $team['picture'] = findImage($root . "/teams/picture", $baseName);
+    $team['picture'] = findImage("$root/teams/picture", $baseName);
 }
 
 $champRaw = getRandom($races);
@@ -101,7 +105,7 @@ $championship = [
 ];
 if ($championship['name']) {
     $baseName = str_replace(' ', '_', $championship['name']);
-    $championship['picture'] = findImage($root . "/races/picture", $baseName);
+    $championship['picture'] = findImage("$root/races/picture", $baseName);
 }
 
 $response = [
@@ -109,8 +113,8 @@ $response = [
     'team' => $team,
     'championship' => $championship,
     'statistics' => $statistics,
-    'generated_at' => date('c')
+    'generated_at' => date('Y-m-d') // ISO 8601 format
 ];
 
 file_put_contents($dataFile, json_encode($response, JSON_PRETTY_PRINT));
-echo json_encode($response);
+returnCards($dataFile);
