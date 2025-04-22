@@ -21,6 +21,15 @@ if (!file_exists($raceFile)) {
 }
 
 $data = json_decode(file_get_contents($raceFile), true);
-$data["picture"] = file_exists( "races/picture/$championship.png") ? "races/picture/$championship.png" : (file_exists( "races/picture/$championship.jpg") ? "races/picture/$championship.jpg" : "races/picture/default.png");
+$data["picture"] = file_exists("races/picture/$championship.png") ? "races/picture/$championship.png" : (file_exists("races/picture/$championship.jpg") ? "races/picture/$championship.jpg" : "races/picture/default.png");
+
+$previousYearFile = "$racesDir$championship/" . ($year - 1) . ".json";
+if (file_exists($previousYearFile)) {
+    $data["previous"] = [$championship, ($year - 1)];
+}
+$nextYearFile = "$racesDir$championship/" . ($year + 1) . ".json";
+if (file_exists($nextYearFile)) {
+    $data["next"] = [$championship, ($year + 1)];
+}
 
 echo json_encode($data);

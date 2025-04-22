@@ -27,7 +27,41 @@ function displayMainRaceInfo(race) {
             <div id="country_flag" class="flex items-center mt-2">
                 <img src="assets/flags/${country}.png" class="w-8 aspect-[3/2] mr-2 rounded" alt="Country Flag">
             </div>
+
+            <div id="other_championship">
+            </div>
         </div>`;
+
+        const otherTeamsContainer = document.getElementById("other_championship");
+        if (race.previous && race.previous.length > 0) {
+            otherTeamsContainer.innerHTML += `
+                <div>
+                <h3 class="text-lg font-semibold mt-4">Previous Teams</h3>
+                <ul class="list-disc list-inside">
+                    <li>
+                        <a href="race.html?id=${race.previous[0]}&year=${race.previous[1]}"} class="text-blue-400 underline">
+                            ${race.previous[1]}
+                        </a>
+                    </li>
+                </ul>
+                </div>
+            `;
+        }
+    
+        if (race.next && race.next.length > 0) {
+            otherTeamsContainer.innerHTML += `
+                <div>
+                    <h3 class="text-lg font-semibold mt-4">Next Teams</h3>
+                    <ul class="list-disc list-inside">
+                        <li>
+                            <a href="race.html?id=${race.next[0]}&year=${race.next[1]}"} class="text-blue-400 underline">
+                                ${race.next[1]}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            `;
+        }
 }
 
 function displayRaceResults(race) {
