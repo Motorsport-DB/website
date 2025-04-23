@@ -1,8 +1,8 @@
 <?php
 header('Content-Type: application/json');
 
-$root = realpath(__DIR__ . '/../../');
-$dataFile = "$root/cards.json";
+$root = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..');
+$dataFile = $root . DIRECTORY_SEPARATOR . 'cards.json';
 $currentDate = date('Y-m-d');
 
 function returnCards($dataFile) {
@@ -22,7 +22,7 @@ if (file_exists($dataFile)) {
 }
 
 function loadJsonObjects($dir) {
-    $files = glob("$dir/*.json");
+    $files = glob($dir . DIRECTORY_SEPARATOR . '*.json');
     $objects = [];
     foreach ($files as $file) {
         $content = json_decode(file_get_contents($file), true);
@@ -32,11 +32,11 @@ function loadJsonObjects($dir) {
 }
 
 function loadRaces($root) {
-    $championships = glob("$root/races/*", GLOB_ONLYDIR);
+    $championships = glob($root . DIRECTORY_SEPARATOR . 'races' . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
     $races = [];
     foreach ($championships as $championshipDir) {
         $championshipName = basename($championshipDir);
-        $yearFiles = glob("$championshipDir/*.json");
+        $yearFiles = glob($championshipDir . DIRECTORY_SEPARATOR . '*.json');
         foreach ($yearFiles as $yearFile) {
             $year = basename($yearFile, '.json');
             $content = json_decode(file_get_contents($yearFile, false, null, 0, 1024 * 1024), true);
@@ -59,14 +59,14 @@ function findImage($dir, $baseName) {
     foreach ($extensions as $ext) {
         $file = $dir . DIRECTORY_SEPARATOR . "$baseName.$ext";
         if (file_exists($file)) {
-            return str_replace(realpath(__DIR__ . '/../../'), '', realpath($file));
+            return str_replace(realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..'), '', realpath($file));
         }
     }
     return null;
 }
 
-$drivers = loadJsonObjects("$root/drivers");
-$teams = loadJsonObjects("$root/teams");
+$drivers = loadJsonObjects($root . DIRECTORY_SEPARATOR . 'drivers');
+$teams = loadJsonObjects($root . DIRECTORY_SEPARATOR . 'teams');
 $races = loadRaces($root);
 
 $statistics = [
@@ -83,7 +83,7 @@ $driver = [
 ];
 if ($driver['firstName'] && $driver['lastName']) {
     $baseName = $driver['firstName'] . '_' . $driver['lastName'];
-    $driver['picture'] = findImage("$root/drivers/picture", $baseName);
+    $driver['picture'] = findImage($root . DIRECTORY_SEPARATOR . 'drivers' . DIRECTORY_SEPARATOR . 'picture', $baseName);
 }
 
 $teamRaw = getRandom($teams);
@@ -93,7 +93,7 @@ $team = [
 ];
 if ($team['name']) {
     $baseName = str_replace(' ', '_', $team['name']);
-    $team['picture'] = findImage("$root/teams/picture", $baseName);
+    $team['picture'] = findImage($root . DIRECTORY_SEPARATOR . 'teams' . DIRECTORY_SEPARATOR . 'picture', $baseName);
 }
 
 $champRaw = getRandom($races);
@@ -104,7 +104,7 @@ $championship = [
 ];
 if ($championship['name']) {
     $baseName = str_replace(' ', '_', $championship['name']);
-    $championship['picture'] = findImage("$root/races/picture", $baseName);
+    $championship['picture'] = findImage($root . DIRECTORY_SEPARATOR . 'races' . DIRECTORY_SEPARATOR . 'picture', $baseName);
 }
 
 $response = [
