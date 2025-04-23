@@ -32,11 +32,11 @@ function displayMainRaceInfo(race) {
             </div>
         </div>`;
 
-        const otherTeamsContainer = document.getElementById("other_championship");
+        const otherChampionshipContainer = document.getElementById("other_championship");
         if (race.previous && race.previous.length > 0) {
-            otherTeamsContainer.innerHTML += `
+            otherChampionshipContainer.innerHTML += `
                 <div>
-                <h3 class="text-lg font-semibold mt-4">Previous Teams</h3>
+                <h3 class="text-lg font-semibold mt-4">Previous Championships</h3>
                 <ul class="list-disc list-inside">
                     <li>
                         <a href="race.html?id=${race.previous[0]}&year=${race.previous[1]}"} class="text-blue-400 underline">
@@ -49,9 +49,9 @@ function displayMainRaceInfo(race) {
         }
     
         if (race.next && race.next.length > 0) {
-            otherTeamsContainer.innerHTML += `
+            otherChampionshipContainer.innerHTML += `
                 <div>
-                    <h3 class="text-lg font-semibold mt-4">Next Teams</h3>
+                    <h3 class="text-lg font-semibold mt-4">Next Championships</h3>
                     <ul class="list-disc list-inside">
                         <li>
                             <a href="race.html?id=${race.next[0]}&year=${race.next[1]}"} class="text-blue-400 underline">
