@@ -1,6 +1,12 @@
 async function fetchData(endpoint, id, year = null) {
     const response = await fetch(`${endpoint}?id=${id}${year ? `&year=${year}` : ""}`);
-    return response.json();
+    try {
+        return response.json();
+    } catch (Exception) {
+        console.error(Exception);
+        console.warn(response.text);
+        return {}
+    }
 }
 
 function getAge(birthDate, deathDate) {

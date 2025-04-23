@@ -3,7 +3,6 @@ header('Content-Type: application/json');
 
 $root = realpath(__DIR__ . '/../../');
 $dataFile = "$root/cards.json";
-$year = date('Y');
 $currentDate = date('Y-m-d');
 
 function returnCards($dataFile) {
@@ -14,7 +13,7 @@ function returnCards($dataFile) {
 if (file_exists($dataFile)) {
     $existingData = json_decode(file_get_contents($dataFile), true);
     if (isset($existingData['generated_at'])) {
-        $generatedDate = $existingData['generated_at']; // No need to substr anymore
+        $generatedDate = $existingData['generated_at'];
         if ($generatedDate === $currentDate) {
             returnCards($dataFile);
             exit;
@@ -40,7 +39,7 @@ function loadRaces($root) {
         $yearFiles = glob("$championshipDir/*.json");
         foreach ($yearFiles as $yearFile) {
             $year = basename($yearFile, '.json');
-            $content = json_decode(file_get_contents($yearFile, false, null, 0, 1024 * 1024), true); // Limit read size to 1MB
+            $content = json_decode(file_get_contents($yearFile, false, null, 0, 1024 * 1024), true);
             if ($content) {
                 $content['year'] = $year;
                 $content['championship_folder'] = $championshipName;
@@ -113,7 +112,7 @@ $response = [
     'team' => $team,
     'championship' => $championship,
     'statistics' => $statistics,
-    'generated_at' => date('Y-m-d') // ISO 8601 format
+    'generated_at' => $currentDate
 ];
 
 file_put_contents($dataFile, json_encode($response, JSON_PRETTY_PRINT));
