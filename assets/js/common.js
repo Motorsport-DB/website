@@ -1,11 +1,12 @@
 async function fetchData(endpoint, id, year = null) {
-    const response = await fetch(`${endpoint}?id=${id}${year ? `&year=${year}` : ""}`);
     try {
-        return response.json();
+        const response = await fetch(`${endpoint}?id=${id}${year ? `&year=${year}` : ""}`);
+        return await response.json();
     } catch (Exception) {
         console.error(Exception);
-        console.warn(response.text);
-        return {}
+        const text = await response?.text();
+        console.warn(text);
+        return {};
     }
 }
 
