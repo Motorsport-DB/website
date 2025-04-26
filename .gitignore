@@ -1,8 +1,18 @@
-# OTHER REPOSITORY
+# OTHER REPOSITORY ON GIT
 drivers/
 races/
 teams/
+
+# JUST FOR WORKING
 script/
+node_modules/
+*.config.js
+package.json
+package-lock.json
+notes.txt
+
+# DEFAULT
+.htaccess
 
 # AUTO-GENERATE BY OTHER SCRIPT
 changelog.json

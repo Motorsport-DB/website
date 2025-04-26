@@ -9,12 +9,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
+    race.year = year;
     displayMainRaceInfo(race);
+    displayRaceStats(race);
     displayRaceResults(race);
     displayDriverComparisonChart(race);
 });
 
 function displayMainRaceInfo(race) {
+    // BASIC INFORMATION
+    document.getElementById("race-name").innerText = race.name.replaceAll("_", " ");
+    document.getElementById("race-date").innerText = race.year;
+
+    document.getElementById("race-picture").src = race.picture || "races/picture/default.png";
+
+    /**
     const picture = race.picture || "default.png";
     const nickname = race.nickname ? `Nickname: ${race.nickname}` : "";
     const country = race.country?.toLowerCase() || "default";
@@ -62,30 +71,34 @@ function displayMainRaceInfo(race) {
                 </div>
             `;
         }
+    **/
 }
 
 function displayRaceResults(race) {
     const resultsContainer = document.getElementById("resultsContainer");
     resultsContainer.innerHTML = "";
 
+    let sessionHTML = "";
     Object.keys(race.events).sort().forEach(event => {
-        let eventHTML = `<h2 class="text-xl font-bold mt-6">${event}</h2>`;
-
         Object.keys(race.events[event]).sort().forEach(session => {
-            let sessionHTML = `<h3 class="text-lg font-semibold mt-4">${session}</h3>`;
-            sessionHTML += `
-                <table class="table-fixed w-full mt-2 bg-gray-800 text-white border border-gray-700">
-                    <thead>
-                        <tr class="bg-gray-700">
-                            <th class="w-1/12 p-2 border border-gray-600">Position</th>
-                            <th class="w-1/12 p-2 border border-gray-600">Car #</th>
-                            <th class="w-1/6 p-2 border border-gray-600">Team</th>
-                            <th class="w-1/6 p-2 border border-gray-600">Drivers</th>
-                            <th class="w-1/6 p-2 border border-gray-600">Fastest Lap</th>
-                            <th class="w-1/6 p-2 border border-gray-600">Other Info</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+            sessionHTML += 
+            `<div class="bg-white rounded-xl p-6 my-8 shadow-md border border-gray-200">
+                <h2 class="text-2xl font-bold text-blue-600 mb-4">
+                    <a class="hover:underline">${event} - ${session}</a>
+                </h2>
+                <div class="overflow-x-auto mt-6">
+                    <table class="min-w-full table-auto text-sm text-gray-800">
+                        <thead class="bg-blue-100 text-blue-700">
+                            <tr>
+                                <th class="w-1/12 p-2 border border-gray-300">Position</th>
+                                <th class="w-1/12 p-2 border border-gray-300">Car #</th>
+                                <th class="w-1/6 p-2 border border-gray-300">Team</th>
+                                <th class="w-1/6 p-2 border border-gray-300">Drivers</th>
+                                <th class="w-1/6 p-2 border border-gray-300">Fastest Lap</th>
+                                <th class="w-1/6 p-2 border border-gray-300">Other Info</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-400">`;
 
             const cars = Object.entries(race.events[event][session]).map(([car, data]) => ({ car, data }));
 
@@ -102,7 +115,7 @@ function displayRaceResults(race) {
                 const fastestLap = data.fastest_lap ?? "N/A";
 
                 const drivers = data.drivers?.length
-                    ? data.drivers.map(driver => `<a class="text-blue-400 underline" href="driver.html?id=${driver}">${driver.replaceAll("_", " ")}</a>`).join(", ")
+                    ? data.drivers.map(driver => `<a class="text-blue-600 hover:underline" href="driver.html?id=${driver}">${driver.replaceAll("_", " ")}</a>`).join(", ")
                     : "N/A";
 
                 const otherInfoHTML = Object.entries(data.other_info || {})
@@ -110,26 +123,25 @@ function displayRaceResults(race) {
                     .join("");
 
                 sessionHTML += `
-                    <tr class="border border-gray-700 cursor-pointer">
-                        <td class="p-2 border border-gray-600">${position}</td>
-                        <td class="p-2 border border-gray-600">${car}</td>
-                        <td class="p-2 border border-gray-600">
-                            <a class="text-blue-400 underline" href="team.html?id=${data.team}">${teamName}</a>
+                    <tr class="border border-gray-300 cursor-pointer hover:bg-blue-50">
+                        <td class="p-2 border border-gray-300">${position}</td>
+                        <td class="p-2 border border-gray-300">${car}</td>
+                        <td class="p-2 border border-gray-300">
+                            <a class="text-blue-600 hover:underline" href="team.html?id=${data.team}">${teamName}</a>
                         </td>
-                        <td class="p-2 border border-gray-600">${drivers}</td>
-                        <td class="p-2 border border-gray-600">${fastestLap}</td>
-                        <td class="p-2 border border-gray-600">
-                            <button class="text-blue-400 underline" onclick="toggleDetails('${rowId}')">Show Details</button>
-                            <span id="${rowId}" class="hidden ml-2">${otherInfoHTML || "No additional info"}</span>
+                        <td class="p-2 border border-gray-300">${drivers}</td>
+                        <td class="p-2 border border-gray-300">${fastestLap}</td>
+                        <td class="p-2 border border-gray-300">
+                            <button class="text-blue-600 hover:underline" onclick="toggleDetails('${rowId}')">Show Details</button>
+                            <span id="${rowId}" class="hidden ml-2 text-gray-600">${otherInfoHTML || "No additional info"}</span>
                         </td>
                     </tr>`;
             });
 
-            sessionHTML += "</tbody></table>";
-            eventHTML += sessionHTML;
+            sessionHTML += "</tbody></table></div></div>";
         });
 
-        resultsContainer.innerHTML += eventHTML;
+        resultsContainer.innerHTML += sessionHTML;
     });
 }
 
@@ -223,12 +235,14 @@ function displayDriverComparisonChart(race) {
             const avgA = a.positions.filter(pos => pos !== null).reduce((sum, pos) => sum + pos, 0) / a.positions.filter(pos => pos !== null).length || Infinity;
             const avgB = b.positions.filter(pos => pos !== null).reduce((sum, pos) => sum + pos, 0) / b.positions.filter(pos => pos !== null).length || Infinity;
             return avgA - avgB;
-        })
+        });
 
     const datasets = topCars.map(([car, data], i) => {
         const driverNames = Array.from(data.drivers).map(driver => driver.replaceAll("_", " ")).join(", ");
         return {
-            label: `[Car #${car}] - (${driverNames})`,
+            label: window.innerWidth <= 768 
+            ? `#${car}`
+            : `${driverNames} #${car}`,
             data: data.positions,
             borderColor: colors[i % colors.length],
             backgroundColor: colors[i % colors.length],
@@ -240,7 +254,7 @@ function displayDriverComparisonChart(race) {
         };
     });
 
-    const ctx = document.getElementById("driverComparisonChart").getContext("2d");
+    const ctx = document.getElementById("performanceChart").getContext("2d");
     new Chart(ctx, {
         type: "line",
         data: {
@@ -266,33 +280,66 @@ function displayDriverComparisonChart(race) {
                     title: {
                         display: true,
                         text: "Events"
-                    },
-                    ticks: {
-                        font: {
-                            size: window.innerWidth < 768 ? 7 : 12 // Adjust font size for mobile
-                        }
                     }
                 }
             },
             plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ${context.raw ?? "N/A"}`;
-                        }
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        boxWidth: 10, // Reduce box size for legend items
+                    },
+                    onClick: (e, legendItem, legend) => {
+                        const index = legendItem.datasetIndex;
+                        const ci = legend.chart;
+                        const meta = ci.getDatasetMeta(index);
+                        meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
+                        ci.update();
                     }
                 },
-                legend: {
-                    position: window.innerWidth < 768 ? "right" : "bottom",
-                    labels: {
-                        color: "white",
-                        boxWidth: 10, // Reduce box size for legend items
-                        font: {
-                            size: window.innerWidth < 768 ? 7 : 12 // Adjust font size for mobile
-                        }
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                },
+            },
+        },
+    });
+}
+
+function displayRaceStats(race) {
+    let totalRaces = 0;
+    let totalLaps = 0;
+    let fastestLapTime = Infinity;
+    let fastestLapDriver = null;
+    let fastestLapCircuit = null;
+
+    Object.keys(race.events).forEach(event => {
+        Object.keys(race.events[event]).forEach(session => {
+            const cars = Object.values(race.events[event][session]);
+            cars.forEach(car => {
+                if (session.toLowerCase().includes("race")) {
+                    totalRaces++;
+                    totalLaps += parseInt(car.other_info?.Laps || 0);
+                }
+                if (car.fastest_lap) {
+                    const lapTimeParts = car.fastest_lap.split(":");
+                    const lapTime = lapTimeParts.length === 2 
+                        ? parseInt(lapTimeParts[0]) * 60 + parseFloat(lapTimeParts[1]) 
+                        : parseFloat(car.fastest_lap);
+                    if (lapTime < fastestLapTime) {
+                        fastestLapTime = lapTime;
+                        display_fastest_lap = car.fastest_lap;
+                        fastestLapDriver = car.drivers?.[0]?.replaceAll("_", " ") || "Unknown";
+                        fastestLapCircuit = `${event} - (${session})`;
                     }
                 }
-            }
-        }
+            });
+        });
     });
+
+    document.getElementById("totalRaces").innerText = totalRaces;
+    document.getElementById("totalLaps").innerText = totalLaps;
+    document.getElementById("fastestLap").innerText = display_fastest_lap !== Infinity
+        ? `${display_fastest_lap} by ${fastestLapDriver} at ${fastestLapCircuit}`
+        : "N/A";
 }

@@ -4,24 +4,40 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let team = (await fetchData("getTeams.php", teamId))[0];
     if (!team) {
-        document.getElementById("teamDetail").innerHTML = "<p id='text_error' class='text-red-500'>Team not found.</p>";
+        document.getElementById("resultsContainer").innerHTML = "<p id='text_error' class='text-red-500'>Team not found.</p>";
         return;
     }
 
-    const container = document.getElementById("teamDetail");
+    const container = document.getElementById("resultsContainer");
     container.style.opacity = 0;
     requestAnimationFrame(() => {
       container.style.transition = "opacity 0.5s ease";
       container.style.opacity = 1;
     });
 
-    team.age = getAge(team.creationDate, team.endDate)
     displayTeamInfo(team);
+    displayTeamStats(team);
     displayTeamResults(team);
     displayTeamPerformanceChart(team);
 });
 
 function displayTeamInfo(team) {
+    document.getElementById("team-name").innerText = team.name;
+    document.getElementById("team-country-img").src = "assets/flags/" + team.country + ".png";
+    document.getElementById("team-logo").src = team.picture;
+
+    document.getElementById("team-founded").innerText = "";
+    for (let i = 0; i < team.creationDate.length; i++) {
+        let age = 0;
+        try {
+            age = getAge(team.creationDate[i], team.endDate[i]);
+        } catch (error) {
+            age = getAge(team.creationDate[i]);
+        }
+        document.getElementById("team-founded").innerText += team.creationDate[i] + " (" + age + " years) \n";
+    }
+
+    /**
     document.getElementById("teamDetail").innerHTML = `
         <img src="${team.picture}" class="w-40 h-40 object-contain aspect-[3/2] rounded-lg mr-6" alt="Picture of ${team.name}">
         <div>
@@ -37,11 +53,7 @@ function displayTeamInfo(team) {
             </div>
         </div>
     `;
-    if (team.country) {
-        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/${team.country.toLowerCase()+".png"}" class="w-10 aspect-[3/2] rounded" alt="Country Flag">`;
-    } else {
-        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/default.png" class="w-10 aspect-[3/2] rounded" alt="Country Flag">`;
-    }
+    **/
 
     const otherTeamsContainer = document.getElementById("other_teams");
     if (team.previous && team.previous.length > 0) {
@@ -51,7 +63,7 @@ function displayTeamInfo(team) {
             <ul class="list-disc list-inside">
                 ${team.previous.flat().map(previousTeam => `
                 <li>
-                    <a ${previousTeam == "?" ? 'href=#' : `href="team.html?id=${previousTeam}"`} class="text-blue-400 underline">
+                    <a ${previousTeam == "?" ? 'href=#' : `href="team.html?id=${previousTeam}"`} class="text-blue-600 underline">
                         ${previousTeam.replace("_", " ")}
                     </a>
                 </li>
@@ -68,7 +80,7 @@ function displayTeamInfo(team) {
                 <ul class="list-disc list-inside">
                     ${team.next.flat().map(nextTeam => `
                         <li>
-                            <a ${nextTeam == "?" ? 'href=#' : `href="team.html?id=${nextTeam}"`} class="text-blue-400 underline">
+                            <a ${nextTeam == "?" ? 'href=#' : `href="team.html?id=${nextTeam}"`} class="text-blue-600 underline">
                                 ${nextTeam.replace("_", " ")}
                             </a>
                         </li>
@@ -86,65 +98,72 @@ function displayTeamResults(team) {
     resultsContainer.innerHTML = seasonsInFileOrder.map(season => {
         return Object.entries(team.seasons[season]).map(([championship, data]) => {
             const standing = data.standing;
-            const standingHTML = standing ? `<span class='text-blue-400'>Standing: P${standing.position} | Total Points: ${standing.points}</span>` : "";
+            const standingHTML = standing ? `<p class="text-sm text-blue-500 mt-2">Standing: P${standing.position} • ${standing.points} points</p>` : "";
 
-            let seasonHTML = `<h3><a href="race.html?id=${championship}&year=${season}" class="text-lg font-semibold mt-4 text-blue-400 underline">${season} - ${championship.replace("_", " ")} ${standingHTML}</a></h3>`;
-
-            seasonHTML += Object.entries(data).filter(([key]) => key !== "standing").map(([event, sessions]) => {
-                let eventHTML = `<h4 class="text-md font-semibold mt-2 text-gray-300">${event}</h4>`;
-                const races = {};
-
-                Object.entries(sessions).forEach(([session, cars]) => {
-                    Object.entries(cars).forEach(([car, details]) => {
-                        if (!races[session]) races[session] = [];
-                        races[session].push({ car, ...details });
-                    });
-                });
-
-                eventHTML += `
-                    <table class="table-fixed w-full mt-2 bg-gray-800 text-white border border-gray-700">
-                        <thead>
-                            <tr class="bg-gray-700">
-                                <th class="w-1/6 p-2 border border-gray-600">Session</th>
-                                <th class="w-1/12 p-2 border border-gray-600">Car #</th>
-                                <th class="w-1/12 p-2 border border-gray-600">Position</th>
-                                <th class="w-1/6 p-2 border border-gray-600">Fastest Lap</th>
-                                <th class="w-1/6 p-2 border border-gray-600">Drivers</th>
-                                <th class="w-1/6 p-2 border border-gray-600">Other Info</th>
+            let seasonHTML = `
+            <div class="bg-white rounded-xl p-6 my-8 shadow-md border border-gray-200">
+                <h2 class="text-2xl font-bold text-blue-600 mb-4">
+                    <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replace("_", " ")}</a>
+                </h2>
+                ${standingHTML}
+                <div class="overflow-x-auto mt-6">
+                    <table class="min-w-full table-auto text-sm text-gray-800">
+                        <thead class="bg-blue-100 text-blue-700">
+                            <tr>
+                                <th class="p-3 text-left">Event</th>
+                                <th class="p-3 text-left">Session</th>
+                                <th class="p-3 text-left">Car #</th>
+                                <th class="p-3 text-left">Position</th>
+                                <th class="p-3 text-left">Fastest Lap</th>
+                                <th class="p-3 text-left">Drivers</th>
+                                <th class="p-3 text-left">Other Info</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            ${Object.entries(races).map(([session, raceData]) => {
-                                return raceData.map((data, index) => {
-                                    const position = data.position ?? "N/A";
-                                    const fastestLap = data.fastest_lap ?? "N/A";
-                                    const otherInfoHTML = Object.entries(data.other_info || {})
-                                        .map(([key, value]) => `<span class="mr-2"><strong>${key.replace(/_/g, " ")}:</strong> ${value}</span>`)
-                                        .join("");
+                        <tbody class="divide-y divide-gray-400">
+            `;
 
-                                    const rowId = `details-${season}-${championship}-${event}-${session}-${index}`;
-                                    return `
-                                        <tr class="border border-gray-700 cursor-pointer">
-                                            ${index === 0 ? `<td class="p-2 border border-gray-600" rowspan="${raceData.length}">${session}</td>` : ""}
-                                            <td class="p-2 border border-gray-600">${data.car}</td>
-                                            <td class="p-2 border border-gray-600">P${position}</td>
-                                            <td class="p-2 border border-gray-600">${fastestLap}</td>
-                                            <td class="p-2 border border-gray-600">
-                                                ${data.drivers ? data.drivers.map(driver => `<a class="text-blue-400 underline focus:outline-none" href="driver.html?id=${driver}">${driver.replace("_", " ")}</a>`).join(", ") : "N/A"}
-                                            </td>
-                                            <td class="p-2 border border-gray-600">
-                                                <button class="text-blue-400 underline focus:outline-none" onclick="toggleDetails('${rowId}')">Show Details</button>
-                                                <span id="${rowId}" class="hidden ml-2">${otherInfoHTML || "No additional info"}</span>
-                                            </td>
-                                        </tr>
-                                    `;
-                                }).join("");
-                            }).join("")}
+            Object.entries(data).filter(([key]) => key !== "standing").forEach(([event, sessions]) => {
+                const eventRowSpan = Object.values(sessions).reduce((sum, cars) => sum + Object.keys(cars).length, 0);
+                let eventHTML = `<tr><td class="p-3 font-semibold" rowspan="${eventRowSpan}">${event}</td>`;
+
+                let isFirstSession = true;
+                Object.entries(sessions).forEach(([session, cars]) => {
+                    Object.entries(cars).forEach(([car, details], index) => {
+                        const position = details.position ?? "N/A";
+                        const fastestLap = details.fastest_lap ?? "N/A";
+                        const otherInfoHTML = Object.entries(details.other_info || {})
+                            .map(([key, value]) => `<span class="mr-2"><strong>${key.replace(/_/g, " ")}:</strong> ${value}</span>`)
+                            .join("");
+
+                        const rowId = `details-${season}-${championship}-${event}-${session}-${index}`;
+
+                        eventHTML += `
+                            ${isFirstSession && index === 0 ? "" : "<tr>"}
+                            ${index === 0 ? `<td class="p-3 font-semibold" rowspan="${Object.keys(cars).length}">${session}</td>` : ""}
+                            <td class="p-3">${car}</td>
+                            <td class="p-3">${position !== "N/A" ? `P${position}` : position}</td>
+                            <td class="p-3">${fastestLap}</td>
+                            <td class="p-3">
+                                ${details.drivers ? details.drivers.map(driver => `<a class="text-blue-600 hover:underline" href="driver.html?id=${driver}">${driver.replace("_", " ")}</a>`).join(", ") : "N/A"}
+                            </td>
+                            <td class="p-3">
+                                <button onclick="toggleDetails('${rowId}')" class="text-blue-600 hover:underline">Show</button>
+                                <div id="${rowId}" class="hidden mt-2 text-sm text-gray-600">${otherInfoHTML || "No additional info"}</div>
+                            </td>
+                            </tr>
+                        `;
+                    });
+                    isFirstSession = false;
+                });
+
+                seasonHTML += eventHTML;
+            });
+
+            seasonHTML += `
                         </tbody>
                     </table>
-                `;
-                return eventHTML;
-            }).join("");
+                </div>
+            </div>`;
 
             return seasonHTML;
         }).join("");
@@ -152,77 +171,46 @@ function displayTeamResults(team) {
 }
 
 function displayTeamPerformanceChart(team) {
-    const chartContainer = document.getElementById("chartContainer");
-    if (!chartContainer) return;
+    const averageBySeason = {};
 
-    const seasonStats = {};
-
-    // Parcours des saisons
-    Object.entries(team.seasons).forEach(([season, championships]) => {
-        let totalPos = 0;
-        let count = 0;
-
-        // Pour chaque championnat de la saison
-        Object.entries(championships).forEach(([championship, data]) => {
-            Object.entries(data).forEach(([eventName, sessions]) => {
-                if (eventName === "standing") return;
-
-                Object.values(sessions).forEach(session => {
-                    Object.values(session).forEach(entry => {
-                        const position = parseInt(entry.position);
-                        if (!isNaN(position)) { // Vérifie que la position est un nombre
-                            totalPos += position;
+    for (const season in team.seasons) {
+        let total = 0, count = 0;
+        for (const championship in team.seasons[season]) {
+            if (championship === "standing") continue;
+            const events = team.seasons[season][championship];
+            for (const event in events) {
+                if (event === "standing") continue;
+                for (const session in events[event]) {
+                    for (const results in events[event][session]) {
+                        const position = parseInt(events[event][session][results].position);
+                        if (!isNaN(position)) {
+                            total += position;
                             count++;
                         }
-                    });
-                });
-            });
-        });
-
-        if (count > 0) {
-            seasonStats[season] = {
-                avgPosition: totalPos / count
-            };
+                    }
+                }
+            }
         }
-    });
+        if (count > 0) averageBySeason[season] = total / count;
+    }
 
-    // Tri des saisons par ordre chronologique
-    const sortedSeasons = Object.keys(seasonStats).sort();
-    const maxPosition = Math.max(...Object.entries(team.seasons).flatMap(([_, championships]) => 
-        Object.entries(championships).flatMap(([_, data]) => 
-            Object.entries(data).flatMap(([eventName, sessions]) => {
-                if (eventName === "standing") return [];
-                return Object.values(sessions).flatMap(session => 
-                    Object.values(session)
-                        .map(entry => {
-                            const position = parseInt(entry.position);
-                            return isNaN(position) ? null : position;
-                        })
-                        .filter(pos => pos !== null)
-                );
-            })
-        )
-    ));
-    const labels = sortedSeasons;
-    const data = sortedSeasons.map(season => seasonStats[season].avgPosition.toFixed(2));
+    const sortedSeasons = Object.keys(averageBySeason).sort();
+    const averagePositions = sortedSeasons.map(season => averageBySeason[season].toFixed(0));
+    const maxPosition = Math.max(...Object.values(averageBySeason).map(pos => Math.ceil(pos)));
 
-    chartContainer.innerHTML = `
-        <h2 class="text-2xl font-semibold mt-8 mb-2">Average Driver Position per Season</h2>
-        <canvas id="teamChart" height="300"></canvas>
-    `;
-    console.log(data);
-    new Chart(document.getElementById("teamChart"), {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: sortedSeasons,
             datasets: [{
-                label: "Average Position",
-                data: data,
+                label: 'Average Position',
+                data: averagePositions,
                 borderColor: "rgb(59, 130, 246)",
                 backgroundColor: "rgb(147, 197, 253)",
                 tension: 0.3,
                 pointRadius: 5,
-                pointHoverRadius: 6,
+                pointHoverRadius: 6
             }]
         },
         options: {
@@ -232,36 +220,54 @@ function displayTeamPerformanceChart(team) {
                     min: 1,
                     max: maxPosition,
                     reverse: true,
-                    title: {
-                        display: true,
-                        text: 'Average Position'
-                    },
-                    ticks: {
-                        stepSize: 1 
-                    }
+                    title: { display: true, text: 'Average Position' },
+                    ticks: { stepSize: 1 }
                 },
                 x: {
-                    title: {
-                        display: true,
-                        text: 'Season'
-                    }
+                    title: { display: true, text: 'Season' }
                 }
             },
             plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function (context) {
-                            return `Avg Pos: P${context.raw}`;
-                        }
-                    }
-                },
                 legend: {
                     position: "bottom",
-                    labels: {
-                        color: "white"
-                    }
                 }
             }
         }
     });
+}
+
+function displayTeamStats(team) {
+    let totalRaces = 0;
+    let totalWins = 0;
+    let totalPodiums = 0;
+    let totalChampionships = 0;
+
+    for (const season in team.seasons) {
+        for (const championship in team.seasons[season]) {
+            if (championship === "standing") continue;
+
+            totalChampionships++;
+            const races = team.seasons[season][championship];
+
+            for (const race in races) {
+                if (race === "standing") continue;
+
+                for (const session in races[race]) {
+                    if (session.toLowerCase().includes("race")) {
+                        totalRaces++;
+                        for (const driver in races[race][session]) {
+                            const position = parseInt(races[race][session][driver].position);
+                            if (position === 1) totalWins++;
+                            else if (position <= 3) totalPodiums++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    document.getElementById("totalRaces").innerText = totalRaces;
+    document.getElementById("totalWins").innerText = totalWins;
+    document.getElementById("totalPodiums").innerText = totalPodiums;
+    document.getElementById("totalChampionships").innerText = totalChampionships;
 }
