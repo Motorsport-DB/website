@@ -22,9 +22,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function displayTeamInfo(team) {
-    document.getElementById("team-name").innerText = team.name;
-    document.getElementById("team-country-img").src = "assets/flags/" + team.country.toLowerCase() + ".png";
-    document.getElementById("team-logo").src = team.picture;
+    document.getElementById("team-name").innerText = team.name.replaceAll("_", " ");
+    if (team.country) document.getElementById("team-country-img").src = "assets/flags/" + team.country.toLowerCase() + ".png";
+    if (team.picture) document.getElementById("team-logo").src = team.picture;
 
     document.getElementById("team-founded").innerText = "";
     for (let i = 0; i < team.creationDate.length; i++) {
@@ -46,7 +46,7 @@ function displayTeamInfo(team) {
                 ${team.previous.flat().map(previousTeam => `
                 <li>
                     <a ${previousTeam == "?" ? 'href=#' : `href="team.html?id=${previousTeam}"`} class="text-blue-600 dark:text-blue-400 hover:underline">
-                        ${previousTeam.replace("_", " ")}
+                        ${previousTeam.replaceAll("_", " ")}
                     </a>
                 </li>
                 `).join("")}
@@ -63,7 +63,7 @@ function displayTeamInfo(team) {
                     ${team.next.flat().map(nextTeam => `
                         <li>
                             <a ${nextTeam == "?" ? 'href=#' : `href="team.html?id=${nextTeam}"`} class="text-blue-600 dark:text-blue-400 hover:underline">
-                                ${nextTeam.replace("_", " ")}
+                                ${nextTeam.replaceAll("_", " ")}
                             </a>
                         </li>
                     `).join("")}
@@ -85,7 +85,7 @@ function displayTeamResults(team) {
             let seasonHTML = `
             <div class="bg-white dark:bg-gray-800 rounded-xl p-6 my-8 shadow-md border border-gray-200 dark:border-gray-700">
                 <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4">
-                    <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replace("_", " ")}</a>
+                    <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replaceAll("_", " ")}</a>
                 </h2>
                 ${standingHTML}
                 <div class="overflow-x-auto mt-6">
@@ -126,7 +126,7 @@ function displayTeamResults(team) {
                             <td class="p-3">${position !== "N/A" ? `P${position}` : position}</td>
                             <td class="p-3">${fastestLap}</td>
                             <td class="p-3">
-                                ${details.drivers ? details.drivers.map(driver => `<a class="text-blue-600 dark:text-blue-400 hover:underline" href="driver.html?id=${driver}">${driver.replace("_", " ")}</a>`).join(", ") : "N/A"}
+                                ${details.drivers ? details.drivers.map(driver => `<a class="text-blue-600 dark:text-blue-400 hover:underline" href="driver.html?id=${driver}">${driver.replaceAll("_", " ")}</a>`).join(", ") : "N/A"}
                             </td>
                             <td class="p-3">
                                 <button onclick="toggleDetails('${rowId}')" class="text-blue-600 dark:text-blue-400 hover:underline">Show</button>
