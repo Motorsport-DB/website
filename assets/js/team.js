@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function displayTeamInfo(team) {
     document.getElementById("team-name").innerText = team.name;
-    document.getElementById("team-country-img").src = "assets/flags/" + team.country + ".png";
+    document.getElementById("team-country-img").src = "assets/flags/" + team.country.toLowerCase() + ".png";
     document.getElementById("team-logo").src = team.picture;
 
     document.getElementById("team-founded").innerText = "";

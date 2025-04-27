@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function displayMainDriverInfo(driver) {
     document.getElementById("driver-name").innerText = driver.firstName + " " + driver.lastName;
-    document.getElementById("driver-country-img").src = "assets/flags/" + driver.country + ".png";
+    document.getElementById("driver-country-img").src = "assets/flags/" + driver.country.toLowerCase() + ".png";
     document.getElementById("driver-picture").src = driver.picture;
     document.getElementById("driver-dob").innerText = driver.dateOfBirth + ` (${driver.age} years old)`;
 }
