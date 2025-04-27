@@ -17,9 +17,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function displayMainDriverInfo(driver) {
     document.getElementById("driver-name").innerText = driver.firstName + " " + driver.lastName;
-    document.getElementById("driver-country-img").src = "assets/flags/" + driver.country + ".png";
-    document.getElementById("driver-picture").src = driver.picture;
-    document.getElementById("driver-dob").innerText = driver.dateOfBirth + ` (${driver.age} years old)`;
+    if (driver.country) document.getElementById("driver-country-img").src = "assets/flags/" + driver.country.toLowerCase() + ".png";
+    if (driver.picture) document.getElementById("driver-picture").src = driver.picture;
+    if (driver.dateOfBirth) document.getElementById("driver-dob").innerText = driver.dateOfBirth + ` (${driver.age} years old)`;
 }
 
 function displayDriverResults(driver) {
