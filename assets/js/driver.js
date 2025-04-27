@@ -5,145 +5,142 @@ document.addEventListener("DOMContentLoaded", async () => {
     let driver = await fetchData("getDrivers.php", driverId);
     driver = driver[0];
     if (!driver) {
-        document.getElementById("driverDetail").innerHTML = "<p id='text_error' class='text-red-500'>Driver not found.</p>";
+        document.getElementById("resultsContainer").innerHTML = "<p id='text_error' class='text-red-500 dark:text-red-400'>Driver not found.</p>";
         return;
     }
     driver.age = getAge(driver.dateOfBirth, driver.dateOfDeath);
     displayMainDriverInfo(driver);
+    displayDriverStats(driver);
     displayDriverResults(driver);
     displayDriverPerformanceChart(driver);
-    displayDriverPointsChart(driver);
 });
 
 function displayMainDriverInfo(driver) {
-    document.getElementById("driverDetail").innerHTML = `
-        <img src="${driver.picture}" class="w-40 h-40 object-contain aspect-[3/2] rounded-lg mr-6" alt="Picture of ${driver.firstName} ${driver.lastName}">
-        <div>
-            <h1 class="text-3xl font-bold">${driver.firstName} ${driver.lastName}</h1>
-            <p class="text-lg text-gray-300">${driver.nickname ? `Nickname: ${driver.nickname}` : ""}</p>
-            ${driver.dateOfBirth ? `<p>Date of Birth: ${driver.dateOfBirth} (Age: ${driver.age})</p>` : ""}
-            ${driver.dateOfDeath ? `<p>Date of Death: ${driver.dateOfDeath}</p>` : ""}
-            <div id="country_flag" class="flex items-center mt-2">
-                
-            </div>
-        </div>
-    `;
-    if (driver.country) {
-        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/${driver.country.toLowerCase()+".png"}" class="w-10 aspect-[3/2] rounded" alt="Country Flag">`;
-    } else {
-        document.getElementById("country_flag").innerHTML += `<img src="assets/flags/default.png" class="w-10 aspect-[3/2] rounded" alt="Country Flag">`;
-    }
+    document.getElementById("driver-name").innerText = driver.firstName + " " + driver.lastName;
+    if (driver.country) document.getElementById("driver-country-img").src = "assets/flags/" + driver.country.toLowerCase() + ".png";
+    if (driver.picture) document.getElementById("driver-picture").src = driver.picture;
+    if (driver.dateOfBirth) document.getElementById("driver-dob").innerText = driver.dateOfBirth + ` (${driver.age} years old)`;
 }
 
 function displayDriverResults(driver) {
     const resultsContainer = document.getElementById("resultsContainer");
 
-    const seasonsInFileOrder = Object.keys(driver.seasons).sort((a, b) => b - a);
-    for (const season of seasonsInFileOrder) {
+    const seasons = Object.keys(driver.seasons).sort((a, b) => b - a);
+    for (const season of seasons) {
         for (const championship in driver.seasons[season]) {
             if (championship === "standing") continue;
-    
-            let standing = driver.seasons[season][championship].standing;
-            let standingHTML = standing ? `<span class='text-blue-400'>Standing: P${standing.position} | Total Points: ${standing.points}</span>` : "";
-    
-            let seasonHTML = `<h3><a href="race.html?id=${championship}&year=${season}" class="text-lg font-semibold mt-4 text-blue-400 underline">${season} - ${championship.replace("_", " ")} ${standingHTML}</a></h3>`;
-    
-            let races = {};
+
+            const standing = driver.seasons[season][championship].standing;
+            const standingHTML = standing ? `<p class="text-sm text-blue-500 dark:text-blue-400 mt-2">Standing: P${standing.position} • ${standing.points} points</p>` : "";
+
+            let seasonHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 my-8 shadow-md border border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4">
+                    <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replaceAll("_", " ")}</a>
+                </h2>
+                ${standingHTML}
+                <div class="overflow-x-auto mt-6">
+                    <table class="min-w-full table-auto text-sm text-gray-800 dark:text-gray-200">
+                        <thead class="bg-blue-100 dark:bg-gray-700 text-blue-700 dark:text-blue-300">
+                            <tr>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Race</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Session</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Position</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Fastest Lap</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Team</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Other Info</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-400 dark:divide-gray-600">
+            `;
+
+            const races = {};
+
             for (const race in driver.seasons[season][championship]) {
                 if (race === "standing") continue;
-    
+
                 for (const session in driver.seasons[season][championship][race]) {
                     if (!races[race]) races[race] = [];
                     races[race].push({ session, ...driver.seasons[season][championship][race][session] });
                 }
             }
-    
-            seasonHTML += `<table class="table-fixed w-full mt-2 bg-gray-800 text-white border border-gray-700">
-                            <thead>
-                                <tr class="bg-gray-700">
-                                    <th class="w-1/4 p-2 border border-gray-600">Race</th>
-                                    <th class="w-1/6 p-2 border border-gray-600">Session</th>
-                                    <th class="w-1/12 p-2 border border-gray-600">Position</th>
-                                    <th class="w-1/6 p-2 border border-gray-600">Fastest Lap</th>
-                                    <th class="w-1/6 p-2 border border-gray-600">Team</th>
-                                    <th class="w-1/6 p-2 border border-gray-600">Other Info</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
 
             for (const race in races) {
                 let firstRow = true;
-                let rowspan = races[race].length;
+                const rowspan = races[race].length;
                 races[race].forEach((data, index) => {
-                    let position = data.position ?? "N/A";
-                    let fastestLap = data.fastest_lap ?? "N/A";
-                    let team = data.team ?? "N/A";
+                    const rowId = `details-${season}-${championship}-${race}-${index}`;
 
-                    let otherInfoHTML = Object.entries(data.other_info || {})
-                        .map(([key, value]) => `<span class="mr-2"><strong>${key.replace(/_/g, " ")}:</strong>${value}</span>`)
-                        .join("");
-
-                    let rowId = `details-${season}-${championship}-${race}-${index}`;
-
-                    seasonHTML += `<tr class="border border-gray-700 cursor-pointer">`;
+                    seasonHTML += `<tr class="hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition">`;
                     if (firstRow) {
-                        seasonHTML += `<td class="p-2 border border-gray-600" rowspan="${rowspan}">${race}</td>`;
+                        seasonHTML += `<td class="p-3 font-semibold" rowspan="${rowspan}">${race}</td>`;
                         firstRow = false;
                     }
                     seasonHTML += `
-                            <td class="p-2 border border-gray-600">${data.session}</td>
-                            <td class="p-2 border border-gray-600">P${position}</td>
-                            <td class="p-2 border border-gray-600">${fastestLap}</td>
-                            <td class="p-2 border border-gray-600">
-                                <a class="text-blue-400 underline focus:outline-none" href='team.html?id=${team}')">${team.replace("_", " ")}</a>
-                            </td>
-                            <td class="p-2 border border-gray-600">
-                                <button class="text-blue-400 underline focus:outline-none" onclick="toggleDetails('${rowId}')">Show Details</button>
-                                <span id="${rowId}" class="hidden ml-2">${otherInfoHTML || "No additional info"}</span>
-                            </td>
-                        </tr>`;
+                        <td class="p-3">${data.session}</td>
+                        <td class="p-3">${data.position ? `P${data.position}` : "N/A"}</td>
+                        <td class="p-3">${data.fastest_lap ?? "N/A"}</td>
+                        <td class="p-3">
+                            <a href="team.html?id=${data.team}" class="text-blue-600 dark:text-blue-400 hover:underline">${data.team?.replaceAll("_", " ") ?? "N/A"}</a>
+                        </td>
+                        <td class="p-3">
+                            <button onclick="toggleDetails('${rowId}')" class="text-blue-600 dark:text-blue-400 hover:underline">Show</button>
+                            <div id="${rowId}" class="hidden mt-2 text-sm text-gray-600 dark:text-gray-300">${formatOtherInfo(data.other_info)}</div>
+                        </td>
+                    </tr>`;
                 });
             }
 
-            seasonHTML += `</tbody></table>`;
+            seasonHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+
             resultsContainer.innerHTML += seasonHTML;
         }
     }
 }
+
+function formatOtherInfo(info) {
+    if (!info || Object.keys(info).length === 0) {
+        return "<p>No additional info</p>";
+    }
+    return Object.entries(info)
+        .map(([key, value]) => `<p><strong>${key.replace(/_/g, " ")}:</strong> ${value}</p>`)
+        .join("");
+}
+
+function toggleDetails(id) {
+    const element = document.getElementById(id);
+    element.classList.toggle("hidden");
+}
+
 function displayDriverPerformanceChart(driver) {
     const averageByYear = {};
 
-    for (const season of Object.keys(driver.seasons)) {
-        let totalPositions = 0;
-        let count = 0;
-
-        for (const championship of Object.keys(driver.seasons[season])) {
+    for (const season in driver.seasons) {
+        let total = 0, count = 0;
+        for (const championship in driver.seasons[season]) {
             if (championship === "standing") continue;
 
             const races = driver.seasons[season][championship];
-            for (const race of Object.keys(races)) {
+            for (const race in races) {
                 if (race === "standing") continue;
-
-                for (const session of Object.keys(races[race])) {
-                    const sessionData = races[race][session];
-                    const position = parseInt(sessionData.position);
-
-                    if (!isNaN(position)) {
-                        totalPositions += position;
+                for (const session in races[race]) {
+                    const pos = parseInt(races[race][session].position);
+                    if (!isNaN(pos)) {
+                        total += pos;
                         count++;
                     }
                 }
             }
         }
-
-        if (count > 0) {
-            averageByYear[season] = totalPositions / count;
-        }
+        if (count > 0) averageByYear[season] = total / count;
     }
 
     const sortedYears = Object.keys(averageByYear).sort();
     const averagePositions = sortedYears.map(year => averageByYear[year].toFixed(0));
-    const maxPosition = Math.max(...Object.values(averageByYear).map(pos => Math.ceil(pos)));
 
     const ctx = document.getElementById('performanceChart').getContext('2d');
     new Chart(ctx, {
@@ -151,89 +148,8 @@ function displayDriverPerformanceChart(driver) {
         data: {
             labels: sortedYears,
             datasets: [{
-                label: 'Average position',
+                label: 'Average Position',
                 data: averagePositions,
-                borderColor: "rgb(59, 130, 246)",
-                backgroundColor: "rgb(147, 197, 253)",
-                tension: 0.3,
-                pointRadius: 5,
-                pointHoverRadius: 6,
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    min: 1,
-                    max: maxPosition,
-                    reverse: true,
-                    title: {
-                        display: true,
-                        text: 'Average position'
-                    },
-                    ticks: {
-                        stepSize: 1 
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Season'
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(ctx) {
-                            return `P${ctx.raw}`;
-                        }
-                    }
-                },
-                legend: {
-                    position: "bottom",
-                    labels: {
-                        color: "white"
-                    }
-                }
-            }
-        }
-    });
-}
-
-function displayDriverPointsChart(driver) {
-    const pointsByYear = {};
-
-    for (const season of Object.keys(driver.seasons)) {
-        let totalPoints = 0;
-
-        for (const championship of Object.keys(driver.seasons[season])) {
-            if (championship === "standing") continue;
-
-            const standing = driver.seasons[season][championship]?.standing;
-            if (standing && !isNaN(parseFloat(standing.points))) {
-                totalPoints += parseFloat(standing.points);
-            }
-        }
-
-        pointsByYear[season] = totalPoints;
-    }
-    if (Object.values(pointsByYear).every(points => points === 0)) {
-        document.getElementById('pointsChart').style.display = 'none';
-        return;
-    }
-
-    const sortedYears = Object.keys(pointsByYear).sort();
-    const points = sortedYears.map(year => pointsByYear[year]);
-
-    const ctx = document.getElementById('pointsChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: sortedYears,
-            datasets: [{
-                label: 'Points',
-                data: points,
                 borderColor: "rgb(59, 130, 246)",
                 backgroundColor: "rgb(147, 197, 253)",
                 tension: 0.3,
@@ -242,28 +158,62 @@ function displayDriverPointsChart(driver) {
             }]
         },
         options: {
+            responsive: true,
             scales: {
                 y: {
                     min: 1,
-                    max: maxPosition,
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Points'
-                    }
+                    reverse: true,
+                    title: { display: true, text: 'Average Position' },
+                    ticks: { stepSize: 1 }
                 },
                 x: {
-                    title: {
-                        display: true,
-                        text: 'Season'
-                    }
+                    title: { display: true, text: 'Season' }
                 }
             },
             plugins: {
                 legend: {
-                    display: false
+                    position: "bottom",
                 }
             }
         }
     });
+}
+
+function displayDriverStats(driver) {
+    let totalRaces = 0;
+    let totalWins = 0;
+    let totalPodiums = 0;
+    let totalChampionships = 0;
+
+    for (const season in driver.seasons) {
+        for (const championship in driver.seasons[season]) {
+            if (championship === "standing") continue;
+
+            totalChampionships++;
+            const races = driver.seasons[season][championship];
+
+            for (const race in races) {
+                if (race === "standing") continue;
+
+                let hasPodium = false;
+
+                for (const session in races[race]) {
+                    if (session.toLowerCase().includes("race")) {
+                        totalRaces++;
+                        const position = parseInt(races[race][session].position);
+
+                        if (position === 1) totalWins++;
+                        if (position <= 3) hasPodium = true;
+                    }
+                }
+
+                if (hasPodium) totalPodiums++;
+            }
+        }
+    }
+
+    document.getElementById("totalRaces").innerText = totalRaces;
+    document.getElementById("totalWins").innerText = totalWins;
+    document.getElementById("totalPodiums").innerText = totalPodiums;
+    document.getElementById("totalChampionships").innerText = totalChampionships;
 }
