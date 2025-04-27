@@ -1,26 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('theme-toggle');
     const toggleBall = document.getElementById('toggle-ball');
+    const isDark = localStorage.getItem('theme') === 'dark';
 
-    // Appliquer la préférence si déjà enregistrée
-    if (localStorage.getItem('theme') === 'dark') {
-        document.documentElement.classList.add('dark');
-        toggleBall.classList.add('translate-x-8');
-        toggleBall.textContent = '🌙';
-    }
+    document.documentElement.classList.toggle('dark', isDark);
+    toggleBall.classList.toggle('translate-x-8', isDark);
+    toggleBall.textContent = isDark ? '🌙' : '🌞';
 
     themeToggle.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark');
-
-        if (document.documentElement.classList.contains('dark')) {
-            toggleBall.classList.add('translate-x-8');
-            toggleBall.textContent = '🌙';
-            localStorage.setItem('theme', 'dark');
-        } else {
-            toggleBall.classList.remove('translate-x-8');
-            toggleBall.textContent = '🌞';
-            localStorage.setItem('theme', 'light');
-        }
+        const darkMode = document.documentElement.classList.toggle('dark');
+        toggleBall.classList.toggle('translate-x-8', darkMode);
+        toggleBall.textContent = darkMode ? '🌙' : '🌞';
+        localStorage.setItem('theme', darkMode ? 'dark' : 'light');
     });
 });
-

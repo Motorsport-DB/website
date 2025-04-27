@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let driver = await fetchData("getDrivers.php", driverId);
     driver = driver[0];
     if (!driver) {
-        document.getElementById("resultsContainer").innerHTML = "<p id='text_error' class='text-red-500'>Driver not found.</p>";
+        document.getElementById("resultsContainer").innerHTML = "<p id='text_error' class='text-red-500 dark:text-red-400'>Driver not found.</p>";
         return;
     }
     driver.age = getAge(driver.dateOfBirth, driver.dateOfDeath);
@@ -16,28 +16,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function displayMainDriverInfo(driver) {
-    // BASIC INFORMATION
     document.getElementById("driver-name").innerText = driver.firstName + " " + driver.lastName;
-    // document.getElementById("driver-country").innerText = driver.country;
-    document.getElementById("driver-country-img").src = "assets/flags/"+ driver.country + ".png";
+    document.getElementById("driver-country-img").src = "assets/flags/" + driver.country + ".png";
     document.getElementById("driver-picture").src = driver.picture;
-    document.getElementById("driver-dob").innerText = driver.dateOfBirth + ` (${driver.age} years old)`; 
-    
-    
-    /**
-    document.getElementById("driverDetail").innerHTML = `
-        <div class="flex flex-col md:flex-row items-center md:items-start gap-6 bg-gray-800 rounded-2xl p-6 shadow-lg">
-            <img src="${driver.picture}" class="w-40 h-40 object-cover rounded-xl" alt="Picture of ${driver.firstName} ${driver.lastName}">
-            <div class="flex-1">
-                <h1 class="text-4xl font-bold mb-2">${driver.firstName} ${driver.lastName}</h1>
-                ${driver.nickname ? `<p class="text-blue-400 mb-2">"${driver.nickname}"</p>` : ""}
-                ${driver.dateOfBirth ? `<p class="text-gray-300">Born: ${driver.dateOfBirth} (${driver.age} years old)</p>` : ""}
-                ${driver.dateOfDeath ? `<p class="text-gray-300">Died: ${driver.dateOfDeath}</p>` : ""}
-                <div id="country_flag" class="flex items-center mt-4"></div>
-            </div>
-        </div>
-    `;
-    **/
+    document.getElementById("driver-dob").innerText = driver.dateOfBirth + ` (${driver.age} years old)`;
 }
 
 function displayDriverResults(driver) {
@@ -49,27 +31,27 @@ function displayDriverResults(driver) {
             if (championship === "standing") continue;
 
             const standing = driver.seasons[season][championship].standing;
-            const standingHTML = standing ? `<p class="text-sm text-blue-500 mt-2">Standing: P${standing.position} • ${standing.points} points</p>` : "";
+            const standingHTML = standing ? `<p class="text-sm text-blue-500 dark:text-blue-400 mt-2">Standing: P${standing.position} • ${standing.points} points</p>` : "";
 
             let seasonHTML = `
-            <div class="bg-white rounded-xl p-6 my-8 shadow-md border border-gray-200">
-                <h2 class="text-2xl font-bold text-blue-600 mb-4">
-                    <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replace("_", " ")}</a>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 my-8 shadow-md border border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4">
+                    <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replaceAll("_", " ")}</a>
                 </h2>
                 ${standingHTML}
                 <div class="overflow-x-auto mt-6">
-                    <table class="min-w-full table-auto text-sm text-gray-800">
-                        <thead class="bg-blue-100 text-blue-700">
+                    <table class="min-w-full table-auto text-sm text-gray-800 dark:text-gray-200">
+                        <thead class="bg-blue-100 dark:bg-gray-700 text-blue-700 dark:text-blue-300">
                             <tr>
-                                <th class="p-3 text-left">Race</th>
-                                <th class="p-3 text-left">Session</th>
-                                <th class="p-3 text-left">Position</th>
-                                <th class="p-3 text-left">Fastest Lap</th>
-                                <th class="p-3 text-left">Team</th>
-                                <th class="p-3 text-left">Other Info</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Race</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Session</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Position</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Fastest Lap</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Team</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Other Info</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-400">
+                        <tbody class="divide-y divide-gray-400 dark:divide-gray-600">
             `;
 
             const races = {};
@@ -89,7 +71,7 @@ function displayDriverResults(driver) {
                 races[race].forEach((data, index) => {
                     const rowId = `details-${season}-${championship}-${race}-${index}`;
 
-                    seasonHTML += `<tr class="hover:bg-gray-200 cursor-pointer transition">`;
+                    seasonHTML += `<tr class="hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition">`;
                     if (firstRow) {
                         seasonHTML += `<td class="p-3 font-semibold" rowspan="${rowspan}">${race}</td>`;
                         firstRow = false;
@@ -99,11 +81,11 @@ function displayDriverResults(driver) {
                         <td class="p-3">${data.position ? `P${data.position}` : "N/A"}</td>
                         <td class="p-3">${data.fastest_lap ?? "N/A"}</td>
                         <td class="p-3">
-                            <a href="team.html?id=${data.team}" class="text-blue-600 hover:underline">${data.team?.replaceAll("_", " ") ?? "N/A"}</a>
+                            <a href="team.html?id=${data.team}" class="text-blue-600 dark:text-blue-400 hover:underline">${data.team?.replaceAll("_", " ") ?? "N/A"}</a>
                         </td>
                         <td class="p-3">
-                            <button onclick="toggleDetails('${rowId}')" class="text-blue-600 hover:underline">Show</button>
-                            <div id="${rowId}" class="hidden mt-2 text-sm text-gray-600">${formatOtherInfo(data.other_info)}</div>
+                            <button onclick="toggleDetails('${rowId}')" class="text-blue-600 dark:text-blue-400 hover:underline">Show</button>
+                            <div id="${rowId}" class="hidden mt-2 text-sm text-gray-600 dark:text-gray-300">${formatOtherInfo(data.other_info)}</div>
                         </td>
                     </tr>`;
                 });

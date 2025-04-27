@@ -11,8 +11,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("resultsContainer");
     container.style.opacity = 0;
     requestAnimationFrame(() => {
-      container.style.transition = "opacity 0.5s ease";
-      container.style.opacity = 1;
+        container.style.transition = "opacity 0.5s ease";
+        container.style.opacity = 1;
     });
 
     displayTeamInfo(team);
@@ -37,33 +37,15 @@ function displayTeamInfo(team) {
         document.getElementById("team-founded").innerText += team.creationDate[i] + " (" + age + " years) \n";
     }
 
-    /**
-    document.getElementById("teamDetail").innerHTML = `
-        <img src="${team.picture}" class="w-40 h-40 object-contain aspect-[3/2] rounded-lg mr-6" alt="Picture of ${team.name}">
-        <div>
-            <h1 class="text-3xl font-bold">${team.name.replaceAll("_", " ")}</h1>
-            ${team.nickname ? `<p class="text-lg text-gray-300">${team.nickname}</p>` : ""}
-            ${team.creationDate ? `<p>Date of creation: ${team.creationDate} (Age: ${team.age})</p>` : ""}
-            ${team.endDate ? `<p>Date of end: ${team.endDate}</p>` : ""}
-            <div id="country_flag" class="flex items-center mt-2">
-                
-            </div>
-
-            <div id="other_teams">
-            </div>
-        </div>
-    `;
-    **/
-
     const otherTeamsContainer = document.getElementById("other_teams");
     if (team.previous && team.previous.length > 0) {
         otherTeamsContainer.innerHTML += `
             <div>
-            <h3 class="text-lg font-semibold mt-4">Previous Teams</h3>
-            <ul class="list-disc list-inside">
+            <h3 class="text-lg font-semibold mt-4 text-gray-800 dark:text-gray-200">Previous Teams</h3>
+            <ul class="list-disc list-inside text-gray-800 dark:text-gray-300">
                 ${team.previous.flat().map(previousTeam => `
                 <li>
-                    <a ${previousTeam == "?" ? 'href=#' : `href="team.html?id=${previousTeam}"`} class="text-blue-600 underline">
+                    <a ${previousTeam == "?" ? 'href=#' : `href="team.html?id=${previousTeam}"`} class="text-blue-600 dark:text-blue-400 hover:underline">
                         ${previousTeam.replace("_", " ")}
                     </a>
                 </li>
@@ -76,11 +58,11 @@ function displayTeamInfo(team) {
     if (team.next && team.next.length > 0) {
         otherTeamsContainer.innerHTML += `
             <div>
-                <h3 class="text-lg font-semibold mt-4">Next Teams</h3>
-                <ul class="list-disc list-inside">
+                <h3 class="text-lg font-semibold mt-4 text-gray-800 dark:text-gray-200">Next Teams</h3>
+                <ul class="list-disc list-inside text-gray-800 dark:text-gray-300">
                     ${team.next.flat().map(nextTeam => `
                         <li>
-                            <a ${nextTeam == "?" ? 'href=#' : `href="team.html?id=${nextTeam}"`} class="text-blue-600 underline">
+                            <a ${nextTeam == "?" ? 'href=#' : `href="team.html?id=${nextTeam}"`} class="text-blue-600 dark:text-blue-400 hover:underline">
                                 ${nextTeam.replace("_", " ")}
                             </a>
                         </li>
@@ -101,30 +83,30 @@ function displayTeamResults(team) {
             const standingHTML = standing ? `<p class="text-sm text-blue-500 mt-2">Standing: P${standing.position} • ${standing.points} points</p>` : "";
 
             let seasonHTML = `
-            <div class="bg-white rounded-xl p-6 my-8 shadow-md border border-gray-200">
-                <h2 class="text-2xl font-bold text-blue-600 mb-4">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 my-8 shadow-md border border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4">
                     <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replace("_", " ")}</a>
                 </h2>
                 ${standingHTML}
                 <div class="overflow-x-auto mt-6">
-                    <table class="min-w-full table-auto text-sm text-gray-800">
-                        <thead class="bg-blue-100 text-blue-700">
+                    <table class="min-w-full table-auto text-sm text-gray-800 dark:text-gray-300">
+                        <thead class="bg-blue-100 dark:bg-gray-700 text-blue-700 dark:text-blue-300">
                             <tr>
-                                <th class="p-3 text-left">Event</th>
-                                <th class="p-3 text-left">Session</th>
-                                <th class="p-3 text-left">Car #</th>
-                                <th class="p-3 text-left">Position</th>
-                                <th class="p-3 text-left">Fastest Lap</th>
-                                <th class="p-3 text-left">Drivers</th>
-                                <th class="p-3 text-left">Other Info</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Event</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Session</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Car #</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Position</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Fastest Lap</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Drivers</th>
+                                <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Other Info</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-400">
+                        <tbody class="divide-y divide-gray-400 dark:divide-gray-600">
             `;
 
             Object.entries(data).filter(([key]) => key !== "standing").forEach(([event, sessions]) => {
                 const eventRowSpan = Object.values(sessions).reduce((sum, cars) => sum + Object.keys(cars).length, 0);
-                let eventHTML = `<tr><td class="p-3 font-semibold" rowspan="${eventRowSpan}">${event}</td>`;
+                let eventHTML = `<tr class="hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition"><td class="p-3 font-semibold" rowspan="${eventRowSpan}">${event}</td>`;
 
                 let isFirstSession = true;
                 Object.entries(sessions).forEach(([session, cars]) => {
@@ -138,17 +120,17 @@ function displayTeamResults(team) {
                         const rowId = `details-${season}-${championship}-${event}-${session}-${index}`;
 
                         eventHTML += `
-                            ${isFirstSession && index === 0 ? "" : "<tr>"}
+                            ${isFirstSession && index === 0 ? "" : `<tr class="hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition">`}
                             ${index === 0 ? `<td class="p-3 font-semibold" rowspan="${Object.keys(cars).length}">${session}</td>` : ""}
                             <td class="p-3">${car}</td>
                             <td class="p-3">${position !== "N/A" ? `P${position}` : position}</td>
                             <td class="p-3">${fastestLap}</td>
                             <td class="p-3">
-                                ${details.drivers ? details.drivers.map(driver => `<a class="text-blue-600 hover:underline" href="driver.html?id=${driver}">${driver.replace("_", " ")}</a>`).join(", ") : "N/A"}
+                                ${details.drivers ? details.drivers.map(driver => `<a class="text-blue-600 dark:text-blue-400 hover:underline" href="driver.html?id=${driver}">${driver.replace("_", " ")}</a>`).join(", ") : "N/A"}
                             </td>
                             <td class="p-3">
-                                <button onclick="toggleDetails('${rowId}')" class="text-blue-600 hover:underline">Show</button>
-                                <div id="${rowId}" class="hidden mt-2 text-sm text-gray-600">${otherInfoHTML || "No additional info"}</div>
+                                <button onclick="toggleDetails('${rowId}')" class="text-blue-600 dark:text-blue-400 hover:underline">Show</button>
+                                <div id="${rowId}" class="hidden mt-2 text-sm text-gray-600 dark:text-gray-400">${otherInfoHTML || "No additional info"}</div>
                             </td>
                             </tr>
                         `;
