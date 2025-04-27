@@ -98,7 +98,6 @@ async function loadStatsAndDrawChart(stats) {
                   position: 'bottom',
                   align: 'center',
                   labels: {
-                      color: "white", // Note: ChartJS doit être configuré manuellement car il ne lit pas les classes Tailwind
                       font: {
                           size: 14,
                           weight: 'bold'
