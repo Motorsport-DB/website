@@ -20,27 +20,27 @@
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300 min-h-screen flex flex-col">
-  <header class="shadow flex bg-white dark:bg-gray-800">
-    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-      <a href="index.html" class="text-3xl font-bold text-blue-600 dark:text-blue-400">MotorsportDB</a>
+  <header class="driver-header shadow dark:shadow-lg flex bg-white dark:bg-gray-800 justify-around">
+    <div class="px-6 py-4 flex justify-between items-center">
+        <a href="index.html" class="text-3xl font-bold text-blue-600 dark:text-blue-400">MotorsportDB</a>
     </div>
-    <div class="flex items-center justify-center p-8">
-      <button id="theme-toggle" class="relative flex items-center w-16 h-8 bg-gray-300 dark:bg-gray-700 rounded-full transition-all duration-300 focus:outline-none">
-        <span id="toggle-ball" class="absolute left-1 top-1 w-6 h-6 bg-white dark:bg-gray-900 rounded-full shadow-md flex items-center justify-center text-lg transform transition-transform duration-300">
-          🌞
-        </span>
-      </button>
+    <div class="flex items-center justify-center">
+        <button id="theme-toggle" class="relative flex items-center w-16 h-8 bg-gray-300 dark:bg-gray-700 rounded-full transition-all duration-300 focus:outline-none">
+            <span id="toggle-ball" class="absolute left-1 top-1 w-6 h-6 bg-white dark:bg-gray-900 rounded-full shadow-md flex items-center justify-center text-lg transform transition-transform duration-300">
+                🌞
+            </span>
+        </button>
     </div>
-  </header>
+</header>
 
   <main class="flex-grow container mx-auto px-6 py-8">
     <!-- Driver Information Section -->
     <section class="mb-10">
       <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">Driver Profile</h2>
       <div class="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0 md:space-x-8">
-        <div class="flex items-center space-x-6">
+        <div class="flex flex-col sm:flex-row items-center space-x-6">
           <img id="driver-picture" src="drivers/picture/default.png" alt="Driver Picture"
-            class="w-48 h-48 object-cover rounded-full border-4 border-blue-600 dark:border-blue-400">
+            class="w-48 h-48 object-contain rounded-full border-4 border-blue-600 dark:border-blue-400">
           <div>
             <h3 id="driver-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Driver Name</h3>
             <div class="flex items-center space-x-2 mt-2">
