@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let race = await fetchData("getRaces.php", raceId, year);
     if (race["error"]) {
-        document.getElementById("raceDetail").innerHTML = "<p id='text_error' class='text-red-500'>Race not found.</p>";
+        document.getElementById("resultsContainer").innerHTML = "<p id='text_error' class='text-red-500'>Race not found.</p>";
         return;
     }
 
