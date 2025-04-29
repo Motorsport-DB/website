@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayTeamStats(team);
     displayTeamResults(team);
     displayTeamPerformanceChart(team);
+    await generate_random_cards();
 });
 
 function displayTeamInfo(team) {

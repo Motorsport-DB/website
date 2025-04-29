@@ -78,5 +78,8 @@ $results = array_merge($results, searchInDirectory($driversDir, "driver"));
 $results = array_merge($results, searchInDirectory($teamsDir, "team"));
 $results = array_merge($results, searchChampionships($racesDir));
 
+// Remove duplicate entries based on the "url" key
+$results = array_values(array_unique($results, SORT_REGULAR));
+
 echo json_encode(array_slice($results, 0, 10));
 ?>
