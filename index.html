@@ -18,9 +18,10 @@
 
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="assets/js/theme.js"></script>
-    <script defer src="assets/js/common.js"></script>
+    <script src="assets/js/common/theme.js"></script>
+    <script defer src="assets/js/common/common.js"></script>
     <script defer src="assets/js/main.js"></script>
+    <script defer src="assets/js/common/proposal_cards.js"></script>
     <script defer src="assets/js/show_changelog.js"></script>
 </head>
 
@@ -50,23 +51,7 @@
 
         <section id="searchResults" class="grid grid-cols-1 md:grid-cols-3 gap-6"></section>
 
-        <section class="my-12">
-            <h2 class="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">Random Highlights</h2>
-            <div id="randomCards" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="p-6 rounded-xl bg-white dark:bg-gray-800 shadow dark:shadow-md animate-pulse">
-                    <h3 class="text-xl mb-4 text-gray-900 dark:text-gray-100">Loading...</h3>
-                    <div class="bg-gray-200 dark:bg-gray-700 h-32 rounded-lg"></div>
-                </div>
-                <div class="p-6 rounded-xl bg-white dark:bg-gray-800 shadow dark:shadow-md animate-pulse">
-                    <h3 class="text-xl mb-4 text-gray-900 dark:text-gray-100">Loading...</h3>
-                    <div class="bg-gray-200 dark:bg-gray-700 h-32 rounded-lg"></div>
-                </div>
-                <div class="p-6 rounded-xl bg-white dark:bg-gray-800 shadow dark:shadow-md animate-pulse">
-                    <h3 class="text-xl mb-4 text-gray-900 dark:text-gray-100">Loading...</h3>
-                    <div class="bg-gray-200 dark:bg-gray-700 h-32 rounded-lg"></div>
-                </div>
-            </div>
-        </section>
+        <section id="section_randomCards" class="my-12"></section>
 
         <section class="w-full md:w-3/5 mx-auto my-12">
             <h2 class="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-gray-100">Motorsport Statistics Overview</h2>

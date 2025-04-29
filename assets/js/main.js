@@ -22,56 +22,12 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
       }
   });
-
-  try {
-      let cards = await fetchData("assets/php/generate_index_cards.php", 0);
-      displayCards(cards);
-  } catch (Exception) {
-      console.error(Exception);
-  }
+  let cards = await generate_random_cards();
+    if (!cards) console.error("No cards found.");
+  loadStatsAndDrawChart(cards.statistics);
 });
 
-function displayCards(cards) {
-  const container = document.getElementById("randomCards");
-  if (!container) return;
 
-  const createCard = (title, content, link_href, picture_href) => `
-      <div class="p-4 bg-gray-100 dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-lg transition transform hover:scale-105 flex flex-col justify-around">
-          <h2 class="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">${title}</h2>
-          <div class="flex items-center">
-              <img src="${picture_href}" alt="${title}" class="w-20 h-20 object-contain rounded-xl mr-4">
-              <div>
-                  <a class="text-lg text-gray-700 dark:text-gray-300 hover:text-blue-500 hover:underline" href="${link_href}">
-                      ${content.replaceAll("_", " ")}
-                  </a>
-              </div>
-          </div>
-      </div>
-  `;
-
-  cards.driver.name = cards.driver.firstName + "_" + cards.driver.lastName;
-  container.innerHTML = `
-      ${createCard("Random Driver", 
-                  cards.driver.name || "Unknown", 
-                  "driver.html?id="+cards.driver.name,
-                  cards.driver.picture || "drivers/picture/default.png"
-                  )
-      }
-      ${createCard("Random Team",
-                  cards.team.name || "Unknown",
-                  "team.html?id="+cards.team.name,
-                  cards.team.picture || "teams/picture/default.png"
-                  )
-      }
-      ${createCard("Random Championship",
-                  cards.championship.name || "Unknown",
-                  "race.html?id="+cards.championship.name+"&year="+cards.championship.year,
-                  cards.championship.picture || "races/picture/default.png"
-                  )
-      }
-  `;
-  loadStatsAndDrawChart(cards.statistics);
-}
 
 async function loadStatsAndDrawChart(stats) {
   const ctx = document.getElementById('statsDonut').getContext('2d');

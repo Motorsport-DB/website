@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayDriverStats(driver);
     displayDriverResults(driver);
     displayDriverPerformanceChart(driver);
+    await generate_random_cards();
 });
 
 function displayMainDriverInfo(driver) {
