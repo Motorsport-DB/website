@@ -23,7 +23,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
   });
   let cards = await generate_random_cards();
-    if (!cards) console.error("No cards found.");
+    if (!cards) {
+        console.error("No cards found.");
+        return;
+    }
   loadStatsAndDrawChart(cards.statistics);
 });
 
