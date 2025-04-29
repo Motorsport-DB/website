@@ -14,9 +14,10 @@
 
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script defer src="assets/js/common.js"></script>
+    <script defer src="assets/js/common/common.js"></script>
     <script defer src="assets/js/race.js"></script>
-    <script src="assets/js/theme.js"></script>
+    <script src="assets/js/common/theme.js"></script>
+    <script defer src="assets/js/common/proposal_cards.js"></script>
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300 min-h-screen flex flex-col">
@@ -78,6 +79,8 @@
 
     <!-- All Race Results -->
     <div id="resultsContainer" class="mt-4"></div>
+
+    <section id="section_randomCards" class="my-12 flex-grow container mx-auto px-6 py-8"></section>
 
     <footer class="bg-white dark:bg-gray-800 border-t dark:border-gray-700 py-6 mt-10">
         <div class="container mx-auto text-center">

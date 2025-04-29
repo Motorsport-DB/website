@@ -1,0 +1,3 @@
+{
+    "REFRESH_TIME_PROPOSAL": [120, "This is the time in seconds to wait before refreshing the proposal list. (default: 120 seconds)"]
+}

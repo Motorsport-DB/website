@@ -3,24 +3,26 @@ header('Content-Type: application/json');
 
 $root = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..');
 $dataFile = $root . DIRECTORY_SEPARATOR . 'cards.json';
-$currentDate = date('Y-m-d');
+$currentDate = date('Y-m-d H:i:s');
+$configFile = $root . DIRECTORY_SEPARATOR . 'config.json';
 
 function returnCards($dataFile) {
     echo file_get_contents($dataFile);
     return file_get_contents($dataFile);
 }
-
-if (file_exists($dataFile)) {
-    $existingData = json_decode(file_get_contents($dataFile), true);
-    if (isset($existingData['generated_at'])) {
-        $generatedDate = $existingData['generated_at'];
-        if ($generatedDate === $currentDate) {
-            returnCards($dataFile);
-            exit;
+function getRandom($array) {
+    return $array[array_rand($array)];
+}
+function findImage($dir, $baseName) {
+    $extensions = ['jpg', 'jpeg', 'png', 'webp'];
+    foreach ($extensions as $ext) {
+        $file = $dir . DIRECTORY_SEPARATOR . "$baseName.$ext";
+        if (file_exists($file)) {
+            return str_replace(realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..'), '', realpath($file));
         }
     }
+    return null;
 }
-
 function loadJsonObjects($dir) {
     $files = glob($dir . DIRECTORY_SEPARATOR . '*.json');
     $objects = [];
@@ -30,7 +32,6 @@ function loadJsonObjects($dir) {
     }
     return $objects;
 }
-
 function loadRaces($root) {
     $championships = glob($root . DIRECTORY_SEPARATOR . 'races' . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
     $races = [];
@@ -50,19 +51,23 @@ function loadRaces($root) {
     return $races;
 }
 
-function getRandom($array) {
-    return $array[array_rand($array)];
-}
+if (file_exists($dataFile)) {
+    $existingData = json_decode(file_get_contents($dataFile), true);
+    if (isset($existingData['generated_at'])) {
+        $generatedDate = $existingData['generated_at'];
+        if (file_exists($configFile)) {
+            $config = json_decode(file_get_contents($configFile), true);
+            $timeBetweenRefresh = $config['REFRESH_TIME_PROPOSAL'][0] ?? 0;
 
-function findImage($dir, $baseName) {
-    $extensions = ['jpg', 'jpeg', 'png', 'webp'];
-    foreach ($extensions as $ext) {
-        $file = $dir . DIRECTORY_SEPARATOR . "$baseName.$ext";
-        if (file_exists($file)) {
-            return str_replace(realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..'), '', realpath($file));
+            $generatedTimestamp = strtotime($generatedDate);
+            $currentTimestamp = time();
+
+            if (($currentTimestamp - $generatedTimestamp) < $timeBetweenRefresh) {
+            returnCards($dataFile);
+            exit;
+            }
         }
     }
-    return null;
 }
 
 $drivers = loadJsonObjects($root . DIRECTORY_SEPARATOR . 'drivers');
@@ -106,7 +111,6 @@ if ($championship['name']) {
     $baseName = str_replace(' ', '_', $championship['name']);
     $championship['picture'] = findImage($root . DIRECTORY_SEPARATOR . 'races' . DIRECTORY_SEPARATOR . 'picture', $baseName);
 }
-
 $response = [
     'driver' => $driver,
     'team' => $team,
@@ -114,6 +118,7 @@ $response = [
     'statistics' => $statistics,
     'generated_at' => $currentDate
 ];
-
 file_put_contents($dataFile, json_encode($response, JSON_PRETTY_PRINT));
-returnCards($dataFile);
+
+
+returnCards($dataFile); // Return the generated data

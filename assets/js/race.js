@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayRaceStats(race);
     displayRaceResults(race);
     displayDriverComparisonChart(race);
+    await generate_random_cards();
 });
 
 function displayMainRaceInfo(race) {

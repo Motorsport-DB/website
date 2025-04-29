@@ -38,7 +38,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         container.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${allCommits.length} gap-6">
+        <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-8">Commit History (Changelog)</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${allCommits.length} gap-6 container mx-auto">
             ${allCommits.map(category => `
                 <div class="bg-gray-100 dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-lg border-t-4 border-blue-500 dark:border-blue-400 transition">
                     <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4 tracking-wide uppercase">${category.category}</h2>
