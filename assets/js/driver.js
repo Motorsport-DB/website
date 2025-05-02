@@ -13,6 +13,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayDriverStats(driver);
     displayDriverResults(driver);
     displayDriverPerformanceChart(driver);
+    // Differed loading of links to avoid blocking the main thread
+    if (window.innerWidth > 768) { // Only execute if the screen is not a tablet/phone
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+                create_links(document.getElementsByTagName("a"));
+            });
+        } else {
+            setTimeout(() => {
+                create_links(document.getElementsByTagName("a"));
+            }, 1000);
+        }
+    }
     await generate_random_cards();
 });
 
@@ -35,13 +47,15 @@ function displayDriverResults(driver) {
             const standingHTML = standing ? `<p class="text-sm text-blue-500 dark:text-blue-400 mt-2">Standing: P${standing.position} • ${standing.points} points</p>` : "";
 
             let seasonHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 my-8 shadow-md border border-gray-200 dark:border-gray-700">
-                <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4">
-                    <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replaceAll("_", " ")}</a>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 my-8 shadow-md border border-gray-200 dark:border-gray-700 z-0">
+                <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4 z-0">
+                    <span class="relative group">
+                        <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replaceAll("_", " ")}</a>
+                    </span>
                 </h2>
                 ${standingHTML}
-                <div class="overflow-x-auto mt-6">
-                    <table class="min-w-full table-auto text-sm text-gray-800 dark:text-gray-200">
+                <div class="mt-6 relative z-0 overflow-x-auto sm:overflow-visible">
+                    <table class="min-w-full table-auto text-sm text-gray-800 dark:text-gray-200 relative z-10">
                         <thead class="bg-blue-100 dark:bg-gray-700 text-blue-700 dark:text-blue-300">
                             <tr>
                                 <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Race</th>
@@ -81,8 +95,10 @@ function displayDriverResults(driver) {
                         <td class="p-3">${data.session}</td>
                         <td class="p-3">${data.position ? `P${data.position}` : "N/A"}</td>
                         <td class="p-3">${data.fastest_lap ?? "N/A"}</td>
-                        <td class="p-3">
-                            <a href="team.html?id=${data.team}" class="text-blue-600 dark:text-blue-400 hover:underline">${data.team?.replaceAll("_", " ") ?? "N/A"}</a>
+                        <td class="p-3 relative group min-w-[8rem] overflow-visible z-30">
+                            <a href="team.html?id=${data.team}" class="text-blue-600 dark:text-blue-400 hover:underline">
+                                ${data.team?.replaceAll("_", " ") ?? "N/A"}
+                            </a>
                         </td>
                         <td class="p-3">
                             <button onclick="toggleDetails('${rowId}')" class="text-blue-600 dark:text-blue-400 hover:underline">Show</button>
