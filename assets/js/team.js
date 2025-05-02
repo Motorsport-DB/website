@@ -19,6 +19,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayTeamStats(team);
     displayTeamResults(team);
     displayTeamPerformanceChart(team);
+    // Differed loading of links to avoid blocking the main thread
+    if (window.innerWidth > 768) { // Only execute if the screen is not a tablet/phone
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+                create_links(document.getElementsByTagName("a"));
+            });
+        } else {
+            setTimeout(() => {
+                create_links(document.getElementsByTagName("a"));
+            }, 1000);
+        }
+    }
     await generate_random_cards();
 });
 
@@ -45,7 +57,7 @@ function displayTeamInfo(team) {
             <h3 class="text-lg font-semibold mt-4 text-gray-800 dark:text-gray-200">Previous Teams</h3>
             <ul class="list-disc list-inside text-gray-800 dark:text-gray-300">
                 ${team.previous.flat().map(previousTeam => `
-                <li>
+                <li class="relative group">
                     <a ${previousTeam == "?" ? 'href=#' : `href="team.html?id=${previousTeam}"`} class="text-blue-600 dark:text-blue-400 hover:underline">
                         ${previousTeam.replaceAll("_", " ")}
                     </a>
@@ -62,7 +74,7 @@ function displayTeamInfo(team) {
                 <h3 class="text-lg font-semibold mt-4 text-gray-800 dark:text-gray-200">Next Teams</h3>
                 <ul class="list-disc list-inside text-gray-800 dark:text-gray-300">
                     ${team.next.flat().map(nextTeam => `
-                        <li>
+                        <li class="relative group">
                             <a ${nextTeam == "?" ? 'href=#' : `href="team.html?id=${nextTeam}"`} class="text-blue-600 dark:text-blue-400 hover:underline">
                                 ${nextTeam.replaceAll("_", " ")}
                             </a>
@@ -84,13 +96,15 @@ function displayTeamResults(team) {
             const standingHTML = standing ? `<p class="text-sm text-blue-500 mt-2">Standing: P${standing.position} • ${standing.points} points</p>` : "";
 
             let seasonHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 my-8 shadow-md border border-gray-200 dark:border-gray-700">
-                <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4">
-                    <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replaceAll("_", " ")}</a>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 my-8 shadow-md border border-gray-200 dark:border-gray-700 z-0">
+                <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4 z-0">
+                    <span class="relative group">
+                        <a href="race.html?id=${championship}&year=${season}" class="hover:underline">${season} - ${championship.replaceAll("_", " ")}</a>
+                    </span>
                 </h2>
                 ${standingHTML}
-                <div class="overflow-x-auto mt-6">
-                    <table class="min-w-full table-auto text-sm text-gray-800 dark:text-gray-300">
+                <div class="mt-6 relative z-0 overflow-x-auto sm:overflow-visible">
+                    <table class="min-w-full table-auto text-sm text-gray-800 dark:text-gray-300 relative z-10">
                         <thead class="bg-blue-100 dark:bg-gray-700 text-blue-700 dark:text-blue-300">
                             <tr>
                                 <th class="p-3 text-left border-b border-gray-300 dark:border-gray-600">Event</th>
@@ -127,7 +141,9 @@ function displayTeamResults(team) {
                             <td class="p-3">${position !== "N/A" ? `P${position}` : position}</td>
                             <td class="p-3">${fastestLap}</td>
                             <td class="p-3">
-                                ${details.drivers ? details.drivers.map(driver => `<a class="text-blue-600 dark:text-blue-400 hover:underline" href="driver.html?id=${driver}">${driver.replaceAll("_", " ")}</a>`).join(", ") : "N/A"}
+                                <ul>
+                                    ${details.drivers ? details.drivers.map(driver => `<li class="relative group"><a class="text-blue-600 dark:text-blue-400 hover:underline" href="driver.html?id=${driver}">${driver.replaceAll("_", " ")}</a></li>`).join("") : "N/A"}
+                                </ul>
                             </td>
                             <td class="p-3">
                                 <button onclick="toggleDetails('${rowId}')" class="text-blue-600 dark:text-blue-400 hover:underline">Show</button>

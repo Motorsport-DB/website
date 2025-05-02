@@ -14,6 +14,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayRaceStats(race);
     displayRaceResults(race);
     displayDriverComparisonChart(race);
+    // Differed loading of links to avoid blocking the main thread
+    if (window.innerWidth > 768) { // Only execute if the screen is not a tablet/phone
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+                create_links(document.getElementsByTagName("a"));
+            });
+        } else {
+            setTimeout(() => {
+                create_links(document.getElementsByTagName("a"));
+            }, 1000);
+        }
+    }
     await generate_random_cards();
 });
 
@@ -37,17 +49,17 @@ function displayRaceResults(race) {
             sessionDiv.classList.add("bg-white", "dark:bg-gray-800", "rounded-xl", "p-6", "my-8", "shadow-md", "border", "border-gray-200", "dark:border-gray-700");
 
             const eventTitle = document.createElement('h2');
-            eventTitle.classList.add("text-2xl", "font-bold", "text-blue-600", "dark:text-blue-400", "mb-4");
-            const eventLink = document.createElement('a');
-            eventLink.classList.add("hover:underline");
-            eventLink.textContent = `${event} - ${session}`;
-            eventTitle.appendChild(eventLink);
+            eventTitle.classList.add("text-2xl", "font-bold", "text-blue-600", "dark:text-blue-400", "mb-4", "z-0");
+            const eventSpan = document.createElement('span');
+            eventSpan.classList.add("relative", "group");
+            eventSpan.textContent = `${session} - ${event.replaceAll("_", " ")}`;
+            eventTitle.appendChild(eventSpan);
             sessionDiv.appendChild(eventTitle);
 
             const tableContainer = document.createElement('div');
-            tableContainer.classList.add("overflow-x-auto", "mt-6");
+            tableContainer.classList.add("mt-6", "relative", "z-0", "overflow-x-auto", "sm:overflow-visible");
             const table = document.createElement('table');
-            table.classList.add("min-w-full", "table-auto", "text-sm", "text-gray-800", "dark:text-gray-100");
+            table.classList.add("min-w-full", "table-auto", "text-sm", "text-gray-800", "dark:text-gray-100", "relative", "z-10");
 
             const thead = document.createElement('thead');
             thead.classList.add("bg-blue-100", "dark:bg-gray-700", "text-blue-700", "dark:text-blue-300");
@@ -81,7 +93,7 @@ function displayRaceResults(race) {
                 const fastestLap = data.fastest_lap ?? "N/A";
 
                 const drivers = data.drivers?.length
-                    ? data.drivers.map(driver => `<a class="text-blue-600 dark:text-blue-400 hover:underline" href="driver.html?id=${driver}">${driver.replaceAll("_", " ")}</a>`).join(", ")
+                    ? data.drivers.map(driver => `<span class="relative group"><a class="text-blue-600 dark:text-blue-400 hover:underline" href="driver.html?id=${driver}">${driver.replaceAll("_", " ")}</a></span>`).join(", ")
                     : "N/A";
 
                 const otherInfoHTML = Object.entries(data.other_info || {})
@@ -89,14 +101,14 @@ function displayRaceResults(race) {
                     .join("");
 
                 row.innerHTML = `
-                    <td class="p-3">${position}</td>
-                    <td class="p-3">${car}</td>
-                    <td class="p-3">
+                    <td class="p-3 w-1/12">${position}</td>
+                    <td class="p-3 w-1/12">${car}</td>
+                    <td class="p-3 relative group w-1/4 overflow-visible z-30">
                         <a class="text-blue-600 dark:text-blue-400 hover:underline" href="team.html?id=${data.team}">${teamName}</a>
                     </td>
-                    <td class="p-3">${drivers}</td>
-                    <td class="p-3">${fastestLap}</td>
-                    <td class="p-3">
+                    <td class="p-3 w-1/4">${drivers}</td>
+                    <td class="p-3 w-1/6">${fastestLap}</td>
+                    <td class="p-3 w-1/6">
                         <button class="text-blue-600 dark:text-blue-400 hover:underline" onclick="toggleDetails('${event}-${session}-${car}')">Show Details</button>
                         <span id="${event}-${session}-${car}" class="hidden ml-2 text-gray-600 dark:text-gray-400">${otherInfoHTML || "No additional info"}</span>
                     </td>
