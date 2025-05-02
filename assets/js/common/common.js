@@ -1,5 +1,3 @@
-let link = {};
-
 async function get_picture(FOLDER, ID) {
     try {
         const response = await fetch(`assets/php/get_picture.php?folder=${FOLDER}&id=${ID}`);
@@ -47,51 +45,46 @@ function displayFlagImage(country) {
     return `assets/flags/${country.toLowerCase().replace(/ /g, "_")}.png`;
 }
 
-async function create_links(BALISE) {
-    for (let i = 0; i < BALISE.length; i++) {
-        PAGE = BALISE[i].href.split(".")[0].split("/").pop();
-        if (!BALISE[i].href.includes("?")) {
-            continue;
-        }
-        try {
-            PARAMS = BALISE[i].href.split("?")[1].split("&").map(param => param.split("=")[1]);
-        } catch (error) {
-            console.error('Error parsing parameters:', error);
-        }
+async function create_links(elements) {
+    const cache = {};
 
+    for (const element of elements) {
+        const href = element.href;
+        if (!href.includes("?")) continue;
 
-        if (PARAMS.length === 0) {
-            continue;
-        }
+        const [page, query] = href.split("?").map((part, index) => index === 0 ? part.split("/").pop().split(".")[0] : part);
+        if (!query) continue;
 
-        let img_link = null;
-        switch (PAGE) {
-            case "index":
+        const params = query.split("&").map(param => param.split("=")[1]);
+        if (params.length === 0) continue;
+
+        if (page === "index") continue;
+
+        const folder = `${page}s`;
+        const id = params[0];
+
+        if (!cache[id]) {
+            try {
+                cache[id] = await get_picture(folder, id);
+            } catch (error) {
+                console.error(`Error fetching image for ID ${id}:`, error);
                 continue;
-            default:
-                let folder = PAGE+"s"; // Just add "s" to the page name
-                if (!link[PARAMS[0]]) {
-                    img_link = await get_picture(folder, PARAMS[0]);
-                    link[PARAMS[0]] = img_link;
-                } else {
-                    img_link = link[PARAMS[0]];
-                }
-                break;
+            }
         }
 
-        let tooltip = `
-        <!-- Tooltip image -->
-        <div class="absolute bottom-full mx-auto mb-2 w-48 h-48 
-            max-w-xs bg-white dark:bg-gray-800 border border-gray-300 
-            dark:border-gray-600 shadow-xl rounded-lg overflow-hidden 
-            opacity-0 group-hover:opacity-100 transition-opacity duration-300 
-            pointer-events-none z-50">
-            <img src="${img_link}" alt="Team logo" class="w-full h-full object-contain" />
-        </div>
+        const imgLink = cache[id];
+        if (!imgLink) continue;
+
+        const tooltip = `
+            <div class="absolute bottom-full mx-auto mb-2 w-48 h-48 
+                max-w-xs bg-white dark:bg-gray-800 border border-gray-300 
+                dark:border-gray-600 shadow-xl rounded-lg overflow-hidden 
+                opacity-0 group-hover:opacity-100 transition-opacity duration-300 
+                pointer-events-none z-50">
+                <img src="${imgLink}" alt="Team logo" class="w-full h-full object-contain" />
+            </div>
         `;
 
-        if (BALISE[i].parentElement) {
-            BALISE[i].parentElement.insertAdjacentHTML('beforeend', tooltip);
-        }
+        element.parentElement?.insertAdjacentHTML('beforeend', tooltip);
     }
 }
