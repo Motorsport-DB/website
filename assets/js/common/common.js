@@ -11,7 +11,6 @@ async function get_picture(FOLDER, ID) {
         return null;
     }
 }
-
 async function fetchData(endpoint, id, year = null) {
     try {
         const response = await fetch(`${endpoint}?id=${id}${year ? `&year=${year}` : ""}`);

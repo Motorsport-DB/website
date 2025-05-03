@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayTeamStats(team);
     displayTeamResults(team);
     displayTeamPerformanceChart(team);
-    // Differed loading of links to avoid blocking the main thread
+    // Deffered loading of links to avoid blocking the main thread
     if (window.innerWidth > 768) { // Only execute if the screen is not a tablet/phone
         if ('requestIdleCallback' in window) {
             requestIdleCallback(() => {
