@@ -17,8 +17,6 @@ async function fetchData(endpoint, id, year = null) {
         return await response.json();
     } catch (Exception) {
         console.error(Exception);
-        const text = await response?.text();
-        console.warn(text);
         return {};
     }
 }
@@ -29,8 +27,12 @@ function getAge(birthDate, deathDate) {
         const death = deathDate ? new Date(deathDate) : new Date();
         return death.getFullYear() - birth.getFullYear();
     } catch (Exception) {
-        const end = deathDate ? end : new Date().getFullYear();
-        return parseInt(birthDate) - parseInt(end);
+        if (/^\d{4}$/.test(birthDate) && (!deathDate || /^\d{4}$/.test(deathDate))) {
+            const end = deathDate ? parseInt(deathDate) : new Date().getFullYear();
+            return end - parseInt(birthDate);
+        } else {
+            throw new Error("Invalid date format. Expected 'YYYY' or 'YYYY-MM-DD'.");
+        }
     }
 }
 
