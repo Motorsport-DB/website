@@ -21,7 +21,11 @@ async function generate_random_cards() {
     let cards = null;
     try {
         cards = await fetchData("assets/php/generate_index_cards.php", 0);
-        displayCards(cards);
+        if (cards && typeof cards === 'object' && Object.keys(cards).length > 0) {
+            displayCards(cards);
+        } else {
+            console.error("No cards data received.");
+        }
     } catch (Exception) {
         console.error(Exception);
     }
@@ -30,6 +34,14 @@ async function generate_random_cards() {
 
 (function() {
     function displayCards(cards) {
+        if (typeof cards === "string") {
+            try {
+                cards = JSON.parse(cards);
+            } catch (error) {
+                console.error("Failed to parse cards JSON:", error);
+                return;
+            }
+        }
         const container = document.getElementById("randomCards");
         if (!container) return;
 
@@ -44,7 +56,6 @@ async function generate_random_cards() {
                 </div>
             </a>
         `;
-
         cards.driver.name = cards.driver.firstName + "_" + cards.driver.lastName;
         container.innerHTML = `
             ${createCard("Random Driver",

@@ -14,6 +14,9 @@ async function get_picture(FOLDER, ID) {
 async function fetchData(endpoint, id, year = null) {
     try {
         const response = await fetch(`${endpoint}?id=${id}${year ? `&year=${year}` : ""}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return await response.json();
     } catch (Exception) {
         console.error(Exception);
@@ -82,7 +85,7 @@ async function create_links(elements) {
                 dark:border-gray-600 shadow-xl rounded-lg overflow-hidden 
                 opacity-0 group-hover:opacity-100 transition-opacity duration-300 
                 pointer-events-none z-50">
-                <img src="${imgLink}" alt="Team logo" class="w-full h-full object-contain" />
+                <img src="${imgLink}" alt="Team logo" class="w-full h-full object-contain aspect-[3/2]" />
             </div>
         `;
 
