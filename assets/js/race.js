@@ -304,15 +304,23 @@ function displayRaceStats(race) {
                     totalLaps += parseInt(car.other_info?.Laps || 0);
                 }
                 if (car.fastest_lap) {
-                    const lapTimeParts = car.fastest_lap.split(":");
-                    const lapTime = lapTimeParts.length === 2 
-                        ? parseInt(lapTimeParts[0]) * 60 + parseFloat(lapTimeParts[1]) 
-                        : parseFloat(car.fastest_lap);
-                    if (lapTime < fastestLapTime) {
-                        fastestLapTime = lapTime;
-                        display_fastest_lap = car.fastest_lap;
-                        fastestLapDriver = car.drivers?.[0]?.replaceAll("_", " ") || "Unknown";
-                        fastestLapCircuit = `${event} <p>(${session})</p>`;
+                    if (
+                        car.fastest_lap &&
+                        car.fastest_lap !== "0.000" &&
+                        car.fastest_lap !== "0:00.000" &&
+                        car.fastest_lap !== "0:00" &&
+                        car.fastest_lap !== "0"
+                    ) {
+                        const lapTimeParts = car.fastest_lap.split(":");
+                        const lapTime = lapTimeParts.length === 2 
+                            ? parseInt(lapTimeParts[0]) * 60 + parseFloat(lapTimeParts[1]) 
+                            : parseFloat(car.fastest_lap);
+                        if (lapTime > 0 && lapTime < fastestLapTime) {
+                            fastestLapTime = lapTime;
+                            display_fastest_lap = car.fastest_lap;
+                            fastestLapDriver = car.drivers?.[0]?.replaceAll("_", " ") || "Unknown";
+                            fastestLapCircuit = `${event} <p>(${session})</p>`;
+                        }
                     }
                 }
             });
@@ -321,7 +329,15 @@ function displayRaceStats(race) {
 
     document.getElementById("totalRaces").innerText = totalRaces;
     document.getElementById("totalLaps").innerText = totalLaps;
-    document.getElementById("fastestLap").innerHTML = display_fastest_lap !== Infinity
-        ? `<strong>${display_fastest_lap}</strong> by ${fastestLapDriver} <p>${fastestLapCircuit}</p>`
-        : "N/A";
+    if (
+        typeof display_fastest_lap === "string" &&
+        display_fastest_lap.trim() !== "" &&
+        fastestLapDriver &&
+        fastestLapDriver !== "Unknown"
+    ) {
+        document.getElementById("fastestLap").innerHTML =
+            `<strong>${display_fastest_lap}</strong> by ${fastestLapDriver} <p>${fastestLapCircuit}</p>`;
+    } else {
+        document.getElementById("fastestLap").innerHTML = "N/A";
+    }
 }
