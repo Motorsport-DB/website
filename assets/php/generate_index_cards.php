@@ -1,5 +1,4 @@
 <?php
-ini_set('memory_limit', '1M'); // Increase memory limit
 header('Content-Type: application/json');
 
 $root = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..');
@@ -24,12 +23,29 @@ function findImage($dir, $baseName) {
     }
     return null;
 }
-function loadJsonObjects($dir) {
+function loadJsonObjects($dir, $type) {
     $files = glob($dir . DIRECTORY_SEPARATOR . '*.json');
     $objects = [];
     foreach ($files as $file) {
-        $content = json_decode(file_get_contents($file), true);
-        if ($content) $objects[] = $content;
+        $filename = basename($file, '.json');
+        if ($dir === realpath(dirname($file))) { // fallback, but not strictly needed
+            // nothing
+        }
+        if ($type === "driver" && strpos($filename, '_') !== false) {
+            // For drivers: filename is "FirstName_LastName.json"
+            list($firstName, $lastName) = explode('_', $filename, 2);
+            $objects[] = [
+                'firstName' => $firstName,
+                'lastName' => $lastName
+            ];
+        } else if ($type === "team") {
+            // For teams: filename is "TeamName.json"
+            $objects[] = [
+                'name' => $filename
+            ];
+        } else {
+            // NOT IMPLEMENTED: For other types, you can customize this logic
+        }
     }
     return $objects;
 }
@@ -44,7 +60,7 @@ function loadRaces($root) {
             $races[] = [
                 'championship_folder' => $championshipName,
                 'year' => $year,
-                'name' => $championshipName // ou autre champ si besoin
+                'name' => $championshipName
             ];
         }
     }
@@ -70,8 +86,8 @@ if (file_exists($dataFile)) {
     }
 }
 
-$drivers = loadJsonObjects($root . DIRECTORY_SEPARATOR . 'drivers');
-$teams = loadJsonObjects($root . DIRECTORY_SEPARATOR . 'teams');
+$drivers = loadJsonObjects($root . DIRECTORY_SEPARATOR . 'drivers', "driver");
+$teams = loadJsonObjects($root . DIRECTORY_SEPARATOR . 'teams', "team");
 $races = loadRaces($root);
 
 $statistics = [
