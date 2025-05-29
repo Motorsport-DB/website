@@ -1,5 +1,4 @@
 <?php
-ini_set('memory_limit', '256M'); // Increase memory limit
 header('Content-Type: application/json');
 
 $root = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..');
@@ -40,13 +39,12 @@ function loadRaces($root) {
         $championshipName = basename($championshipDir);
         $yearFiles = glob($championshipDir . DIRECTORY_SEPARATOR . '*.json');
         foreach ($yearFiles as $yearFile) {
-            $content = json_decode(file_get_contents($yearFile), true);
             $year = basename($yearFile, '.json');
-            if ($content) {
-                $content['year'] = $year;
-                $content['championship_folder'] = $championshipName;
-                $races[] = $content;
-            }
+            $races[] = [
+                'championship_folder' => $championshipName,
+                'year' => $year,
+                'name' => $championshipName // ou autre champ si besoin
+            ];
         }
     }
     return $races;
