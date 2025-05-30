@@ -6,7 +6,7 @@ $teamsDir = 'teams/';
 if (isset($_GET['id'])) {
     $teamId = $_GET['id'];
 
-    if (preg_match('/[^a-zA-Z0-9_ Áóáíì\'-]/', $teamId)) {
+    if (preg_match('/[\/.~`$<>|]/', $teamId)) {
         http_response_code(401);
         echo json_encode(["error" => "Invalid team ID"]);
         exit;
