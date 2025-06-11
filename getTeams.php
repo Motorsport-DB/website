@@ -17,7 +17,7 @@ if (isset($_GET['id'])) {
     if ($teamFile && str_starts_with($teamFile, realpath($teamsDir))) {
         if (file_exists($teamFile)) {
             $data = json_decode(file_get_contents($teamFile), true);
-            $data["picture"] = file_exists( "teams/picture/$teamId.png") ? "teams/picture/$teamId.png" : (file_exists( "teams/picture/$teamId.jpg") ? "teams/picture/$teamId.jpg" : "teams/picture/default.png");
+            $data["picture"] = file_exists( "teams/picture/$teamId.png") ? "teams/picture/$teamId.png" : (file_exists( "teams/picture/$teamId.jpg") ? "teams/picture/$teamId.jpg" : null);
             echo json_encode([$data]);
         } else {
             http_response_code(404);

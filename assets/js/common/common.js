@@ -23,6 +23,21 @@ async function fetchData(endpoint, id, year = null) {
         return {};
     }
 }
+async function setData(endpoint, data) {
+    try {
+        const response = await fetch(endpoint, {
+            method: "POST",
+            body: data
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (Exception) {
+        console.error(Exception);
+        return {};
+    }
+}
 
 function getAge(birthDate, deathDate) {
     try {

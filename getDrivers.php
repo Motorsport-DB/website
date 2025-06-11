@@ -17,7 +17,7 @@ if (isset($_GET['id'])) {
     if ($driverFile && str_starts_with($driverFile, realpath($driversDir))) {
         if (file_exists($driverFile)) {
             $data = json_decode(file_get_contents($driverFile), true, 512, JSON_OBJECT_AS_ARRAY);
-            $data["picture"] = file_exists( "drivers/picture/$driverId.png") ? "drivers/picture/$driverId.png" : (file_exists( "drivers/picture/$driverId.jpg") ? "drivers/picture/$driverId.jpg" : "drivers/picture/default.png");
+            $data["picture"] = file_exists( "drivers/picture/$driverId.png") ? "drivers/picture/$driverId.png" : (file_exists( "drivers/picture/$driverId.jpg") ? "drivers/picture/$driverId.jpg" : null);
             echo json_encode([$data]);
         } else {
             http_response_code(404);

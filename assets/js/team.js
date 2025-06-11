@@ -1,3 +1,5 @@
+let proposalModification = false;
+
 document.addEventListener("DOMContentLoaded", async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const teamId = urlParams.get("id");
@@ -19,6 +21,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayTeamStats(team);
     displayTeamResults(team);
     displayTeamPerformanceChart(team);
+    let team_proposal = await fetchTeamProposal(team);
+    if (team_proposal != null) displayProposalInfo(team, team_proposal);
+
+    document.getElementById("edit-team-btn").addEventListener("click", () => {
+        proposalModification = !proposalModification;
+        displayModifProposal(team);
+    });
+    document.getElementById("save-team-btn").addEventListener("click", async () => {
+        saveModifProposal(team);
+    });
+
     // Deffered loading of links to avoid blocking the main thread
     if (window.innerWidth > 768) { // Only execute if the screen is not a tablet/phone
         if ('requestIdleCallback' in window) {
@@ -34,55 +47,128 @@ document.addEventListener("DOMContentLoaded", async () => {
     await generate_random_cards();
 });
 
+async function displayProposalInfo(team, team_proposal) {
+    if (team_proposal.picture && !team.picture ) {
+        const pictureElem = document.getElementById("team-picture");
+        pictureElem.classList.remove("border-blue-600", "dark:border-blue-400");
+        pictureElem.classList.add("border-yellow-500", "border-4");
+        pictureElem.src = team_proposal.picture;
+        team.picture = team_proposal.picture;
+
+        pictureElem.style.cursor = "pointer";
+        pictureElem.addEventListener("click", () => {
+            alert("This picture is a user proposal and has not been verified.");
+        });
+    }
+
+    if (team_proposal.country && !team.country) {
+        const countryElem = document.getElementById("team-country-img");
+        countryElem.src = "assets/flags/" + team_proposal.country.toLowerCase() + ".png";
+        countryElem.classList.remove("border-blue-600", "dark:border-blue-400");
+        countryElem.classList.add("border-yellow-500", "border-4", "rounded-full");
+        team.country = team_proposal.country;
+        
+        countryElem.style.cursor = "pointer";
+        countryElem.addEventListener("click", () => {
+            alert("This country is a user proposal and has not been verified.");
+        });
+    }
+
+    document.getElementById("warning-information").classList.remove("hidden");
+}
+
+async function fetchTeamProposal(team){
+  try {
+    const response = await fetch(`assets/php/proposal/getTeam.php?id=${encodeURIComponent(team.name)}`);
+    if (!response.ok) {
+      console.error(`Request failed with status ${response.status}`);
+      return null;
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      console.warn("Server responded with success: false.");
+      return null;
+    }
+
+    const hasData = result.data && Object.keys(result.data).length > 0;
+    const hasPicture = result.picture && typeof result.picture === "string";
+
+    if (!hasData && !hasPicture) {
+        return null;
+    }
+    return result.data;
+  } catch (error) {
+    console.error("Error fetching proposal data:", error);
+    return null;
+  }
+}
+
+
+async function saveModifProposal(team) {
+    let formData = new FormData();
+    let team_picture = document.getElementById("team-picture");
+    if(document.getElementById("team-country-img").value != "" && document.getElementById("team-country-img").value != undefined) formData.append("country", document.getElementById("team-country-img").value);
+    if (team_picture && team_picture.type === "file" && team_picture.files.length > 0) formData.append("picture", team_picture.files[0]);
+
+    if ([...formData.entries()].length >= 1) {
+        formData.append("id", team.name);
+
+        let data = await setData("assets/php/proposal/setTeam.php", formData);
+        console.log(data);
+        alert(data.success ? "Proposal saved!" : "Error");
+        window.location.reload();
+    } else {
+        console.log(formData);
+        console.log("No changes made to the team profile.");
+    }
+}
+
+function displayModifProposal(team) {
+    if (proposalModification) {
+        document.getElementById("save-team-btn").classList.remove("hidden");
+        document.getElementById("edit-team-btn").innerText = "Cancel";
+        if (!team.country) {
+            document.getElementById("team-country-img").outerHTML = `
+                <input type="text" id="team-country-img" placeholder="Country" class="border p-1 rounded" />
+            `;
+        }
+        if (!team.picture) {
+            document.getElementById("team-picture").outerHTML = `
+                <input type="file" id="team-picture" accept="image/*" class="border p-1 rounded" />
+            `;
+        }
+    } else {
+        document.getElementById("save-team-btn").classList.add("hidden");
+        document.getElementById("edit-team-btn").innerText = "Edit";
+        document.getElementById("team-country-img").outerHTML = `
+            <img id="team-country-img" src="assets/flags/default.png" alt="Team Country"
+                class="inline-block h-6 w-6 m-2 object-contain">
+        `;
+        document.getElementById("team-picture").outerHTML = `
+            <img id="team-picture" src="teams/picture/default.png" alt="Team Picture"
+                class="w-48 h-48 object-contain rounded-full border-4 border-blue-600 dark:border-blue-400">
+        `;
+        window.location.reload();
+    }
+}
+
 function displayTeamInfo(team) {
     document.getElementById("team-name").innerText = team.name.replaceAll("_", " ");
     if (team.country) document.getElementById("team-country-img").src = "assets/flags/" + team.country.toLowerCase() + ".png";
-    if (team.picture) document.getElementById("team-logo").src = team.picture;
+    if (team.picture) document.getElementById("team-picture").src = team.picture;
 
-    document.getElementById("team-founded").innerText = "";
-    for (let i = 0; i < team.creationDate.length; i++) {
-        let age = 0;
-        try {
-            age = getAge(team.creationDate[i], team.endDate[i]);
-        } catch (error) {
-            age = getAge(team.creationDate[i]);
-        }
-        document.getElementById("team-founded").innerText += team.creationDate[i] + " (" + age + " years) \n";
-    }
-
-    const otherTeamsContainer = document.getElementById("other_teams");
-    if (team.previous && team.previous.length > 0) {
-        otherTeamsContainer.innerHTML += `
-            <div>
-            <h3 class="text-lg font-semibold mt-4 text-gray-800 dark:text-gray-200">Previous Teams</h3>
-            <ul class="list-disc list-inside text-gray-800 dark:text-gray-300">
-                ${team.previous.flat().map(previousTeam => `
-                <li class="relative group">
-                    <a ${previousTeam == "?" ? 'href=#' : `href="team.html?id=${previousTeam}"`} class="text-blue-600 dark:text-blue-400 hover:underline">
-                        ${previousTeam.replaceAll("_", " ")}
-                    </a>
-                </li>
-                `).join("")}
-            </ul>
-            </div>
-        `;
-    }
-
-    if (team.next && team.next.length > 0) {
-        otherTeamsContainer.innerHTML += `
-            <div>
-                <h3 class="text-lg font-semibold mt-4 text-gray-800 dark:text-gray-200">Next Teams</h3>
-                <ul class="list-disc list-inside text-gray-800 dark:text-gray-300">
-                    ${team.next.flat().map(nextTeam => `
-                        <li class="relative group">
-                            <a ${nextTeam == "?" ? 'href=#' : `href="team.html?id=${nextTeam}"`} class="text-blue-600 dark:text-blue-400 hover:underline">
-                                ${nextTeam.replaceAll("_", " ")}
-                            </a>
-                        </li>
-                    `).join("")}
-                </ul>
-            </div>
-        `;
+    // Calculate creationDate and endDate from seasons
+    const seasons = Object.keys(team.seasons).map(Number).filter(y => !isNaN(y));
+    let creationDate = "";
+    let endDate = "";
+    if (seasons.length > 0) {
+        creationDate = Math.min(...seasons).toString();
+        endDate = Math.max(...seasons).toString();
+        document.getElementById("team-founded").innerText = `${creationDate} (${getAge(creationDate, endDate)} years)`;
+    } else {
+        document.getElementById("team-founded").innerText = "Unknown";
     }
 }
 
