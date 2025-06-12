@@ -1,12 +1,45 @@
 <?php
 header('Content-Type: application/json');
 
+function hasAtLeast20Races($data) {
+    $count = 0;
+    if (!isset($data['seasons']) || !is_array($data['seasons'])) return false;
+    foreach ($data['seasons'] as $season) {
+        foreach ($season as $competition) {
+            foreach ($competition as $race) {
+                $count += count($race);
+            }
+        }
+    }
+    return $count >= 30;
+}
+
+function isActiveOrLastYear($data) {
+    if (!isset($data['seasons']) || !is_array($data['seasons'])) return false;
+    $years = array_keys($data['seasons']);
+    if (empty($years)) return false;
+    $currentYear = (int)date('Y');
+    $lastYear = $currentYear - 1;
+    foreach ($years as $year) {
+        if ((int)$year === $currentYear || (int)$year === $lastYear) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function getAllDrivers() {
     $dir = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'drivers/';
     $files = glob($dir . '*.json');
-    return array_map(function($file) {
-        return pathinfo($file, PATHINFO_FILENAME);
-    }, $files);
+    $validDrivers = [];
+    foreach ($files as $file) {
+        $data = json_decode(file_get_contents($file), true);
+        if (!$data) continue;
+        if (hasAtLeast20Races($data) && isActiveOrLastYear($data)) {
+            $validDrivers[] = pathinfo($file, PATHINFO_FILENAME);
+        }
+    }
+    return $validDrivers;
 }
 
 function normalize($str) {
@@ -36,10 +69,27 @@ function getDailyDriver() {
     $name = pathinfo($filename, PATHINFO_FILENAME);
     [$firstname, $lastname] = explode('_', $name, 2);
 
-    echo json_encode([
+    $result = [
         'firstname' => $firstname,
-        'lastname' => $lastname
-    ]);
+        'lastname' => $lastname,
+        'date' => date('Y-m-d')
+    ];
+
+    // Save to /driverdle.json at the web root
+    $rootFile = $_SERVER['DOCUMENT_ROOT'] . '/driverdle.json';
+    file_put_contents($rootFile, json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+    echo json_encode($result);
 }
 
+$rootFile = $_SERVER['DOCUMENT_ROOT'] . '/driverdle.json';
+
+if (file_exists($rootFile)) {
+    $json = json_decode(file_get_contents($rootFile), true);
+    $today = date('Y-m-d');
+    if (isset($json['date']) && $json['date'] === $today) {
+        echo json_encode($json);
+        exit;
+    }
+}
 getDailyDriver();
