@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
       for (let j = 0; j < normalized.length; j++) {
         const char = normalized[j];
         const cell = document.createElement("div");
-        cell.className = "w-10 h-10 border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-xl font-bold flex items-center justify-center uppercase rounded shadow";
+        cell.className = "w-8 h-8 sm:w-10 sm:h-10 border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-base sm:text-xl font-bold flex items-center justify-center uppercase rounded shadow";
         if (!/[A-Z]/.test(char)) {
           cell.textContent = char;
           cell.classList.add("bg-gray-300", "dark:bg-gray-700", "text-gray-500");
