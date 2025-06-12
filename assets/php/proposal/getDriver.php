@@ -7,7 +7,10 @@ $picturesDir = $proposalDir . '/pictures';
 
 // Retrieve and validate the ID
 $id = $_GET['id'] ?? null;
-if (!$id || !preg_match('/^[a-zA-Z0-9_\-]+$/', $id)) {
+if (
+    !$id ||
+    preg_match('/[\/.~`$<>|]/', $id)
+) {
     echo json_encode(['success' => false, 'message' => 'Invalid or missing id.']);
     exit;
 }
@@ -18,8 +21,8 @@ if (count($parts) < 2) {
     echo json_encode(['success' => false, 'message' => 'Invalid id format.']);
     exit;
 }
-$firstName = preg_replace('/[^a-zA-Z0-9\-]/', '', $parts[0]);
-$lastName = preg_replace('/[^a-zA-Z0-9\-]/', '', $parts[1]);
+$firstName = preg_replace('/[\/.~`$<>|]/', '', $parts[0]);
+$lastName = preg_replace('/[\/.~`$<>|]/', '', $parts[1]);
 
 // Paths
 $jsonPath = $proposalDir . "/{$firstName}_{$lastName}.json";

@@ -90,7 +90,7 @@ async function displayProposalInfo(driver, driver_proposal) {
 
     if (driver_proposal.dateOfDeath && !driver.dateOfDeath) {
         const dodElem = document.getElementById("driver-dod");
-        dodElem.innerText = `${driver_proposal.dateOfDeath} (${getAge(driver_proposal.dateOfBirth, driver.dateOfDeath)} years old) ⚠️`;
+        dodElem.innerText = `${driver_proposal.dateOfDeath} ⚠️`;
         dodElem.classList.add(
             "border-4",
             "border-yellow-500",
@@ -120,6 +120,7 @@ async function fetchDriverProposal(driver){
 
     if (!result.success) {
       console.warn("Server responded with success: false.");
+      console.warn("Response data:", result);
       return null;
     }
 
@@ -141,12 +142,11 @@ async function saveModifProposal(driver) {
     let formData = new FormData();
     let driver_picture = document.getElementById("driver-picture");
     if(document.getElementById("driver-country-img").value != "" && document.getElementById("driver-country-img").value != undefined) formData.append("country", document.getElementById("driver-country-img").value);
-    try {
-        if(document.getElementById("input-dob").value != "") formData.append("dateOfBirth", document.getElementById("input-dob").value);
-        if(document.getElementById("input-dod").value != "") formData.append("dateOfDeath", document.getElementById("input-dod").value);
-    } catch (error) {
-        console.warn("Error retrieving date of birth or death:", error);
-    }
+    try { if(document.getElementById("input-dob").value != "") formData.append("dateOfBirth", document.getElementById("input-dob").value); } catch (error) {
+        console.warn("Error retrieving date of birth:", error); }
+    try { if(document.getElementById("input-dod").value != "") formData.append("dateOfDeath", document.getElementById("input-dod").value); } catch (error) {
+        console.warn("Error retrieving date of death:", error); }
+
     if (driver_picture && driver_picture.type === "file" && driver_picture.files.length > 0) formData.append("picture", driver_picture.files[0]);
 
     if ([...formData.entries()].length >= 1) {
