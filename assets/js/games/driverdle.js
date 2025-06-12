@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (attempts.length >= maxAttempts) {
       showEndMessage(false);
-    } else if (attempts.includes(normalizedLastName)) {
+    } else if (attempts.some(a => normalize(a) === normalize(solution.lastname))) {
       showEndMessage(true);
     }
   }
@@ -143,7 +143,6 @@ document.addEventListener("DOMContentLoaded", () => {
     resultBox.classList.remove("hidden");
 
     const id = (solution.raw || `${solution.firstname}_${solution.lastname}`)
-      .toLowerCase()
       .replace(/[\s\-'.]/g, "_");
 
     const link = `/driver.html?id=${id}`;

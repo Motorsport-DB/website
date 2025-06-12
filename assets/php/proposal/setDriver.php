@@ -8,7 +8,10 @@ if (empty($id)) {
     echo json_encode(['success' => false, 'message' => 'Missing driver id.']);
     exit;
 }
-$id = preg_replace('/[^a-zA-Z0-9_\-]/', '', $id); // sanitize
+if (preg_match('/[\/.~`$<>|]/', $id)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid driver id.']);
+    exit;
+}
 
 $proposalDir = $root . "/proposal";
 $picturesDir = $proposalDir . "/pictures";
