@@ -37,43 +37,33 @@
   </header>
 
   <main class="flex-grow container mx-auto px-6 py-8 flex flex-col items-center space-y-8">
-<div class="max-w-xl mx-auto mt-10 p-4 bg-white dark:bg-gray-900 rounded-xl shadow">
-  <h2 class="text-2xl font-bold text-center mb-6">Driverdle 🏁</h2>
+    <div class="max-w-xl w-full mx-auto mt-6 p-2 sm:p-4 bg-white dark:bg-gray-900 rounded-xl shadow">
+      <h2 class="text-2xl font-bold text-center mb-4 sm:mb-6">Driverdle 🏁</h2>
 
-  <!-- Grille de jeu (générée dynamiquement via JS) -->
-  <div id="driverdle-board" class="space-y-2 mb-6"></div>
+      <!-- Game grid (dynamically generated via JS) -->
+      <div id="driverdle-board" class="space-y-2 mb-4 sm:mb-6"></div>
 
-  <!-- Formulaire de saisie -->
-  <form id="guess-form" class="flex items-center justify-center space-x-2 mb-6">
-    <input
-      type="text"
-      id="guess-input"
-      class="w-full max-w-sm px-4 py-2 text-center text-xl border border-gray-300 rounded shadow-sm dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      placeholder="Tape ton guess ici"
-      autocomplete="off"
-    />
-    <button
-      type="submit"
-      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow"
-    >
-      OK
-    </button>
-  </form>
+      <!-- Input form -->
+      <form id="guess-form" class="flex flex-col sm:flex-row items-center justify-center gap-2 mb-4 sm:mb-6">
+        <input type="text" id="guess-input"
+          class="w-full px-3 py-2 text-center text-lg sm:text-xl border border-gray-300 rounded shadow-sm dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Type your guess here" autocomplete="off" />
+        <button type="submit"
+          class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow">
+          OK
+        </button>
+      </form>
 
-  <!-- Résultat final -->
-  <div
-    id="driverdle-result"
-    class="hidden text-center text-lg font-semibold"
-  ></div>
-</div>
-
-
+      <!-- Final result -->
+      <div id="driverdle-result" class="hidden text-center text-base sm:text-lg font-semibold"></div>
+    </div>
 
   </main>
 
   <footer class="bg-white dark:bg-gray-800 border-t dark:border-gray-700 py-6 mt-10">
     <div class="container mx-auto text-center">
-      <p class="text-gray-500 dark:text-gray-400 text-sm">MotorsportDB is an open-source project. Contributions are welcome!</p>
+      <p class="text-gray-500 dark:text-gray-400 text-sm">MotorsportDB is an open-source project. Contributions are
+        welcome!</p>
       <a href="https://github.com/Motorsport-DB" target="_blank"
         class="inline-flex items-center gap-2 text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mt-2 transition">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
