@@ -143,8 +143,6 @@ document.addEventListener("DOMContentLoaded", () => {
     resultBox.classList.remove("hidden");
 
     const id = (solution.raw || `${solution.firstname}_${solution.lastname}`)
-      .replace(/[\s\-'.]/g, "_");
-
     const link = `/driver.html?id=${id}`;
 
     if (won) {
@@ -155,12 +153,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function fetchDriverOfToday() {
-    const res = await fetch("/assets/php/games/driverdle/getDriverOfToday.php");
+    const res = await fetch("assets/php/games/driverdle/getDriverOfToday.php");
     return await res.json();
   }
 
   async function validateGuess(guess) {
-    const res = await fetch("/assets/php/games/driverdle/validateGuess.php", {
+    const res = await fetch("assets/php/games/driverdle/validateGuess.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ guess }),
