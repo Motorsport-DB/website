@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cell.classList.add("bg-yellow-400", "dark:bg-yellow-600", "text-white");
       } else {
         cell.textContent = letter;
-        cell.classList.add("bg-gray-500", "text-white");
+        cell.classList.add("bg-gray-500", "dark:bg-gray-700", "text-white");
       }
     }
   }
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const valid = await validateGuess(guessRaw);
     console.log("Validation result:", valid);
     if (!valid) {
-      alert("Ce pilote est inconnu ou invalide.");
+      alert("This driver is not valid or does not exist.");
       return;
     }
 
