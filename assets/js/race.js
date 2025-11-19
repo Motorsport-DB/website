@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayRaceStats(race);
     displayRaceResults(race);
     displayDriverComparisonChart(race);
+    displayQualifyingRaceChart(race);
     // Deffered loading of links to avoid blocking the main thread
     if (window.innerWidth > 768) { // Only execute if the screen is not a tablet/phone
         if ('requestIdleCallback' in window) {
@@ -35,11 +36,52 @@ function displayMainRaceInfo(race) {
     document.getElementById("race-date").innerText = race.year;
 
     document.getElementById("race-picture").src = race.picture || "races/picture/default.png";
+    
+    // YEAR NAVIGATION
+    const currentYearSpan = document.getElementById("current-year");
+    const prevYearBtn = document.getElementById("prev-year-btn");
+    const nextYearBtn = document.getElementById("next-year-btn");
+    const prevYearText = document.getElementById("prev-year-text");
+    const nextYearText = document.getElementById("next-year-text");
+    
+    if (currentYearSpan) {
+        currentYearSpan.textContent = race.year;
+    }
+    
+    // Show previous year button if available
+    if (race.previous && prevYearBtn) {
+        const [championship, year] = race.previous;
+        prevYearText.textContent = year;
+        prevYearBtn.classList.remove("hidden");
+        prevYearBtn.onclick = () => {
+            window.location.href = `race.html?id=${championship}&year=${year}`;
+        };
+    }
+    
+    // Show next year button if available
+    if (race.next && nextYearBtn) {
+        const [championship, year] = race.next;
+        nextYearText.textContent = year;
+        nextYearBtn.classList.remove("hidden");
+        nextYearBtn.onclick = () => {
+            window.location.href = `race.html?id=${championship}&year=${year}`;
+        };
+    }
 }
 
 function displayRaceResults(race) {
     const resultsContainer = document.getElementById("resultsContainer");
     resultsContainer.innerHTML = ""; // Clear the container once
+    
+    // Add global toggle button
+    const toggleAllBtn = document.createElement('div');
+    toggleAllBtn.className = 'text-center mb-6';
+    toggleAllBtn.innerHTML = `
+        <button id="toggle-all-results" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200">
+            📂 Collapse All Results
+        </button>
+    `;
+    resultsContainer.appendChild(toggleAllBtn);
 
     const fragment = document.createDocumentFragment();
     
@@ -47,17 +89,41 @@ function displayRaceResults(race) {
         Object.keys(race.events[event]).sort().forEach(session => {
             const sessionDiv = document.createElement('div');
             sessionDiv.classList.add("bg-white", "dark:bg-gray-800", "rounded-xl", "p-6", "my-8", "shadow-md", "border", "border-gray-200", "dark:border-gray-700");
+            
+            const sectionId = `section-${event.replace(/[^a-zA-Z0-9]/g, '_')}-${session.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const isRaceSession = session.toLowerCase().includes('race');
 
+            // Header with toggle button
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'flex justify-between items-center mb-4';
+            
             const eventTitle = document.createElement('h2');
-            eventTitle.classList.add("text-2xl", "font-bold", "text-blue-600", "dark:text-blue-400", "mb-4", "z-0");
+            eventTitle.classList.add("text-2xl", "font-bold", "text-blue-600", "dark:text-blue-400", "z-0");
             const eventSpan = document.createElement('span');
             eventSpan.classList.add("relative", "group");
             eventSpan.textContent = `${session} - ${event.replaceAll("_", " ")}`;
             eventTitle.appendChild(eventSpan);
-            sessionDiv.appendChild(eventTitle);
+            
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-all duration-200 flex items-center gap-2';
+            toggleBtn.onclick = () => toggleSection(sectionId);
+            toggleBtn.innerHTML = `
+                <svg class="w-5 h-5 toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isRaceSession ? 'M19 9l-7 7-7-7' : 'M9 5l7 7-7 7'}"></path>
+                </svg>
+                <span class="toggle-text">${isRaceSession ? 'Collapse' : 'Expand'}</span>
+            `;
+            
+            headerDiv.appendChild(eventTitle);
+            headerDiv.appendChild(toggleBtn);
+            sessionDiv.appendChild(headerDiv);
 
             const tableContainer = document.createElement('div');
+            tableContainer.id = sectionId;
             tableContainer.classList.add("mt-6", "relative", "z-0", "overflow-x-auto", "sm:overflow-visible");
+            if (!isRaceSession) {
+                tableContainer.classList.add('hidden');
+            }
             const table = document.createElement('table');
             table.classList.add("min-w-full", "table-auto", "text-sm", "text-gray-800", "dark:text-gray-100", "relative", "z-10");
 
@@ -125,10 +191,51 @@ function displayRaceResults(race) {
     });
 
     resultsContainer.appendChild(fragment);
+    
+    // Add toggle all functionality
+    document.getElementById('toggle-all-results').addEventListener('click', function() {
+        const allSections = document.querySelectorAll('[id^="section-"]');
+        const allHidden = Array.from(allSections).every(section => section.classList.contains('hidden'));
+        
+        allSections.forEach(section => {
+            if (allHidden) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        });
+        
+        // Update all toggle buttons
+        document.querySelectorAll('.toggle-text').forEach(text => {
+            text.textContent = allHidden ? 'Collapse' : 'Expand';
+        });
+        document.querySelectorAll('.toggle-icon path').forEach(icon => {
+            icon.setAttribute('d', allHidden ? 'M19 9l-7 7-7-7' : 'M9 5l7 7-7 7');
+        });
+        
+        this.textContent = allHidden ? '📁 Collapse All Results' : '📂 Expand All Results';
+    });
 }
 
 function toggleDetails(rowId) {
     document.getElementById(rowId)?.classList.toggle("hidden");
+}
+
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    const button = event.currentTarget;
+    const text = button.querySelector('.toggle-text');
+    const icon = button.querySelector('.toggle-icon path');
+    
+    section.classList.toggle('hidden');
+    
+    if (section.classList.contains('hidden')) {
+        text.textContent = 'Expand';
+        icon.setAttribute('d', 'M9 5l7 7-7 7');
+    } else {
+        text.textContent = 'Collapse';
+        icon.setAttribute('d', 'M19 9l-7 7-7-7');
+    }
 }
 
 function getAveragePositionsPerEvent(race) {
@@ -236,7 +343,18 @@ function displayDriverComparisonChart(race) {
         };
     });
 
-    const ctx = document.getElementById("performanceChart").getContext("2d");
+    const canvas = document.getElementById("performanceChart");
+    if (!canvas) {
+        console.error('Canvas element "performanceChart" not found');
+        return;
+    }
+    
+    if (datasets.length === 0) {
+        console.warn('No data available for performance chart');
+        return;
+    }
+    
+    const ctx = canvas.getContext("2d");
     new Chart(ctx, {
         type: "line",
         data: {
@@ -245,10 +363,15 @@ function displayDriverComparisonChart(race) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             scales: {
                 y: {
+                    beginAtZero: false,
                     min: 1,
-                    max: maxPosition,
                     reverse: true,
                     title: {
                         display: true,
@@ -256,12 +379,18 @@ function displayDriverComparisonChart(race) {
                     },
                     ticks: {
                         stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(156, 163, 175, 0.2)'
                     }
                 },
                 x: {
                     title: {
                         display: true,
                         text: "Events"
+                    },
+                    grid: {
+                        display: false
                     }
                 }
             },
@@ -280,8 +409,14 @@ function displayDriverComparisonChart(race) {
                     }
                 },
                 tooltip: {
+                    backgroundColor: "#111827",
+                    titleColor: "#ffffff",
+                    bodyColor: "#d1d5db",
+                    borderColor: "#3B82F6",
+                    borderWidth: 1,
+                    cornerRadius: 8,
                     mode: 'index',
-                    intersect: false,
+                    intersect: false
                 },
             },
         },
@@ -340,4 +475,162 @@ function displayRaceStats(race) {
     } else {
         document.getElementById("fastestLap").innerHTML = "N/A";
     }
+}
+
+function displayQualifyingRaceChart(race) {
+    const driverData = {};
+    
+    Object.keys(race.events).forEach(event => {
+        Object.entries(race.events[event]).forEach(([session, sessionData]) => {
+            Object.entries(sessionData).forEach(([car, data]) => {
+                if (!data.drivers) return;
+                
+                data.drivers.forEach(driver => {
+                    if (!driverData[driver]) {
+                        driverData[driver] = { qualifying: [], race: [] };
+                    }
+                    
+                    const position = parseInt(data.position);
+                    if (!isNaN(position)) {
+                        if (session.toLowerCase().includes("qualifying") || session.toLowerCase().includes("practice")) {
+                            driverData[driver].qualifying.push(position);
+                        } else if (session.toLowerCase().includes("race")) {
+                            driverData[driver].race.push(position);
+                        }
+                    }
+                });
+            });
+        });
+    });
+    
+    const canvas = document.getElementById('qualifyingRaceChart');
+    if (!canvas) {
+        console.error('Canvas element "qualifyingRaceChart" not found');
+        return;
+    }
+    
+    // Calculate average positions for each driver
+    const driverAverages = {};
+    Object.entries(driverData).forEach(([driver, data]) => {
+        const avgQualifying = data.qualifying.length > 0 
+            ? data.qualifying.reduce((sum, pos) => sum + pos, 0) / data.qualifying.length 
+            : null;
+        const avgRace = data.race.length > 0 
+            ? data.race.reduce((sum, pos) => sum + pos, 0) / data.race.length 
+            : null;
+        
+        if (avgQualifying !== null && avgRace !== null) {
+            driverAverages[driver] = {
+                qualifying: avgQualifying,
+                race: avgRace,
+                qualifyingCount: data.qualifying.length,
+                raceCount: data.race.length
+            };
+        }
+    });
+    
+    // Filter drivers who have both qualifying and race data
+    // Sort by position difference: most gained positions first, most lost positions last
+    const validDrivers = Object.entries(driverAverages)
+        .sort((a, b) => {
+            const diffA = a[1].qualifying - a[1].race;
+            const diffB = b[1].qualifying - b[1].race;
+            return diffB - diffA; // Descending order (most gained to most lost)
+        });
+    
+    if (validDrivers.length === 0) {
+        console.warn('No qualifying vs race data available');
+        return;
+    }
+    
+    const labels = validDrivers.map(([driver, _]) => driver.replaceAll("_", " "));
+    
+    // Calculate position difference (qualifying - race)
+    // Positive = gained positions (green), Negative = lost positions (red)
+    const positionDifferences = validDrivers.map(([_, data]) => data.qualifying - data.race);
+    
+    // Create colors array based on whether positions were gained or lost
+    const backgroundColors = positionDifferences.map(diff => 
+        diff > 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)'
+    );
+    const borderColors = positionDifferences.map(diff => 
+        diff > 0 ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'
+    );
+    
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Position Change',
+                    data: positionDifferences,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { 
+                        display: true, 
+                        text: 'Positions Gained/Lost' 
+                    },
+                    ticks: { 
+                        stepSize: 1,
+                        callback: function(value) {
+                            return value > 0 ? '+' + value : value;
+                        }
+                    },
+                    grid: { color: 'rgba(156, 163, 175, 0.2)' }
+                },
+                x: {
+                    title: { display: true, text: 'Driver' },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: "#111827",
+                    titleColor: "#ffffff",
+                    bodyColor: "#d1d5db",
+                    borderColor: "#3B82F6",
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            const driverIndex = context.dataIndex;
+                            const driver = validDrivers[driverIndex];
+                            const qualAvg = driver[1].qualifying.toFixed(2);
+                            const raceAvg = driver[1].race.toFixed(2);
+                            const qualCount = driver[1].qualifyingCount;
+                            const raceCount = driver[1].raceCount;
+                            
+                            if (value > 0) {
+                                return `Gained ${value.toFixed(2)} positions (Q avg: P${qualAvg} [${qualCount}] → Race avg: P${raceAvg} [${raceCount}])`;
+                            } else if (value < 0) {
+                                return `Lost ${Math.abs(value).toFixed(2)} positions (Q avg: P${qualAvg} [${qualCount}] → Race avg: P${raceAvg} [${raceCount}])`;
+                            } else {
+                                return `No change (avg: P${qualAvg})`;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
 }

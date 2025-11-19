@@ -52,6 +52,8 @@ function loadJsonObjects($dir, $type) {
 function loadRaces($root) {
     $championships = glob($root . DIRECTORY_SEPARATOR . 'races' . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
     $races = [];
+    $totalRaces = 0;
+    
     foreach ($championships as $championshipDir) {
         $championshipName = basename($championshipDir);
         $yearFiles = glob($championshipDir . DIRECTORY_SEPARATOR . '*.json');
@@ -62,9 +64,21 @@ function loadRaces($root) {
                 'year' => $year,
                 'name' => $championshipName
             ];
+            
+            // Count race sessions
+            $raceData = json_decode(file_get_contents($yearFile), true);
+            if ($raceData && isset($raceData['events'])) {
+                foreach ($raceData['events'] as $event => $sessions) {
+                    foreach ($sessions as $session => $sessionData) {
+                        if (stripos($session, 'race') !== false) {
+                            $totalRaces++;
+                        }
+                    }
+                }
+            }
         }
     }
-    return $races;
+    return ['races' => $races, 'totalRaces' => $totalRaces];
 }
 
 if (file_exists($dataFile)) {
@@ -88,12 +102,15 @@ if (file_exists($dataFile)) {
 
 $drivers = loadJsonObjects($root . DIRECTORY_SEPARATOR . 'drivers', "driver");
 $teams = loadJsonObjects($root . DIRECTORY_SEPARATOR . 'teams', "team");
-$races = loadRaces($root);
+$racesData = loadRaces($root);
+$races = $racesData['races'];
+$totalRaces = $racesData['totalRaces'];
 
 $statistics = [
     "numbers_of_drivers" => count($drivers),
     "numbers_of_teams" => count($teams),
     "numbers_of_championship" => count($races),
+    "numbers_of_races" => $totalRaces,
 ];
 
 $driverRaw = getRandom($drivers);
