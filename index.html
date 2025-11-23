@@ -17,10 +17,13 @@
     <meta property="og:type" content="website">
 
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
+    <link href="assets/css/custom.css" rel="stylesheet">
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="assets/js/common/theme.js"></script>
     <script defer src="assets/js/common/common.js"></script>
     <script defer src="assets/js/main.js"></script>
+    <script defer src="assets/js/stats.js"></script>
     <script defer src="assets/js/common/proposal_cards.js"></script>
 
     <link rel="preload" as="image" href="assets/other/guess-who.png">
@@ -28,7 +31,6 @@
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300 min-h-screen flex flex-col">
     <script defer src="assets/js/show_changelog.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <header class="driver-header shadow dark:shadow-lg flex bg-white dark:bg-gray-800 justify-around">
         <div class="px-6 py-4 flex justify-between items-center">
             <a href="index.html" class="text-3xl font-bold text-blue-600 dark:text-blue-400">MotorsportDB</a>
@@ -56,12 +58,63 @@
         </section>
 
         <section id="searchResults" class="grid grid-cols-1 md:grid-cols-3 gap-6"></section>
+        
+        <!-- Head to Head Section -->
+        <section class="my-16">
+            <h2 class="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">Compare Drivers</h2>
+            <div class="max-w-2xl mx-auto">
+                <a href="head-to-head.html"
+                    class="flex flex-col items-center bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 text-white text-center py-12 rounded-lg shadow-lg hover:shadow-xl transition hover-lift transform hover:scale-105">
+                    <span class="text-6xl mb-4">⚔️</span>
+                    <span class="font-bold text-3xl mb-2">Head to Head</span>
+                    <span class="text-lg px-8 opacity-90">Compare 2-5 drivers side by side with detailed statistics and direct battles analysis</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Global Statistics Section -->
+        <section id="globalStats" class="my-16">
+            <h2 class="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">Database Overview</h2>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-lg shadow-lg p-6 text-white hover-lift">
+                    <div class="text-4xl font-bold mb-2" id="totalDrivers">-</div>
+                    <div class="text-sm opacity-90">Total Drivers</div>
+                </div>
+                <div class="bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 rounded-lg shadow-lg p-6 text-white hover-lift">
+                    <div class="text-4xl font-bold mb-2" id="totalTeams">-</div>
+                    <div class="text-sm opacity-90">Total Teams</div>
+                </div>
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 rounded-lg shadow-lg p-6 text-white hover-lift">
+                    <div class="text-4xl font-bold mb-2" id="totalChampionships">-</div>
+                    <div class="text-sm opacity-90">Championships</div>
+                </div>
+                <div class="bg-gradient-to-br from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-700 rounded-lg shadow-lg p-6 text-white hover-lift">
+                    <div class="text-4xl font-bold mb-2" id="totalRaces">-</div>
+                    <div class="text-sm opacity-90">Total Races</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover-lift">
+                    <h3 class="text-xl font-bold text-center mb-4 text-blue-600 dark:text-blue-400">Drivers by Nationality</h3>
+                    <canvas id="nationalityChart" aria-label="Drivers by Nationality"></canvas>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover-lift">
+                    <h3 class="text-xl font-bold text-center mb-4 text-blue-600 dark:text-blue-400">Database Growth</h3>
+                    <canvas id="growthChart" aria-label="Database Growth Over Time"></canvas>
+                </div>
+            </div>
+        </section>
+
         <section id="games">
-            <h2 class="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">Check our games</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-12">
+            <h2 class="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">Games</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-12">
                 <span class="col-span-1">
                     <a href="guess-who.html"
-                        class="flex flex-col bg-gray-100 dark:bg-gray-800 text-white text-center py-4 rounded-lg shadow dark:hover:bg-gray-700 hover:bg-gray-200 transition">
+                        class="flex flex-col bg-gray-100 dark:bg-gray-800 text-white text-center py-4 rounded-lg shadow dark:hover:bg-gray-700 hover:bg-gray-200 transition hover-lift">
                         <span class="font-semibold text-gray-800 dark:text-gray-300">2 Players Guess Who?
                             Edition</span>
                         <img src="assets/other/guess-who.png" alt="Guess Who? Game"
@@ -72,7 +125,7 @@
                 </span>
                 <span class="col-span-1">
                     <a href="driverdle.html"
-                        class="flex flex-col bg-gray-100 dark:bg-gray-800 text-white text-center py-4 rounded-lg shadow dark:hover:bg-gray-700 hover:bg-gray-200 transition">
+                        class="flex flex-col bg-gray-100 dark:bg-gray-800 text-white text-center py-4 rounded-lg shadow dark:hover:bg-gray-700 hover:bg-gray-200 transition hover-lift">
                         <span class="font-semibold text-gray-800 dark:text-gray-300">Driverdle</span>
                         <img src="assets/other/driverdle.png" alt="Coming Soon"
                             fetchpriority="high"

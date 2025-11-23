@@ -10,6 +10,7 @@ node_modules/
 package.json
 package-lock.json
 notes.txt
+tests/
 
 # DEFAULT
 .htaccess

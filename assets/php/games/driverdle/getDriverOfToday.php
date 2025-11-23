@@ -57,7 +57,7 @@ function getDailyDriver() {
     }
     $index = $dayHash % count($drivers);
     $filename = $drivers[$index];
-    $path = __DIR__ . '/../../../../drivers/' . $filename . '.json';
+    $path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'drivers/' . $filename . '.json';
 
     if (!file_exists($path)) {
         http_response_code(404);
@@ -76,13 +76,13 @@ function getDailyDriver() {
     ];
 
     // Save to /driverdle.json at the web root
-    $rootFile = $_SERVER['DOCUMENT_ROOT'] . '/driverdle.json';
+    $rootFile = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'driverdle.json';
     file_put_contents($rootFile, json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
     echo json_encode($result);
 }
 
-$rootFile = $_SERVER['DOCUMENT_ROOT'] . '/driverdle.json';
+$rootFile = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'driverdle.json';
 
 if (file_exists($rootFile)) {
     $json = json_decode(file_get_contents($rootFile), true);

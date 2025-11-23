@@ -38,6 +38,26 @@
         <!-- Race Information Section -->
         <section class="mb-10">
             <h2 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 mb-4">Race Details</h2>
+            
+            <!-- Year Navigation -->
+            <div id="year-navigation" class="flex justify-center items-center gap-4 mb-6">
+                <button id="prev-year-btn" class="hidden px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    <span id="prev-year-text"></span>
+                </button>
+                
+                <span id="current-year" class="text-2xl font-bold text-blue-600 dark:text-blue-400 px-6"></span>
+                
+                <button id="next-year-btn" class="hidden px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span id="next-year-text"></span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+            
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="flex flex-col sm:flex-row items-center space-x-6">
                     <img id="race-picture" src="races/picture/default.png" alt="Race Picture"
@@ -70,11 +90,22 @@
             </div>
         </section>
 
-        <!-- Race Results Chart -->
-        <section class="w-full md:w-3/5 mx-auto my-12 driver-card bg-gray-200 dark:bg-gray-800 rounded-lg p-6 shadow-md transition-shadow duration-300 hover:shadow-lg">
-            <h3 class="text-2xl font-bold text-center mb-6 text-blue-600 dark:text-blue-400">Top Finishers</h3>
-            <canvas id="performanceChart" aria-label="Top Finishers Overview"></canvas>
-        </section>
+        <!-- Charts Grid -->
+        <div class="container mx-auto px-6 my-12">
+            <h2 class="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-white">Race Analytics</h2>
+            
+            <!-- Row 1: Top Finishers -->
+            <section class="w-full md:w-4/5 mx-auto mb-8 driver-card bg-gray-200 dark:bg-gray-800 rounded-lg p-6 shadow-md transition-shadow duration-300 hover:shadow-lg">
+                <h3 class="text-2xl font-bold text-center mb-6 text-blue-600 dark:text-blue-400">Top 10 Finishers</h3>
+                <canvas id="performanceChart" aria-label="Top Finishers Overview"></canvas>
+            </section>
+
+            <!-- Qualifying vs Race Positions -->
+            <section class="w-full md:w-4/5 mx-auto mb-8 driver-card bg-gray-200 dark:bg-gray-800 rounded-lg p-6 shadow-md transition-shadow duration-300 hover:shadow-lg">
+                <h3 class="text-2xl font-bold text-center mb-6 text-blue-600 dark:text-blue-400">Qualifying vs Race Positions</h3>
+                <canvas id="qualifyingRaceChart" aria-label="Qualifying vs Race"></canvas>
+            </section>
+        </div>
     </main>
 
     <!-- All Race Results -->

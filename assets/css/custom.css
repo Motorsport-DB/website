@@ -1,0 +1,228 @@
+/* Custom animations for MotorsportDB games and UI */
+
+@keyframes flip {
+    0% {
+        transform: rotateX(0);
+    }
+    50% {
+        transform: rotateX(90deg);
+    }
+    100% {
+        transform: rotateX(0);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+@keyframes bounce-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse-slow {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.animate-flip {
+    animation: flip 0.6s ease-in-out;
+}
+
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+.animate-bounce-in {
+    animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-fade-in {
+    animation: fade-in 0.4s ease-out;
+}
+
+.animate-pulse-slow {
+    animation: pulse-slow 2s ease-in-out infinite;
+}
+
+/* Smooth transitions for theme toggle */
+.theme-transition {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Improved hover effects */
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading skeleton */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.dark .skeleton {
+    background: linear-gradient(90deg, #2d2d2d 25%, #3d3d3d 50%, #2d2d2d 75%);
+    background-size: 200% 100%;
+}
+
+/* Improved focus states for accessibility */
+.focus-ring:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.dark .focus-ring:focus {
+    outline-color: #60a5fa;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Optimize font rendering */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Virtual Keyboard Styles */
+#virtual-keyboard .key {
+    min-width: 32px;
+    height: 48px;
+    padding: 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #d3d6da;
+    color: #1a1a1b;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dark #virtual-keyboard .key {
+    background-color: #818384;
+    color: #ffffff;
+}
+
+#virtual-keyboard .key:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#virtual-keyboard .key:active {
+    transform: scale(0.95);
+}
+
+#virtual-keyboard .key-wide {
+    min-width: 60px;
+    font-size: 12px;
+}
+
+/* Key states */
+#virtual-keyboard .key.absent {
+    background-color: #3a3a3c;
+    color: #ffffff;
+    opacity: 0.5;
+}
+
+.dark #virtual-keyboard .key.absent {
+    background-color: #3a3a3c;
+    opacity: 0.7;
+}
+
+#virtual-keyboard .key.present {
+    background-color: #f59e0b;
+    color: #ffffff;
+}
+
+.dark #virtual-keyboard .key.present {
+    background-color: #d97706;
+}
+
+#virtual-keyboard .key.correct {
+    background-color: #10b981;
+    color: #ffffff;
+}
+
+.dark #virtual-keyboard .key.correct {
+    background-color: #059669;
+}
+
+/* Ensure colored keys remain clickable */
+#virtual-keyboard .key.absent,
+#virtual-keyboard .key.present,
+#virtual-keyboard .key.correct {
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+/* Current input indicator on the board */
+.cell-input {
+    border-color: #3b82f6 !important;
+    border-width: 2px !important;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        border-color: #3b82f6;
+    }
+    50% {
+        border-color: #60a5fa;
+    }
+}

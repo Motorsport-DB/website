@@ -14,6 +14,7 @@
   <meta property="og:type" content="website">
 
   <link href="assets/css/tailwind.min.css" rel="stylesheet">
+  <link href="assets/css/custom.css" rel="stylesheet">
   <script defer src="assets/js/games/driverdle.js"></script>
   <script src="assets/js/common/theme.js"></script>
   <script src="assets/js/common/common.js"></script>
@@ -43,16 +44,55 @@
       <!-- Game grid (dynamically generated via JS) -->
       <div id="driverdle-board" class="space-y-2 mb-4 sm:mb-6"></div>
 
-      <!-- Input form -->
-      <form id="guess-form" class="flex flex-col sm:flex-row items-center justify-center gap-2 mb-4 sm:mb-6">
-        <input type="text" id="guess-input"
-          class="w-full px-3 py-2 text-center text-lg sm:text-xl border border-gray-300 rounded shadow-sm dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Type your guess here" autocomplete="off" />
-        <button type="submit"
-          class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow">
-          OK
-        </button>
+      <!-- Hidden input for form submission -->
+      <form id="guess-form" class="mb-6">
+        <div class="flex justify-center mb-2">
+          <button type="submit"
+            class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg font-semibold transition">
+            OK
+          </button>
+        </div>
+        <!-- Error message container -->
+        <div id="error-message" class="hidden text-red-500 dark:text-red-400 text-sm text-center mt-2"></div>
       </form>
+
+      <!-- Virtual Keyboard -->
+      <div id="virtual-keyboard" class="mb-6">
+        <div class="flex justify-center gap-1 mb-1" data-row="1">
+          <button class="key" data-key="Q">Q</button>
+          <button class="key" data-key="W">W</button>
+          <button class="key" data-key="E">E</button>
+          <button class="key" data-key="R">R</button>
+          <button class="key" data-key="T">T</button>
+          <button class="key" data-key="Y">Y</button>
+          <button class="key" data-key="U">U</button>
+          <button class="key" data-key="I">I</button>
+          <button class="key" data-key="O">O</button>
+          <button class="key" data-key="P">P</button>
+        </div>
+        <div class="flex justify-center gap-1 mb-1" data-row="2">
+          <button class="key" data-key="A">A</button>
+          <button class="key" data-key="S">S</button>
+          <button class="key" data-key="D">D</button>
+          <button class="key" data-key="F">F</button>
+          <button class="key" data-key="G">G</button>
+          <button class="key" data-key="H">H</button>
+          <button class="key" data-key="J">J</button>
+          <button class="key" data-key="K">K</button>
+          <button class="key" data-key="L">L</button>
+        </div>
+        <div class="flex justify-center gap-1" data-row="3">
+          <button class="key key-wide" data-key="ENTER">↵</button>
+          <button class="key" data-key="Z">Z</button>
+          <button class="key" data-key="X">X</button>
+          <button class="key" data-key="C">C</button>
+          <button class="key" data-key="V">V</button>
+          <button class="key" data-key="B">B</button>
+          <button class="key" data-key="N">N</button>
+          <button class="key" data-key="M">M</button>
+          <button class="key key-wide" data-key="BACKSPACE">⌫</button>
+        </div>
+      </div>
 
       <!-- Final result -->
       <div id="driverdle-result" class="hidden text-center text-base sm:text-lg font-semibold"></div>
