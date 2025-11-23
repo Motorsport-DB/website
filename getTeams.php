@@ -5,6 +5,9 @@ $teamsDir = 'teams/';
 
 if (isset($_GET['id'])) {
     $teamId = $_GET['id'];
+    if ($teamId == '') {
+        $teamId = "NO_TEAM";
+    }
 
     if (preg_match('/[\/.~`$<>|]/', $teamId)) {
         http_response_code(401);
