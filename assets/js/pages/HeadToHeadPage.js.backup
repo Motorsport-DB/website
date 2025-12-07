@@ -1,0 +1,240 @@
+/**
+ * MotorsportDB - Head to Head Page
+ * Modern implementation of driver comparison page
+ */
+
+import { apiService } from '../services/ApiService.js';
+import { chartService } from '../services/ChartService.js';
+import { themeService } from '../services/ThemeService.js';
+import { SearchComponent } from '../components/SearchComponent.js';
+import { calculateHeadToHead, calculateDriverStats } from '../utils/dataProcessor.js';
+import { formatName } from '../utils/helpers.js';
+import * as dom from '../utils/dom.js';
+
+class HeadToHeadPage {
+    constructor() {
+        this.selectedDrivers = [];
+        this.maxDrivers = 5;
+        this.searchComponent = null;
+        this.charts = new Map();
+        this.init();
+    }
+
+    async init() {
+        try {
+            themeService.initToggleButton();
+            this.initializeSearch();
+            this.setupEventListeners();
+        } catch (error) {
+            console.error('Error initializing head-to-head page:', error);
+        }
+    }
+
+    initializeSearch() {
+        const searchContainer = document.getElementById('driver-search-container');
+        if (!searchContainer) return;
+
+        this.searchComponent = new SearchComponent('driver-search-container', {
+            placeholder: 'Search and add drivers (up to 5)...',
+            showImages: true,
+            maxResults: 10,
+            onSelect: (driver) => {
+                this.addDriver(driver);
+                this.searchComponent.clear();
+            }
+        });
+    }
+
+    setupEventListeners() {
+        const compareBtn = document.getElementById('compare-btn');
+        if (compareBtn) {
+            compareBtn.addEventListener('click', () => this.compareDrivers());
+        }
+    }
+
+    addDriver(driver) {
+        if (this.selectedDrivers.length >= this.maxDrivers) {
+            alert(`Maximum ${this.maxDrivers} drivers can be compared`);
+            return;
+        }
+
+        if (this.selectedDrivers.find(d => d.id === driver.id)) {
+            alert('Driver already selected');
+            return;
+        }
+
+        this.selectedDrivers.push(driver);
+        this.renderSelectedDrivers();
+    }
+
+    removeDriver(driverId) {
+        this.selectedDrivers = this.selectedDrivers.filter(d => d.id !== driverId);
+        this.renderSelectedDrivers();
+        this.clearComparison();
+    }
+
+    renderSelectedDrivers() {
+        const container = document.getElementById('selected-drivers');
+        if (!container) return;
+
+        if (this.selectedDrivers.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 col-span-full text-center">No drivers selected</p>';
+            return;
+        }
+
+        let html = '';
+        this.selectedDrivers.forEach(driver => {
+            html += `
+                <div class="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-md flex items-center gap-3">
+                    <img src="${driver.image || 'drivers/picture/default.png'}" 
+                         alt="${driver.name}" 
+                         class="w-12 h-12 rounded-full object-cover">
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-900 dark:text-white">${driver.name}</p>
+                    </div>
+                    <button onclick="window.headToHeadPage.removeDriver('${driver.id}')" 
+                            class="text-red-600 hover:text-red-700 dark:text-red-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    async compareDrivers() {
+        if (this.selectedDrivers.length < 2) {
+            alert('Please select at least 2 drivers to compare');
+            return;
+        }
+
+        try {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+
+            // Load detailed data for each driver
+            const driversData = await Promise.all(
+                this.selectedDrivers.map(d => apiService.getDriver(d.id))
+            );
+
+            console.log('Loaded drivers data:', driversData);
+
+            // Calculate stats for each driver
+            const comparison = {
+                drivers: driversData.map(driver => ({
+                    name: `${driver.firstName} ${driver.lastName}`,
+                    stats: calculateDriverStats(driver),
+                    country: driver.country,
+                    image: driver.picture || 'drivers/picture/default.png'
+                }))
+            };
+
+            console.log('Comparison data:', comparison);
+
+            // Display comparison
+            this.displayComparison(comparison);
+            this.displayComparisonCharts(comparison);
+
+            if (loadingIndicator) loadingIndicator.classList.add('hidden');
+
+        } catch (error) {
+            console.error('Error comparing drivers:', error);
+            alert('Failed to load comparison data');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) loadingIndicator.classList.add('hidden');
+        }
+    }
+
+    displayComparison(comparison) {
+        const container = document.getElementById('comparison-results');
+        if (!container) return;
+
+        let html = '<div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">';
+        html += '<h2 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Comparison Results</h2>';
+
+        // Stats table
+        html += '<div class="overflow-x-auto">';
+        html += '<table class="min-w-full">';
+        html += '<thead class="bg-gray-100 dark:bg-gray-700">';
+        html += '<tr>';
+        html += '<th class="px-4 py-3 text-left">Driver</th>';
+        html += '<th class="px-4 py-3 text-center">Races</th>';
+        html += '<th class="px-4 py-3 text-center">Wins</th>';
+        html += '<th class="px-4 py-3 text-center">Podiums</th>';
+        html += '<th class="px-4 py-3 text-center">Win Rate</th>';
+        html += '</tr>';
+        html += '</thead>';
+        html += '<tbody>';
+
+        comparison.drivers.forEach(driver => {
+            html += '<tr class="border-t dark:border-gray-600">';
+            html += `<td class="px-4 py-3 font-semibold">${driver.name}</td>`;
+            html += `<td class="px-4 py-3 text-center">${driver.stats.totalRaces}</td>`;
+            html += `<td class="px-4 py-3 text-center">${driver.stats.wins}</td>`;
+            html += `<td class="px-4 py-3 text-center">${driver.stats.podiums}</td>`;
+            html += `<td class="px-4 py-3 text-center">${driver.stats.winRate}%</td>`;
+            html += '</tr>';
+        });
+
+        html += '</tbody>';
+        html += '</table>';
+        html += '</div>';
+        html += '</div>';
+
+        container.innerHTML = html;
+        container.classList.remove('hidden');
+    }
+
+    displayComparisonCharts(comparison) {
+        // Clear existing charts
+        this.charts.forEach(chart => chart.destroy());
+        this.charts.clear();
+
+        // Wins comparison chart
+        const winsCanvas = document.getElementById('winsComparisonChart');
+        if (winsCanvas) {
+            const chart = chartService.createBarChart('winsComparisonChart', comparison.drivers.map(d => d.name), [{
+                label: 'Wins',
+                data: comparison.drivers.map(d => d.stats.wins),
+                backgroundColor: '#10b981'
+            }]);
+            this.charts.set('wins', chart);
+        }
+
+        // Podiums comparison chart
+        const podiumsCanvas = document.getElementById('podiumsComparisonChart');
+        if (podiumsCanvas) {
+            const chart = chartService.createBarChart('podiumsComparisonChart', comparison.drivers.map(d => d.name), [{
+                label: 'Podiums',
+                data: comparison.drivers.map(d => d.stats.podiums),
+                backgroundColor: '#3b82f6'
+            }]);
+            this.charts.set('podiums', chart);
+        }
+    }
+
+    clearComparison() {
+        const container = document.getElementById('comparison-results');
+        if (container) {
+            container.classList.add('hidden');
+            container.innerHTML = '';
+        }
+
+        this.charts.forEach(chart => chart.destroy());
+        this.charts.clear();
+    }
+}
+
+// Initialize and expose globally for button onclick
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.headToHeadPage = new HeadToHeadPage();
+    });
+} else {
+    window.headToHeadPage = new HeadToHeadPage();
+}
+
+export default HeadToHeadPage;

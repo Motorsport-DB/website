@@ -1,4 +1,83 @@
-# Motorsport-DB - Website Contribution Guide
+# Motorsport-DB - Website
+
+Welcome to the **website repository** of Motorsport-DB! This is an open-source motorsport database featuring drivers, teams, championships, and races data with modern web technologies.
+
+## 🏎️ **About**
+
+MotorsportDB is a comprehensive database of motorsport information including:
+- **Drivers:** Detailed profiles with statistics, career achievements, and performance analytics
+- **Teams:** Team histories, results, and comparisons
+- **Championships:** Race results, standings, and historical data
+- **Games:** Interactive games like Guess Who and Driverdle
+
+## 🚀 **Tech Stack**
+
+- **Backend:** PHP 8+ (OOP, PSR-4)
+- **Frontend:** Modern JavaScript (ES6+ modules), Tailwind CSS
+- **Architecture:** MVC-like structure with service layer
+- **Data:** JSON files for easy contribution
+- **Charts:** Chart.js for analytics visualization
+
+## 🚀 **Requires**
+- **Serveur Web**: Apache2 2.4+
+- **PHP**: 8.0+ avec extensions:
+  - `php-json`
+  - `php-mbstring`
+  - `php-curl`
+- **Node.js**: 18+ (for Tailwind CSS)
+- **NPM**: 8+
+
+## 📁 **Project Structure**
+
+```
+MotorsportDB/
+├── public/              # Web-accessible pages
+│   ├── index.php        # Homepage
+│   ├── driver.php       # Driver profile page
+│   ├── team.php         # Team profile page
+│   ├── race.php         # Race/championship page
+│   └── games/           # Interactive games
+├── includes/            # Reusable PHP components (header, footer)
+├── api/                 # API endpoints
+├── src/                 # Backend logic (controllers, models, utils)
+├── assets/              # Static resources (CSS, JS, images)
+├── drivers/             # Driver data (JSON)
+├── teams/               # Team data (JSON)
+└── races/               # Race data (JSON)
+```
+
+## 🎯 **Features**
+
+- ✅ Modern responsive design with dark mode
+- ✅ Interactive charts and statistics
+- ✅ Advanced search with autocomplete
+- ✅ Head-to-head driver comparisons
+- ✅ Performance analytics and radar charts
+- ✅ RESTful API for data access
+- ✅ Games: Guess Who and Driverdle
+
+## 💻 **Getting Started**
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Motorsport-DB/website.git
+   cd website
+   git clone https://github.com/motorsportdb/drivers.git
+   git clone https://github.com/motorsportdb/teams.git
+   git clone https://github.com/motorsportdb/races.git
+   ```
+
+2. Start development server with clean URLs:
+   ```bash
+   php -S localhost:8080 router.php
+   ```
+
+3. Open your browser:
+   ```
+   http://localhost:8080
+   ```
+
+## 🤝 **Contributing**
 
 Welcome to the **website repository** of Motorsport-DB! This project is open-source and welcomes **all contributions**, whether you're improving PHP, JavaScript, CSS, or adding new features.
 
@@ -48,6 +127,19 @@ Improved homepage styling and optimized search feature
 
 ## 🏁 **Need Help?**
 If you're unsure about how to contribute or have any questions, feel free to **open an issue** in the repository. We appreciate all contributions, big or small, to make Motorsport-DB the best racing database possible!
+
+## 📄 **License**
+
+This project is open-source. All images and assets must be copyright-free or your own property.
+
+## 🔗 **Links**
+
+- **GitHub:** https://github.com/Motorsport-DB
+- **Website:** https://motorsportdb.org
+
+---
+
+**Made with ❤️ by the motorsport community**
 
 Thank you for your support! 🏎️
 

@@ -56,9 +56,9 @@ $secret2 = $pilots[$keys[1]];
 
 $pilots_with_images = [];
 foreach ($pilots as $driverId) {
-    $picture = file_exists($root_dir . "drivers/picture/$driverId.png") ? "drivers/picture/$driverId.png"
-        : (file_exists($root_dir . "drivers/picture/$driverId.jpg") ? "drivers/picture/$driverId.jpg"
-        : "drivers/picture/default.png");
+    $picture = file_exists($root_dir . "drivers/picture/$driverId.png") ? "/drivers/picture/$driverId.png"
+        : (file_exists($root_dir . "drivers/picture/$driverId.jpg") ? "/drivers/picture/$driverId.jpg"
+        : "/drivers/picture/default.png");
     $pilots_with_images[$driverId] = [
         "id" => $driverId,
         "picture" => $picture
