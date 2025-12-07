@@ -263,6 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       attempts = [];
       keyboardState = {};
+      keyboardState = {};
     } else {
       // Load existing game state
       solution = saved;
@@ -296,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
       disableInput();
     } else if (attempts.some(a => normalize(a) === normalizedLastName)) {
       showEndMessage(true);
+      disableInput();
       disableInput();
     }
   }
@@ -497,7 +499,13 @@ document.addEventListener("DOMContentLoaded", () => {
     submitBtn.disabled = false;
     submitBtn.textContent = "OK";
     
+    
+    // Re-enable input
+    submitBtn.disabled = false;
+    submitBtn.textContent = "OK";
+    
     if (!valid) {
+      showError("This driver is unknown or invalid.");
       showError("This driver is unknown or invalid.");
       return;
     }
@@ -543,15 +551,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const resultBox = document.getElementById("driverdle-result");
     resultBox.classList.remove("hidden");
     resultBox.classList.add("animate-bounce-in");
+    resultBox.classList.add("animate-bounce-in");
 
     const id = (solution.raw || `${solution.firstname}_${solution.lastname}`)
     const link = `/driver?id=${id}`;
 
     if (won) {
       resultBox.innerHTML = `🎉 Congratulations! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
+      resultBox.innerHTML = `🎉 Congratulations! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
     } else {
       resultBox.innerHTML = `❌ Game Over! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
+      resultBox.innerHTML = `❌ Game Over! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
     }
+  }
+
+  function disableInput() {
+    const keys = document.querySelectorAll("#virtual-keyboard .key");
+    keys.forEach(key => {
+      key.style.opacity = "0.5";
+      key.style.cursor = "not-allowed";
+      key.onclick = null;
+    });
   }
 
   function disableInput() {
