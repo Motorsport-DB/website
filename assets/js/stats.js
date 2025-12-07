@@ -77,7 +77,11 @@ async function loadGlobalStats() {
         } else {
             document.getElementById('totalChampionships').textContent = '50+';
             document.getElementById('totalRaces').textContent = '10,000+';
+<<<<<<< HEAD
             console.warn('cards.json not found or incomplete. Using API endpoint /api/cards.php instead.');
+=======
+            console.warn('cards.json not found or incomplete. Generate it via assets/php/generate_index_cards.php');
+>>>>>>> origin/main
         }
         
         // Create charts

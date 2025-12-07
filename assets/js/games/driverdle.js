@@ -13,6 +13,7 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
+<<<<<<< HEAD
   // ==================== CONSTANTS ====================
   const MAX_ATTEMPTS = 5;
   const STORAGE_KEYS = {
@@ -37,11 +38,22 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ==================== STATE VARIABLES ====================
+=======
+  const maxAttempts = 5;
+  const storageKey = "driverdle_attempts";
+  const solutionKey = "driverdle_solution";
+  const keyboardStateKey = "driverdle_keyboard";
+  const today = new Date().toISOString().slice(0, 10);
+>>>>>>> origin/main
   let solution = null;
   let attempts = [];
   let currentInput = [];
   let currentAttempt = 0;
+<<<<<<< HEAD
   let keyboardState = {}; // { letter: 'correct' | 'present' | 'absent' }
+=======
+  let keyboardState = {};
+>>>>>>> origin/main
 
   // ==================== UTILITY FUNCTIONS ====================
   
@@ -251,6 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!saved || saved.date !== TODAY) {
       // New day - fetch new solution
       solution = await fetchDriverOfToday();
+<<<<<<< HEAD
       if (!solution || !solution.lastname) {
         showError("Unable to load today's driver");
         return;
@@ -264,20 +277,35 @@ document.addEventListener("DOMContentLoaded", () => {
       attempts = [];
       keyboardState = {};
       keyboardState = {};
+=======
+      if (!solution || !solution.lastname) return;
+      localStorage.setItem(solutionKey, JSON.stringify({ ...solution, date: today }));
+      localStorage.setItem(storageKey, JSON.stringify([]));
+      localStorage.setItem(keyboardStateKey, JSON.stringify({}));
+      attempts = [];
+      keyboardState = {};
+>>>>>>> origin/main
     } else {
       // Load existing game state
       solution = saved;
+<<<<<<< HEAD
       attempts = JSON.parse(localStorage.getItem(STORAGE_KEYS.attempts)) || [];
       keyboardState = JSON.parse(localStorage.getItem(STORAGE_KEYS.keyboard)) || {};
       currentAttempt = attempts.length;
       
       console.log("📂 Loaded game state:", { attempts, keyboardState });
+=======
+      attempts = JSON.parse(localStorage.getItem(storageKey)) || [];
+      keyboardState = JSON.parse(localStorage.getItem(keyboardStateKey)) || {};
+      currentAttempt = attempts.length;
+>>>>>>> origin/main
     }
 
     const normalizedLastName = normalize(solution.lastname);
     const board = document.getElementById("driverdle-board");
     board.innerHTML = "";
     board.dataset.length = normalizedLastName.length;
+<<<<<<< HEAD
     
     // Draw empty grid
     drawGrid(board, normalizedLastName, MAX_ATTEMPTS);
@@ -299,6 +327,22 @@ document.addEventListener("DOMContentLoaded", () => {
       showEndMessage(true);
       disableInput();
       disableInput();
+=======
+    drawGrid(board, normalizedLastName, maxAttempts);
+    renderPastAttempts(attempts, normalizedLastName);
+    updateKeyboardColors();
+
+    // Setup form and keyboard
+    document.getElementById("guess-form").onsubmit = handleSubmit;
+    setupVirtualKeyboard();
+
+    if (attempts.length >= maxAttempts) {
+      showEndMessage(false);
+      disableInput();
+    } else if (attempts.some(a => normalize(a) === normalize(solution.lastname))) {
+      showEndMessage(true);
+      disableInput();
+>>>>>>> origin/main
     }
   }
 
@@ -316,7 +360,10 @@ document.addEventListener("DOMContentLoaded", () => {
         cell.className = "w-10 h-10 sm:w-12 sm:h-12 border-2 border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-lg sm:text-2xl font-bold flex items-center justify-center uppercase rounded shadow transition-all";
         cell.dataset.col = j;
         
+<<<<<<< HEAD
         // Mark static cells (non-letters)
+=======
+>>>>>>> origin/main
         if (!/[A-Z]/.test(char)) {
           cell.textContent = char;
           cell.classList.add("bg-gray-300", "dark:bg-gray-700", "text-gray-500");
@@ -330,6 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+<<<<<<< HEAD
   /**
    * Render all past attempts using new architecture
    */
@@ -351,12 +399,51 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!keyboard) {
       console.error("❌ Virtual keyboard element not found!");
       return;
+=======
+  function renderPastAttempts(attempts, solution) {
+    const board = document.getElementById("driverdle-board");
+    attempts.forEach((guess, i) => {
+      const row = board.children[i];
+      if (row) renderAttempt(row, normalize(guess), solution, false);
+    });
+  }
+
+  function renderAttempt(row, guess, solution, animate = true) {
+    const solutionArr = solution.split("");
+    const guessArr = guess.split("");
+    const matched = Array(solution.length).fill(false);
+    const letterStates = {};
+
+    // First pass: greens (correct position)
+    for (let i = 0; i < solution.length; i++) {
+      const cell = row.children[i];
+      if (cell.dataset.static === "1") continue;
+      const letter = guessArr[i];
+      
+      if (letter === solutionArr[i]) {
+        matched[i] = true;
+        letterStates[letter] = 'correct';
+        
+        if (animate) {
+          setTimeout(() => {
+            cell.textContent = letter;
+            cell.classList.add("bg-green-500", "dark:bg-green-700", "text-gray-700", "dark:text-gray-100", "border-gray-500", "animate-flip");
+            cell.classList.remove("bg-white");
+          }, i * 100);
+        } else {
+          cell.textContent = letter;
+          cell.classList.add("bg-green-500", "dark:bg-green-700", "text-gray-700", "dark:text-gray-100", "border-gray-500");
+          cell.classList.remove("bg-white");
+        }
+      }
+>>>>>>> origin/main
     }
     console.log("✅ Virtual keyboard found, setting up...");
     
     const keys = keyboard.querySelectorAll(".key");
     console.log(`✅ Found ${keys.length} keyboard keys`);
 
+<<<<<<< HEAD
     keys.forEach(key => {
       key.addEventListener("click", () => {
         const keyValue = key.dataset.key;
@@ -380,11 +467,104 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("⌨️  Enter pressed");
         handleKeyPress("ENTER");
       }
+=======
+    // Second pass: yellows (present but wrong position) and grays (absent)
+    for (let i = 0; i < solution.length; i++) {
+      const cell = row.children[i];
+      if (cell.dataset.static === "1" || cell.classList.contains("bg-green-500")) continue;
+      
+      const letter = guessArr[i];
+      let found = false;
+      
+      for (let j = 0; j < solution.length; j++) {
+        if (!matched[j] && letter === solutionArr[j]) {
+          matched[j] = true;
+          found = true;
+          break;
+        }
+      }
+      
+      if (animate) {
+        setTimeout(() => {
+          cell.textContent = letter;
+          if (found) {
+            cell.classList.add("bg-yellow-400", "dark:bg-yellow-600", "text-white", "border-yellow-400", "animate-flip");
+            if (letterStates[letter] !== 'correct') {
+              letterStates[letter] = 'present';
+            }
+          } else {
+            cell.classList.add("bg-gray-500", "text-white", "border-gray-500", "animate-flip");
+            if (!letterStates[letter]) {
+              letterStates[letter] = 'absent';
+            }
+          }
+        }, i * 100);
+      } else {
+        cell.textContent = letter;
+        if (found) {
+          cell.classList.add("bg-yellow-400", "dark:bg-yellow-600", "text-gray-700", "dark:text-gray-100", "border-gray-500");
+          if (letterStates[letter] !== 'correct') {
+            letterStates[letter] = 'present';
+          }
+        } else {
+          cell.classList.add("bg-gray-500", "text-gray-700", "dark:text-gray-100", "border-gray-500");
+          if (!letterStates[letter]) {
+            letterStates[letter] = 'absent';
+          }
+        }
+      }
+    }
+
+    // Update keyboard state
+    Object.keys(letterStates).forEach(letter => {
+      if (!keyboardState[letter] || 
+          (keyboardState[letter] === 'absent' && letterStates[letter] !== 'absent') ||
+          (keyboardState[letter] === 'present' && letterStates[letter] === 'correct')) {
+        keyboardState[letter] = letterStates[letter];
+      }
+    });
+
+    if (animate) {
+      setTimeout(() => {
+        updateKeyboardColors();
+        localStorage.setItem(keyboardStateKey, JSON.stringify(keyboardState));
+      }, solution.length * 100 + 100);
+    }
+  }
+
+  function setupVirtualKeyboard() {
+    const keyboard = document.getElementById("virtual-keyboard");
+    const keys = keyboard.querySelectorAll(".key");
+
+    keys.forEach(key => {
+      key.addEventListener("click", () => {
+        const keyValue = key.dataset.key;
+        handleKeyPress(keyValue);
+      });
+    });
+
+    // Also handle physical keyboard
+    document.addEventListener("keydown", (e) => {
+      if (currentAttempt >= maxAttempts) return;
+      
+      const key = e.key.toUpperCase();
+      if (/^[A-Z]$/.test(key)) {
+        handleKeyPress(key);
+      } else if (key === "BACKSPACE") {
+        handleKeyPress("BACKSPACE");
+      } else if (key === "ENTER") {
+        handleKeyPress("ENTER");
+      }
+>>>>>>> origin/main
     });
   }
 
   function handleKeyPress(key) {
+<<<<<<< HEAD
     if (currentAttempt >= MAX_ATTEMPTS) return;
+=======
+    if (currentAttempt >= maxAttempts) return;
+>>>>>>> origin/main
 
     const board = document.getElementById("driverdle-board");
     const row = board.children[currentAttempt];
@@ -442,8 +622,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+<<<<<<< HEAD
   // ==================== FORM SUBMISSION ====================
   
+=======
+  function updateKeyboardColors() {
+    Object.keys(keyboardState).forEach(letter => {
+      const key = document.querySelector(`.key[data-key="${letter}"]`);
+      if (key) {
+        key.classList.remove('absent', 'present', 'correct');
+        key.classList.add(keyboardState[letter]);
+      }
+    });
+  }
+
+>>>>>>> origin/main
   async function handleSubmit(e) {
     e.preventDefault();
     
@@ -451,6 +644,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const expectedLength = parseInt(board.dataset.length);
     const normalizedLastName = normalize(solution.lastname);
     
+<<<<<<< HEAD
     console.log("📝 Submit attempt:");
     console.log(`  Solution lastname: ${solution.lastname}`);
     console.log(`  Normalized: ${normalizedLastName}`);
@@ -458,20 +652,48 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log(`  Input length: ${currentInput.length}`);
     
     // Count expected letters (excluding static characters like -, ', spaces)
+=======
+    // Count expected letters (excluding static characters)
+>>>>>>> origin/main
     let expectedLetters = 0;
     for (let i = 0; i < normalizedLastName.length; i++) {
       if (/[A-Z]/.test(normalizedLastName[i])) expectedLetters++;
     }
+<<<<<<< HEAD
     
     console.log(`  Expected letters: ${expectedLetters}`);
 
     if (currentInput.length !== expectedLetters) {
       console.warn(`❌ Length mismatch: got ${currentInput.length}, expected ${expectedLetters}`);
+=======
+
+    if (currentInput.length !== expectedLetters) {
+>>>>>>> origin/main
       showError(`Please enter all ${expectedLetters} letters`);
       return;
     }
     
     console.log("✅ Length validation passed");
+
+    // Reconstruct the guess with static characters
+    let guessArray = [];
+    let inputIndex = 0;
+    
+    for (let i = 0; i < normalizedLastName.length; i++) {
+      if (/[A-Z]/.test(normalizedLastName[i])) {
+        guessArray.push(currentInput[inputIndex]);
+        inputIndex++;
+      } else {
+        guessArray.push(normalizedLastName[i]);
+      }
+    }
+    
+    const guessRaw = guessArray.join("");
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+
+    // Disable input during validation
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Checking...";
 
     // Reconstruct the guess with static characters
     let guessArray = [];
@@ -499,6 +721,7 @@ document.addEventListener("DOMContentLoaded", () => {
     submitBtn.disabled = false;
     submitBtn.textContent = "OK";
     
+<<<<<<< HEAD
     
     // Re-enable input
     submitBtn.disabled = false;
@@ -517,17 +740,38 @@ document.addEventListener("DOMContentLoaded", () => {
     // Render the guess using new architecture
     const row = board.children[currentAttempt];
     renderGuessInGrid(row, normalize(guessRaw), normalizedLastName, true);
+=======
+    if (!valid) {
+      showError("This driver is unknown or invalid.");
+      return;
+    }
+
+    // Add attempt
+    attempts.push(guessRaw);
+    localStorage.setItem(storageKey, JSON.stringify(attempts));
+    
+    const row = board.children[currentAttempt];
+    renderAttempt(row, normalize(guessRaw), normalize(solution.lastname), true);
+>>>>>>> origin/main
 
     currentAttempt++;
     currentInput = [];
 
     // Check win/lose conditions
+<<<<<<< HEAD
     if (normalize(guessRaw) === normalizedLastName) {
+=======
+    if (normalize(guessRaw) === normalize(solution.lastname)) {
+>>>>>>> origin/main
       setTimeout(() => {
         showEndMessage(true);
         disableInput();
       }, normalizedLastName.length * 100 + 300);
+<<<<<<< HEAD
     } else if (currentAttempt >= MAX_ATTEMPTS) {
+=======
+    } else if (currentAttempt >= maxAttempts) {
+>>>>>>> origin/main
       setTimeout(() => {
         showEndMessage(false);
         disableInput();
@@ -551,6 +795,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const resultBox = document.getElementById("driverdle-result");
     resultBox.classList.remove("hidden");
     resultBox.classList.add("animate-bounce-in");
+<<<<<<< HEAD
     resultBox.classList.add("animate-bounce-in");
 
     const id = (solution.raw || `${solution.firstname}_${solution.lastname}`)
@@ -562,6 +807,16 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       resultBox.innerHTML = `❌ Game Over! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
       resultBox.innerHTML = `❌ Game Over! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
+=======
+
+    const id = (solution.raw || `${solution.firstname}_${solution.lastname}`)
+    const link = `/driver.html?id=${id}`;
+
+    if (won) {
+      resultBox.innerHTML = `🎉 Congratulations! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
+    } else {
+      resultBox.innerHTML = `❌ Game Over! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
+>>>>>>> origin/main
     }
   }
 
@@ -574,6 +829,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+<<<<<<< HEAD
   function disableInput() {
     const keys = document.querySelectorAll("#virtual-keyboard .key");
     keys.forEach(key => {
@@ -583,13 +839,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+=======
+>>>>>>> origin/main
   async function fetchDriverOfToday() {
-    const res = await fetch("/assets/php/games/driverdle/getDriverOfToday.php");
+    const res = await fetch("assets/php/games/driverdle/getDriverOfToday.php");
     return await res.json();
   }
 
   async function validateGuess(guess) {
-    const res = await fetch("/assets/php/games/driverdle/validateGuess.php", {
+    const res = await fetch("assets/php/games/driverdle/validateGuess.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ guess }),
