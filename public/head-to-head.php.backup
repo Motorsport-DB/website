@@ -1,0 +1,83 @@
+<?php
+$pageTitle = 'Head to Head Comparison';
+$pageDescription = 'Compare drivers head-to-head: races, wins, podiums, and direct battles.';
+require_once __DIR__ . '/../includes/header.php';
+?>
+
+<main class="flex-grow container mx-auto px-6 py-8">
+    <!-- Page Title -->
+    <section class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-gray-100 mb-4">
+            🏁 Head to Head Comparison
+        </h1>
+        <p class="text-lg text-gray-600 dark:text-gray-400 mb-6">
+            Compare up to 5 drivers and analyze their performances in common races
+        </p>
+    </section>
+
+    <!-- Driver Selection Section -->
+    <section class="mb-12 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+            Select Drivers to Compare
+        </h2>
+        
+        <!-- Driver Search and Selection -->
+        <div class="mb-6">
+            <div id="driver-search-container" class="relative">
+                <!-- SearchComponent will create the input and dropdown here -->
+            </div>
+        </div>
+
+        <!-- Selected Drivers -->
+        <div id="selected-drivers" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+            <p class="text-gray-500 dark:text-gray-400 col-span-full text-center">No drivers selected</p>
+        </div>
+
+        <!-- Comparison Mode Selection -->
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
+            <div class="flex items-center gap-4">
+                <label class="text-gray-700 dark:text-gray-300 font-semibold">Comparison Mode:</label>
+                <select id="comparison-mode" 
+                    class="p-2 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200">
+                    <option value="all">All Races</option>
+                    <option value="common">Common Races Only</option>
+                    <option value="same-team">Same Team</option>
+                </select>
+            </div>
+            
+            <button id="compare-btn" 
+                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                Compare Drivers
+            </button>
+        </div>
+    </section>
+
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="hidden text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p class="mt-4 text-gray-600 dark:text-gray-400">Loading comparison data...</p>
+    </div>
+
+    <!-- Comparison Results -->
+    <div id="comparison-results" class="hidden">
+        <!-- Results will be inserted here dynamically -->
+    </div>
+
+    <!-- Charts -->
+    <div id="comparison-charts" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+        <section class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+            <h3 class="text-xl font-bold text-center mb-4 text-blue-600 dark:text-blue-400">Wins Comparison</h3>
+            <canvas id="winsComparisonChart"></canvas>
+        </section>
+
+        <section class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+            <h3 class="text-xl font-bold text-center mb-4 text-blue-600 dark:text-blue-400">Podiums Comparison</h3>
+            <canvas id="podiumsComparisonChart"></canvas>
+        </section>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="module" src="/assets/js/pages/HeadToHeadPage.js"></script>
+
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
