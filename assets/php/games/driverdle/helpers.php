@@ -13,7 +13,7 @@ function isF1Driver(array $data): bool {
         if (!isset($champs['Formula_1'])) continue;
         foreach ($champs['Formula_1'] as $sessions) {
             foreach ($sessions as $sessionName => $session) {
-                if ($sessionName === 'Race' || $sessionName === 'Feature Race') {
+                if (stripos($sessionName, 'race') !== false) {
                     return true;
                 }
             }
@@ -43,7 +43,7 @@ function computeF1Stats(array $data, string $filename): array {
                 if (!empty($session['team'])) {
                     $teams[] = $session['team'];
                 }
-                if (($sessionName === 'Race' || $sessionName === 'Feature Race')
+                if (stripos($sessionName, 'race') !== false
                     && ($session['position'] ?? '') === '1') {
                     $wins++;
                 }
@@ -102,7 +102,7 @@ function computeAllStats(array $data, string $filename): array {
             $series[] = $champ;
             foreach ($races as $sessions) {
                 foreach ($sessions as $sessionName => $session) {
-                    if (($sessionName === 'Race' || $sessionName === 'Feature Race')
+                    if (stripos($sessionName, 'race') !== false
                         && ($session['position'] ?? '') === '1') {
                         $wins++;
                     }
