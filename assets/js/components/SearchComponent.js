@@ -149,13 +149,17 @@ export class SearchComponent {
 
         // Add image if enabled
         if (this.options.showImages && result.image) {
+            const wrapper = createElement('div', {
+                className: 'w-16 h-16 rounded-full border-2 border-blue-400 dark:border-blue-500 ' +
+                          'overflow-hidden flex-shrink-0 mr-4 bg-white dark:bg-gray-700',
+            });
             const img = createElement('img', {
                 src: result.image,
                 alt: result.name,
-                className: 'w-16 h-16 object-contain rounded-full mr-4 ' +
-                          'border-2 border-blue-400 dark:border-blue-500',
+                className: 'w-full h-full object-contain p-1',
             });
-            item.appendChild(img);
+            wrapper.appendChild(img);
+            item.appendChild(wrapper);
         }
 
         // Add content

@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', '0');
+error_reporting(0);
 header('Content-Type: application/json');
 
 function hasAtLeast20Races($data) {
@@ -43,7 +45,7 @@ function getAllDrivers() {
 }
 
 function normalize($str) {
-    return preg_replace('~[^\pL\d]+~u', '', iconv('UTF-8', 'ASCII//TRANSLIT', $str));
+    return preg_replace('~[^\pL\d]+~u', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str));
 }
 
 function getDailyDriver() {

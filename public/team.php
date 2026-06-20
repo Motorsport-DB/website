@@ -13,8 +13,10 @@ require_once __DIR__ . '/../includes/header.php';
         
         <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="flex flex-col sm:flex-row items-center space-x-6">
-                <img id="team-picture" src="/teams/picture/default.png" alt="Team Logo"
-                    class="w-48 h-48 object-contain rounded-full border-4 border-blue-600 dark:border-blue-400">
+                <div class="w-48 h-48 rounded-full border-4 border-blue-600 dark:border-blue-400 overflow-hidden bg-white dark:bg-gray-700 flex-shrink-0">
+                    <img id="team-picture" src="/teams/picture/default.png" alt="Team Logo"
+                        class="w-full h-full object-contain p-3">
+                </div>
                 <div>
                     <h3 id="team-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Team Name</h3>
                     <div class="flex h-12">

@@ -20,6 +20,9 @@
                         <li><a href="/head-to-head.html" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Head to Head</a></li>
                         <li><a href="/games/guess-who.php" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Guess Who</a></li>
                         <li><a href="/games/driverdle.php" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Driverdle</a></li>
+                        <li><a href="/games/driverdle-f1.php" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors pl-3">↳ Driverdle F1</a></li>
+                        <li><a href="/games/driverdle-all.php" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors pl-3">↳ Driverdle All</a></li>
+                        <li><a href="/games/driverdle-classic.php" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors pl-3">↳ Driverdle Classic</a></li>
                     </ul>
                 </div>
                 
@@ -29,7 +32,6 @@
                     <ul class="space-y-2 text-sm">
                         <li><a href="/api/drivers-list.php" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Drivers List</a></li>
                         <li><a href="/api/teams-list.php" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Teams List</a></li>
-                        <li><a href="/README_V2.md" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Documentation</a></li>
                         <li><a href="https://github.com/Motorsport-DB" target="_blank" rel="noopener noreferrer" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">GitHub</a></li>
                     </ul>
                 </div>
