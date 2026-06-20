@@ -13,7 +13,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 let div = document.createElement("div");
                 div.className = "bg-gray-100 dark:bg-gray-800 p-4 rounded-2xl flex items-center mb-2 shadow transition hover:scale-105";
                 div.innerHTML = `
-                    <img src="${item.image}" class="w-16 h-16 object-contain rounded-full mr-4 border-2 border-blue-400">
+                    <div class="w-16 h-16 rounded-full border-2 border-blue-400 overflow-hidden flex-shrink-0 mr-4 bg-white dark:bg-gray-700">
+                        <img src="${item.image}" class="w-full h-full object-contain p-1">
+                    </div>
                     <div class="flex flex-col">
                         <a href="${item.url}" class="text-lg font-bold text-gray-800 dark:text-blue-400 hover:underline">${item.name}</a>
                     </div>

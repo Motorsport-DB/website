@@ -1,9 +1,6 @@
 <?php
-/**
- * Get cards and statistics for homepage
- * Modern API endpoint using CardGenerator class
- */
-
+ini_set('display_errors', '0');
+error_reporting(0);
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../src/api/Utils/CardGenerator.php';

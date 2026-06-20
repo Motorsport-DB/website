@@ -9,11 +9,17 @@
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $query = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
 
+// Sitemap
+if ($uri === '/sitemap.xml') {
+    require __DIR__ . '/sitemap-serve.php';
+    return true;
+}
+
 // Map clean URLs to PHP files
 $routes = [
-    '/driver' => '/driver.php',
-    '/team' => '/team.php',
-    '/race' => '/race.php',
+    '/driver'       => '/driver.php',
+    '/team'         => '/team.php',
+    '/race'         => '/race.php',
     '/head-to-head' => '/head-to-head.php',
 ];
 
@@ -28,14 +34,31 @@ if (isset($routes[$uri])) {
     return true;
 }
 
-// Handle /games/ paths - with or without .php extension
+// Handle /games/ paths - map to public/games/
+$gameRoutes = [
+    '/games/driverdle.php'         => 'driverdle',
+    '/games/driverdle'             => 'driverdle',
+    '/games/driverdle-f1.php'      => 'driverdle-f1',
+    '/games/driverdle-f1'          => 'driverdle-f1',
+    '/games/driverdle-all.php'     => 'driverdle-all',
+    '/games/driverdle-all'         => 'driverdle-all',
+    '/games/driverdle-classic.php' => 'driverdle-classic',
+    '/games/driverdle-classic'     => 'driverdle-classic',
+    '/games/guess-who.php'         => 'guess-who',
+    '/games/guess-who'             => 'guess-who',
+];
+
+if (isset($gameRoutes[$uri])) {
+    $gamePath = __DIR__ . '/public/games/' . $gameRoutes[$uri] . '.php';
+    if (file_exists($gamePath)) {
+        require $gamePath;
+        return true;
+    }
+}
+
+// Fallback: generic /games/ regex handler
 if (preg_match('#^/games/(.+)$#', $uri, $matches)) {
-    $game = $matches[1];
-    
-    // Remove .php if already present
-    $game = preg_replace('/\.php$/', '', $game);
-    
-    // Try with .php extension
+    $game = preg_replace('/\.php$/', '', $matches[1]);
     $gamePath = __DIR__ . '/public/games/' . $game . '.php';
     if (file_exists($gamePath)) {
         require $gamePath;

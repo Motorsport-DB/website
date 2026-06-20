@@ -31,8 +31,8 @@
     <link rel="stylesheet" href="/assets/css/design-system.css">
     <link rel="stylesheet" href="/assets/css/custom.css">
     
-    <!-- Chart.js (loaded before modules) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Chart.js (local copy, no CDN dependency) -->
+    <script src="/assets/js/chart.umd.min.js"></script>
     
     <?php if (isset($additionalHead)): ?>
     <?= $additionalHead ?>
@@ -63,12 +63,21 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <div class="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                         <a href="/games/guess-who.html" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg transition-colors">
                             Guess Who
                         </a>
-                        <a href="/games/driverdle.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg transition-colors">
+                        <a href="/games/driverdle.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-semibold transition-colors">
                             Driverdle
+                        </a>
+                        <a href="/games/driverdle-f1.php" class="block px-4 py-2 pl-8 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            🏎️ F1 Mode
+                        </a>
+                        <a href="/games/driverdle-all.php" class="block px-4 py-2 pl-8 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            🌍 All Series
+                        </a>
+                        <a href="/games/driverdle-classic.php" class="block px-4 py-2 pl-8 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg transition-colors">
+                            🟩 Classic
                         </a>
                     </div>
                 </div>
@@ -114,8 +123,17 @@
                     <a href="/games/guess-who.php" class="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                         Guess Who
                     </a>
-                    <a href="/games/driverdle.php" class="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <a href="/games/driverdle.php" class="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-semibold">
                         Driverdle
+                    </a>
+                    <a href="/games/driverdle-f1.php" class="block py-1 pl-4 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        🏎️ F1 Mode
+                    </a>
+                    <a href="/games/driverdle-all.php" class="block py-1 pl-4 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        🌍 All Series
+                    </a>
+                    <a href="/games/driverdle-classic.php" class="block py-1 pl-4 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        🟩 Classic
                     </a>
                 </div>
             </div>

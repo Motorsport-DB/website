@@ -13,8 +13,10 @@ require_once __DIR__ . '/../includes/header.php';
         
         <div class="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0 md:space-x-8">
             <div class="flex flex-col sm:flex-row items-center space-x-6">
-                <img id="driver-picture" src="/drivers/picture/default.png" alt="Driver Picture"
-                    class="w-48 h-48 object-contain rounded-full border-4 border-blue-600 dark:border-blue-400">
+                <div class="w-48 h-48 rounded-full border-4 border-blue-600 dark:border-blue-400 overflow-hidden flex-shrink-0">
+                    <img id="driver-picture" src="/drivers/picture/default.png" alt="Driver Picture"
+                        class="w-full h-full object-cover">
+                </div>
                 <div>
                     <h3 id="driver-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Driver Name</h3>
                     <div class="flex flex-col">

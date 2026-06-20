@@ -30,8 +30,10 @@ require_once __DIR__ . '/../includes/header.php';
         
         <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="flex flex-col sm:flex-row items-center space-x-6">
-                <img id="race-picture" src="/races/picture/default.png" alt="Race Picture"
-                    class="w-48 h-48 object-contain rounded-full border-4 border-blue-600 dark:border-blue-400">
+                <div class="w-48 h-48 rounded-full border-4 border-blue-600 dark:border-blue-400 overflow-hidden bg-white dark:bg-gray-700 flex-shrink-0">
+                    <img id="race-picture" src="/races/picture/default.png" alt="Race Picture"
+                        class="w-full h-full object-contain p-3">
+                </div>
                 <div>
                     <h3 id="race-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Race Name</h3>
                     <p class="text-lg text-gray-700 dark:text-gray-300">Date: <span id="race-date" class="font-semibold">Date</span></p>

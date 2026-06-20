@@ -1,10 +1,10 @@
 <?php
-// assets/php/games/driverdle/validateGuess.php
-
+ini_set('display_errors', '0');
+error_reporting(0);
 header('Content-Type: application/json');
 
 function normalize($str) {
-    return strtoupper(preg_replace('~[^\pL\d-]+~u', '', iconv('UTF-8', 'ASCII//TRANSLIT', $str)));
+    return strtoupper(preg_replace('~[^\pL\d-]+~u', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str)));
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
