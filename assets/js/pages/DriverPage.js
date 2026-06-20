@@ -43,19 +43,19 @@ class DriverPage {
 
             // Load driver data
             await this.loadDriverData();
-
+            console.log("data loaded");
             // Hide loading
             hideLoadingOverlay();
-
+            console.log("test");
             // Display driver info
             this.displayDriverProfile();
             this.displayDriverStats();
             this.displayDriverCharts();
             this.displayDriverResults();
-
+            console.log("test");
             // Load random cards
             await this.loadRandomCards();
-
+            console.log("test");
             // Initialize tooltips (deferred)
             this.deferredInit();
 
@@ -80,7 +80,7 @@ class DriverPage {
             this.driver = response;
             
             // Calculate additional data
-            this.driver.age = calculateAge(this.driver.dateOfBirth, this.driver.dateOfDeath);
+            this.driver.age = this.driver.dateOfBirth ? calculateAge(this.driver.dateOfBirth, this.driver.dateOfDeath) : undefined;
             this.driver.stats = calculateDriverStats(this.driver);
             this.driver.seasonPerformance = getSeasonPerformance(this.driver);
             this.driver.radarData = getDriverRadarData(this.driver);
