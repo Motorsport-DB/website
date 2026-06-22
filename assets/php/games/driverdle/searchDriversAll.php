@@ -10,19 +10,24 @@ if (strlen($q) < 2) {
     exit;
 }
 
-$cacheFile = __DIR__ . '/../../../../driverdle-all-list.json';
-$allIds = [];
+$today = date('Y-m-d');
+$cache = readDriverdleCache();
 
-if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 86400) {
-    $allIds = json_decode(file_get_contents($cacheFile), true) ?: [];
+// Build (or reuse today's) list of drivers with ≥150 races across all categories
+if (($cache['allList']['date'] ?? '') === $today && !empty($cache['allList']['drivers'])) {
+    $allIds = $cache['allList']['drivers'];
 } else {
+    $allIds = [];
     foreach (glob(DRIVERS_DIR . '*.json') as $file) {
-        $allIds[] = pathinfo($file, PATHINFO_FILENAME);
+        $data = json_decode(file_get_contents($file), true);
+        if ($data && hasAtLeastNRaces($data, 150)) {
+            $allIds[] = pathinfo($file, PATHINFO_FILENAME);
+        }
     }
-    file_put_contents($cacheFile, json_encode($allIds));
+    writeDriverdleSections(['allList' => ['date' => $today, 'drivers' => $allIds]]);
 }
 
-$q = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', str_replace('-', ' ', $q)));
+$q       = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', str_replace('-', ' ', $q)));
 $results = [];
 
 foreach ($allIds as $id) {

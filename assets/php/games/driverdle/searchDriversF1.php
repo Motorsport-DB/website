@@ -10,29 +10,29 @@ if (strlen($q) < 2) {
     exit;
 }
 
-// Build (or load cached) list of F1-eligible driver IDs
-$cacheFile = __DIR__ . '/../../../../driverdle-f1-list.json';
-$f1Ids = [];
+$today = date('Y-m-d');
+$cache = readDriverdleCache();
 
-if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 86400) {
-    $f1Ids = json_decode(file_get_contents($cacheFile), true) ?: [];
+// Build (or reuse today's) list of F1-eligible drivers
+if (($cache['f1List']['date'] ?? '') === $today && !empty($cache['f1List']['drivers'])) {
+    $f1Ids = $cache['f1List']['drivers'];
 } else {
+    $f1Ids = [];
     foreach (glob(DRIVERS_DIR . '*.json') as $file) {
         $data = json_decode(file_get_contents($file), true);
         if ($data && isF1Driver($data)) {
             $f1Ids[] = pathinfo($file, PATHINFO_FILENAME);
         }
     }
-    file_put_contents($cacheFile, json_encode($f1Ids));
+    writeDriverdleSections(['f1List' => ['date' => $today, 'drivers' => $f1Ids]]);
 }
 
-// Normalize query: transliterate accents and collapse hyphens to spaces
-$q = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', str_replace('-', ' ', $q)));
+$q       = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', str_replace('-', ' ', $q)));
 $results = [];
 
 foreach ($f1Ids as $id) {
-    $name       = str_replace('_', ' ', $id);                                      // display (keeps hyphens)
-    $normalized = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', str_replace('-', ' ', $name))); // search (no hyphens)
+    $name       = str_replace('_', ' ', $id);
+    $normalized = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', str_replace('-', ' ', $name)));
     if (strpos($normalized, $q) !== false) {
         $results[] = ['id' => $id, 'name' => $name];
         if (count($results) >= 20) break;

@@ -1,10 +1,16 @@
 services:
-  web:
+  motorsportdb:
+    container_name: motorsportdb
     build:
       context: .
       dockerfile: docker/Dockerfile
     ports:
-      - "8080:80"
+      - "10001:80"
     volumes:
       - .:/var/www/html
+    # Ensure driverdle.json is writable by www-data (the PHP process user)
+    command: >
+      sh -c "touch /var/www/html/driverdle.json &&
+             chmod 666 /var/www/html/driverdle.json &&
+             exec apache2-foreground"
     restart: unless-stopped

@@ -4,27 +4,27 @@ error_reporting(0);
 header('Content-Type: application/json');
 require_once __DIR__ . '/helpers.php';
 
-$cacheFile = __DIR__ . '/../../../../driverdle-all.json';
-$today     = date('Y-m-d');
+$today = date('Y-m-d');
+$cache = readDriverdleCache();
 
-if (file_exists($cacheFile)) {
-    $cached = json_decode(file_get_contents($cacheFile), true);
-    if (($cached['date'] ?? '') === $today) {
-        echo json_encode(['id' => $cached['id'], 'name' => $cached['firstname'] . ' ' . $cached['lastname'], 'date' => $today]);
-        exit;
-    }
+// Return cached target if still valid for today
+if (($cache['all']['date'] ?? '') === $today) {
+    $all = $cache['all'];
+    echo json_encode(['id' => $all['id'], 'name' => $all['firstname'] . ' ' . $all['lastname'], 'date' => $today]);
+    exit;
 }
 
-$listCache = __DIR__ . '/../../../../driverdle-all-list.json';
-$all = [];
-
-if (file_exists($listCache) && (time() - filemtime($listCache)) < 86400) {
-    $all = json_decode(file_get_contents($listCache), true) ?: [];
+// Build (or reuse today's) list of drivers with ≥150 races across all categories
+if (($cache['allList']['date'] ?? '') === $today && !empty($cache['allList']['drivers'])) {
+    $all = $cache['allList']['drivers'];
 } else {
+    $all = [];
     foreach (glob(DRIVERS_DIR . '*.json') as $file) {
-        $all[] = pathinfo($file, PATHINFO_FILENAME);
+        $data = json_decode(file_get_contents($file), true);
+        if ($data && hasAtLeastNRaces($data, 150)) {
+            $all[] = pathinfo($file, PATHINFO_FILENAME);
+        }
     }
-    file_put_contents($listCache, json_encode($all));
 }
 
 if (empty($all)) {
@@ -42,9 +42,12 @@ if (!$data) {
     exit;
 }
 
-$stats = computeAllStats($data, $id . '.json');
+$stats         = computeAllStats($data, $id . '.json');
 $stats['date'] = $today;
 
-file_put_contents($cacheFile, json_encode($stats, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+writeDriverdleSections([
+    'all'     => $stats,
+    'allList' => ['date' => $today, 'drivers' => $all],
+]);
 
 echo json_encode(['id' => $stats['id'], 'name' => $stats['firstname'] . ' ' . $stats['lastname'], 'date' => $today]);

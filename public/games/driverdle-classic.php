@@ -8,6 +8,11 @@ require_once __DIR__ . '/../../includes/header.php';
     <div class="max-w-xl w-full mx-auto mt-6 p-2 sm:p-4 bg-white dark:bg-gray-900 rounded-xl shadow">
         <h2 class="text-2xl font-bold text-center mb-4 sm:mb-6">Driverdle 🏁</h2>
 
+        <!-- Loading bar -->
+        <div id="driverdle-loader" class="driverdle-loading-bar mb-4">
+            <div class="driverdle-loading-bar-inner"></div>
+        </div>
+
         <!-- Game grid (dynamically generated via JS) -->
         <div id="driverdle-board" class="space-y-2 mb-4 sm:mb-6"></div>
 

@@ -4,32 +4,27 @@ error_reporting(0);
 header('Content-Type: application/json');
 require_once __DIR__ . '/helpers.php';
 
-$cacheFile = __DIR__ . '/../../../../driverdle-f1.json';
-$today     = date('Y-m-d');
+$today = date('Y-m-d');
+$cache = readDriverdleCache();
 
 // Return cached target if still valid for today
-if (file_exists($cacheFile)) {
-    $cached = json_decode(file_get_contents($cacheFile), true);
-    if (($cached['date'] ?? '') === $today) {
-        echo json_encode(['id' => $cached['id'], 'name' => $cached['firstname'] . ' ' . $cached['lastname'], 'date' => $today]);
-        exit;
-    }
+if (($cache['f1']['date'] ?? '') === $today) {
+    $f1 = $cache['f1'];
+    echo json_encode(['id' => $f1['id'], 'name' => $f1['firstname'] . ' ' . $f1['lastname'], 'date' => $today]);
+    exit;
 }
 
-// Build list of F1-eligible drivers (reuse search cache when available)
-$listCache = __DIR__ . '/../../../../driverdle-f1-list.json';
-$eligible  = [];
-
-if (file_exists($listCache) && (time() - filemtime($listCache)) < 86400) {
-    $eligible = json_decode(file_get_contents($listCache), true) ?: [];
+// Build (or reuse today's) list of F1-eligible drivers
+if (($cache['f1List']['date'] ?? '') === $today && !empty($cache['f1List']['drivers'])) {
+    $eligible = $cache['f1List']['drivers'];
 } else {
+    $eligible = [];
     foreach (glob(DRIVERS_DIR . '*.json') as $file) {
         $data = json_decode(file_get_contents($file), true);
         if ($data && isF1Driver($data)) {
             $eligible[] = pathinfo($file, PATHINFO_FILENAME);
         }
     }
-    file_put_contents($listCache, json_encode($eligible));
 }
 
 if (empty($eligible)) {
@@ -47,9 +42,12 @@ if (!$data) {
     exit;
 }
 
-$stats = computeF1Stats($data, $id . '.json');
+$stats         = computeF1Stats($data, $id . '.json');
 $stats['date'] = $today;
 
-file_put_contents($cacheFile, json_encode($stats, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+writeDriverdleSections([
+    'f1'     => $stats,
+    'f1List' => ['date' => $today, 'drivers' => $eligible],
+]);
 
 echo json_encode(['id' => $stats['id'], 'name' => $stats['firstname'] . ' ' . $stats['lastname'], 'date' => $today]);

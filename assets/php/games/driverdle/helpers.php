@@ -5,21 +5,95 @@ if (!defined('DRIVERS_DIR')) {
     define('DRIVERS_DIR', __DIR__ . '/../../../../drivers/');
 }
 
+if (!defined('DRIVERDLE_CACHE')) {
+    define('DRIVERDLE_CACHE', __DIR__ . '/../../../../driverdle.json');
+}
+
+function readDriverdleCache(): array {
+    // 1. APCu (in-memory, fastest)
+    if (function_exists('apcu_fetch')) {
+        $data = apcu_fetch('driverdle_cache', $ok);
+        if ($ok) return $data;
+    }
+    // 2. File fallback
+    if (!file_exists(DRIVERDLE_CACHE)) return [];
+    $f = fopen(DRIVERDLE_CACHE, 'r');
+    if (!$f) return [];
+    flock($f, LOCK_SH);
+    $content = stream_get_contents($f);
+    flock($f, LOCK_UN);
+    fclose($f);
+    $data = $content ? (json_decode($content, true) ?: []) : [];
+    // Warm APCu from file
+    if ($data && function_exists('apcu_store')) {
+        apcu_store('driverdle_cache', $data, strtotime('tomorrow midnight') - time());
+    }
+    return $data;
+}
+
+function writeDriverdleSections(array $updates): void {
+    $f = fopen(DRIVERDLE_CACHE, 'c+');
+    if ($f) {
+        flock($f, LOCK_EX);
+        $content = stream_get_contents($f);
+        $cache   = $content ? (json_decode($content, true) ?: []) : [];
+        foreach ($updates as $key => $data) {
+            $cache[$key] = $data;
+        }
+        ftruncate($f, 0);
+        rewind($f);
+        fwrite($f, json_encode($cache, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        flock($f, LOCK_UN);
+        fclose($f);
+    } else {
+        // File not writable — read from APCu/recompute current state
+        $cache = readDriverdleCache();
+        foreach ($updates as $key => $data) {
+            $cache[$key] = $data;
+        }
+    }
+    // Always update APCu
+    if (function_exists('apcu_store')) {
+        apcu_store('driverdle_cache', $cache, strtotime('tomorrow midnight') - time());
+    }
+}
+
 // --- Driver eligibility ---
 
-function isF1Driver(array $data): bool {
-    if (!isset($data['seasons'])) return false;
-    foreach ($data['seasons'] as $champs) {
-        if (!isset($champs['Formula_1'])) continue;
-        foreach ($champs['Formula_1'] as $sessions) {
-            foreach ($sessions as $sessionName => $session) {
-                if (stripos($sessionName, 'race') !== false) {
-                    return true;
+function hasAtLeastNRaces(array $data, int $n): bool {
+    $count = 0;
+    foreach ($data['seasons'] ?? [] as $champs) {           // year
+        foreach ($champs as $races) {                        // championship
+            foreach ($races as $sessions) {                  // race weekend
+                foreach ($sessions as $sessionName => $s) { // session
+                    if (stripos($sessionName, 'race') !== false) {
+                        if (++$count >= $n) return true;
+                    }
                 }
             }
         }
     }
     return false;
+}
+
+function isF1Driver(array $data): bool {
+    if (!isset($data['seasons'])) return false;
+    $raceCount = 0;
+    $winCount  = 0;
+    foreach ($data['seasons'] as $champs) {
+        if (!isset($champs['Formula_1'])) continue;
+        foreach ($champs['Formula_1'] as $sessions) {
+            foreach ($sessions as $sessionName => $session) {
+                if (stripos($sessionName, 'race') !== false) {
+                    $raceCount++;
+                    if (($session['position'] ?? '') === '1') {
+                        $winCount++;
+                    }
+                }
+            }
+        }
+    }
+    return $winCount >= 1 || $raceCount >= 14;
 }
 
 // --- Stats computation ---

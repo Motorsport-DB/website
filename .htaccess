@@ -1,0 +1,113 @@
+# MotorsportDB .htaccess - SIMPLE PHP VERSION
+RewriteEngine On
+
+# Disable directory browsing
+Options -Indexes +FollowSymLinks
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Block sensitive directories
+    RewriteRule ^\.git/ - [F,L]
+    RewriteRule ^includes/ - [F,L]
+    RewriteRule ^src/ - [F,L]
+    RewriteRule ^docker/ - [F,L]
+    RewriteRule ^node_modules/ - [F,L]
+    RewriteRule ^script/ - [F,L]
+    RewriteRule ^tests/ - [F,L]
+
+    # Block direct access to utility PHP files (not for direct HTTP requests)
+    RewriteRule ^sitemap-serve\.php$ - [F,L]
+    RewriteRule ^router\.php$ - [F,L]
+    
+    # Allow JSON files in games directories
+    RewriteRule ^games/[^/]+/[^/]+\.json$ - [L]
+    
+    # Remove trailing slashes
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [R=301,L]
+    
+    # Sitemap - [END] stops the rewrite loop so the sitemap-serve.php block rule below
+    # doesn't fire on the internally-rewritten URL
+    RewriteRule ^sitemap\.xml$ sitemap-serve.php [END]
+
+    # Allow direct access to existing files (CSS, JS, images, JSON)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+    
+    # Allow api, assets, data directories
+    RewriteCond %{REQUEST_URI} ^/(api|assets|drivers|teams|races)/
+    RewriteRule ^ - [L]
+    
+    # OLD API REDIRECTS
+    RewriteRule ^getDrivers\.php$ api/drivers.php [L,QSA]
+    RewriteRule ^getDriversList\.php$ api/drivers-list.php [L,QSA]
+    RewriteRule ^getTeams\.php$ api/teams.php [L,QSA]
+    RewriteRule ^getTeamsList\.php$ api/teams-list.php [L,QSA]
+    RewriteRule ^getRaces\.php$ api/races.php [L,QSA]
+    RewriteRule ^getMainPage\.php$ api/search.php [L,QSA]
+    
+    # REDIRECT OLD HTML FILES to PHP files (WITH extension)
+    RewriteRule ^index\.html$ / [L,R=301]
+    RewriteRule ^driver\.html$ /driver.php [L,R=301,QSA]
+    RewriteRule ^team\.html$ /team.php [L,R=301,QSA]
+    RewriteRule ^race\.html$ /race.php [L,R=301,QSA]
+    RewriteRule ^head-to-head\.html$ /head-to-head.php [L,R=301,QSA]
+    RewriteRule ^guess-who\.html$ /games/guess-who.php [L,R=301]
+    RewriteRule ^driverdle\.html$ /games/driverdle.php [L,R=301]
+    
+    # MAIN PAGES - Route *.php at root to public/*.php
+    RewriteRule ^(driver|team|race|head-to-head)\.php$ public/$1.php [L,QSA]
+    
+    # GAMES - Route /games/*.php to public/games/*.php
+    RewriteRule ^games/(guess-who|driverdle|driverdle-f1|driverdle-all|driverdle-classic)\.php$ public/games/$1.php [L,QSA]
+
+    # HOME - Route root to public/index.php
+    RewriteRule ^$ public/index.php [L]
+
+    # CLEAN URLs (optional - redirect to .php if someone uses them)
+    RewriteRule ^driver$ /driver.php [R=301,L,QSA]
+    RewriteRule ^team$ /team.php [R=301,L,QSA]
+    RewriteRule ^race$ /race.php [R=301,L,QSA]
+    RewriteRule ^head-to-head$ /head-to-head.php [R=301,L,QSA]
+    RewriteRule ^games/guess-who$ /games/guess-who.php [R=301,L]
+    RewriteRule ^games/driverdle$ /games/driverdle.php [R=301,L]
+    RewriteRule ^games/driverdle-f1$ /games/driverdle-f1.php [R=301,L]
+    RewriteRule ^games/driverdle-all$ /games/driverdle-all.php [R=301,L]
+    RewriteRule ^games/driverdle-classic$ /games/driverdle-classic.php [R=301,L]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';"
+</IfModule>
+
+# Protect sensitive files
+<FilesMatch "(^|\/)(\.(env|git|gitignore|dockerignore|htaccess)|docker-compose[\w.-]*\.yml|config\.json|tailwind\.config\.js|README\.md|composer\.(json|lock)|package(-lock)?\.json)$">
+    Require all denied
+</FilesMatch>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json application/xml
+</IfModule>
+
+# Browser Caching
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/html "access plus 0 seconds"
+    ExpiresByType application/json "access plus 1 hour"
+</IfModule>

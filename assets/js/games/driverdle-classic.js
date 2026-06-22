@@ -15,12 +15,18 @@
 document.addEventListener("DOMContentLoaded", () => {
   // ==================== CONSTANTS ====================
   const MAX_ATTEMPTS = 5;
-  const STORAGE_KEYS = {
-    attempts: "driverdle_attempts",
-    solution: "driverdle_solution",
-    keyboard: "driverdle_keyboard"
-  };
-  const TODAY = new Date().toISOString().slice(0, 10);
+  const STORAGE_KEY  = "driverdle_classic";
+  const TODAY        = new Date().toISOString().slice(0, 10);
+
+  // ==================== STORAGE HELPERS ====================
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch { return {}; }
+  }
+
+  function saveState(patch) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...loadState(), ...patch }));
+  }
   
   const LETTER_STATE = {
     CORRECT: 'correct',   // Green - exact match
@@ -188,9 +194,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let guessIdx = 0;
     for (let i = 0; i < row.children.length; i++) {
       const cell = row.children[i];
-      
-      // Skip static cells (spaces, hyphens)
-      if (cell.dataset.static === "1") continue;
+
+      // Skip static cells (spaces, hyphens) — advance guessIdx to stay aligned with letterStates
+      if (cell.dataset.static === "1") {
+        guessIdx++;
+        continue;
+      }
       
       const { letter, state } = letterStates[guessIdx];
       
@@ -231,9 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Update keyboard state after rendering grid
     updateKeyboardState(letterStates);
     renderKeyboard();
-    
-    // Save keyboard state
-    localStorage.setItem(STORAGE_KEYS.keyboard, JSON.stringify(keyboardState));
+    saveState({ keyboard: keyboardState });
   }
 
   // ==================== INITIALIZATION ====================
@@ -246,31 +253,25 @@ document.addEventListener("DOMContentLoaded", () => {
    * - Setup keyboard
    */
   async function init() {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.solution));
-    
-    if (!saved || saved.date !== TODAY) {
-      // New day - fetch new solution
+    const state = loadState();
+
+    if (!state.date || state.date !== TODAY) {
+      showLoader();
       solution = await fetchDriverOfToday();
+      hideLoader();
       if (!solution || !solution.lastname) {
         showError("Unable to load today's driver");
         return;
       }
-      
-      // Save new solution
-      localStorage.setItem(STORAGE_KEYS.solution, JSON.stringify({ ...solution, date: TODAY }));
-      localStorage.setItem(STORAGE_KEYS.attempts, JSON.stringify([]));
-      localStorage.setItem(STORAGE_KEYS.keyboard, JSON.stringify({}));
-      
+      saveState({ date: TODAY, solution, attempts: [], keyboard: {} });
       attempts = [];
       keyboardState = {};
     } else {
-      // Load existing game state
-      solution = saved;
-      attempts = JSON.parse(localStorage.getItem(STORAGE_KEYS.attempts)) || [];
-      keyboardState = JSON.parse(localStorage.getItem(STORAGE_KEYS.keyboard)) || {};
+      hideLoader();
+      solution      = state.solution;
+      attempts      = state.attempts  || [];
+      keyboardState = state.keyboard  || {};
       currentAttempt = attempts.length;
-      
-      console.log("📂 Loaded game state:", { attempts, keyboardState });
     }
 
     const normalizedLastName = normalize(solution.lastname);
@@ -504,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Add attempt and save
     attempts.push(guessRaw);
-    localStorage.setItem(STORAGE_KEYS.attempts, JSON.stringify(attempts));
+    saveState({ attempts });
     
     // Render the guess using new architecture
     const row = board.children[currentAttempt];
@@ -561,6 +562,16 @@ document.addEventListener("DOMContentLoaded", () => {
       key.style.cursor = "not-allowed";
       key.onclick = null;
     });
+  }
+
+  function showLoader() {
+    const el = document.getElementById("driverdle-loader");
+    if (el) el.style.opacity = "1";
+  }
+
+  function hideLoader() {
+    const el = document.getElementById("driverdle-loader");
+    if (el) el.style.opacity = "0";
   }
 
   async function fetchDriverOfToday() {
