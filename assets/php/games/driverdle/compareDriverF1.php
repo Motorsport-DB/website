@@ -13,33 +13,27 @@ if (!$guessId) {
     exit;
 }
 
-$cacheFile = __DIR__ . '/../../../../driverdle-f1.json';
-$today     = date('Y-m-d');
-$target    = null;
+$today  = date('Y-m-d');
+$cache  = readDriverdleCache();
+$target = null;
 
-// Try to load from cache
-if (file_exists($cacheFile)) {
-    $cached = json_decode(file_get_contents($cacheFile), true);
-    if (is_array($cached) && ($cached['date'] ?? '') === $today) {
-        $target = $cached;
-    }
+// Use shared cache (same as getDriverOfTodayF1.php)
+if (($cache['f1']['date'] ?? '') === $today) {
+    $target = $cache['f1'];
 }
 
-// Bootstrap if needed
+// Bootstrap if needed — mirrors getDriverOfTodayF1.php logic exactly
 if ($target === null) {
-    $listCache = __DIR__ . '/../../../../driverdle-f1-list.json';
-    $eligible  = [];
-
-    if (file_exists($listCache) && (time() - filemtime($listCache)) < 86400) {
-        $eligible = json_decode(file_get_contents($listCache), true) ?: [];
+    if (($cache['f1List']['date'] ?? '') === $today && !empty($cache['f1List']['drivers'])) {
+        $eligible = $cache['f1List']['drivers'];
     } else {
+        $eligible = [];
         foreach (glob(DRIVERS_DIR . '*.json') as $f) {
             $d = json_decode(file_get_contents($f), true);
             if ($d && isF1Driver($d)) {
                 $eligible[] = pathinfo($f, PATHINFO_FILENAME);
             }
         }
-        @file_put_contents($listCache, json_encode($eligible));
     }
 
     if (empty($eligible)) {
@@ -58,7 +52,10 @@ if ($target === null) {
 
     $target         = computeF1Stats($tdata, $tid . '.json');
     $target['date'] = $today;
-    @file_put_contents($cacheFile, json_encode($target, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    writeDriverdleSections([
+        'f1'     => $target,
+        'f1List' => ['date' => $today, 'drivers' => $eligible],
+    ]);
 }
 
 // Load and validate guessed driver
