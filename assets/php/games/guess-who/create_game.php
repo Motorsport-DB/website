@@ -1,4 +1,11 @@
 <?php
+// This is a JSON API: never let PHP warnings/notices leak HTML into the
+// response body, or the frontend's response.json() throws an uncaught
+// SyntaxError instead of the intended error message.
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+header('Content-Type: application/json');
+
 $root_dir = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
 
 require_once 'clear_sessions.php';
@@ -42,7 +49,10 @@ $all_pilots = array_values(array_unique($all_pilots));
 
 $session_id = bin2hex(random_bytes(4)); // ex: 'a1b2c3d4'
 $session_dir = $root_dir . "games" . DIRECTORY_SEPARATOR . "guess-who";
-@mkdir($session_dir, 0777, true);
+if (!is_dir($session_dir) && !@mkdir($session_dir, 0777, true) && !is_dir($session_dir)) {
+    echo json_encode(["success" => false, "error" => "Unable to create game session directory"]);
+    exit;
+}
 
 shuffle($all_pilots); 
 $pilots = array_slice($all_pilots, 0, 20);

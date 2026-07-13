@@ -3,15 +3,39 @@ const API_JOIN = "/assets/php/games/guess-who/join_game.php";
 
 const list_championships = [];
 
+// Fetches JSON and always resolves to parsed data or throws a readable
+// Error, so callers never hit an uncaught "Unexpected token" SyntaxError
+// when the server returns something that isn't valid JSON (e.g. a PHP
+// error page).
+async function fetchJson(url, options) {
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch (err) {
+    throw new Error("Unable to reach the server. Please check your connection and try again.");
+  }
+  try {
+    return await response.json();
+  } catch (err) {
+    throw new Error(`The server returned an unexpected response (HTTP ${response.status}). Please try again later.`);
+  }
+}
+
 async function createGame() {
   console.log("🎮 Creating game...");
-  
+
   if (list_championships.length == 0) {
     console.log("📊 Loading championships...");
-    const response = await fetch("/assets/php/games/guess-who/get_championships.php");
-    const data = await response.json();
+    let data;
+    try {
+      data = await fetchJson("/assets/php/games/guess-who/get_championships.php");
+    } catch (err) {
+      console.error("❌ Failed to load championships:", err);
+      alert(err.message);
+      return;
+    }
     console.log("📊 Championships data:", data);
-    
+
     if (data.success) {
       if (typeof data.championships === "object" && data.championships !== null) {
         Object.entries(data.championships).forEach(([name, arr]) => {
@@ -55,15 +79,21 @@ async function createGame() {
 async function startGame() {
   const selectedChampionships = getSelectedChampionships();
   console.log("🎮 Starting game with championships:", selectedChampionships);
-  
-  const response = await fetch(API_CREATE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ championships: selectedChampionships })
-  });
-  const data = await response.json();
+
+  let data;
+  try {
+    data = await fetchJson(API_CREATE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ championships: selectedChampionships })
+    });
+  } catch (err) {
+    console.error("❌ Failed to create game:", err);
+    alert(err.message);
+    return;
+  }
   console.log("📦 Server response:", data);
-  
+
   if (data.success) {
     console.log(`✅ Game created, redirecting to session ${data.session_id}`);
     // Use proper PHP path, not .html
@@ -94,10 +124,16 @@ async function loadGame() {
     return;
   }
 
-  const response = await fetch(`${API_JOIN}?session=${encodeURIComponent(sessionId)}&player=${encodeURIComponent(player)}`);
-  const data = await response.json();
+  let data;
+  try {
+    data = await fetchJson(`${API_JOIN}?session=${encodeURIComponent(sessionId)}&player=${encodeURIComponent(player)}`);
+  } catch (err) {
+    console.error("❌ Failed to join game:", err);
+    alert(err.message);
+    return;
+  }
   console.log("📦 Game data received:", data);
-  
+
   if (!data.success) {
     console.error("❌ Invalid or expired session");
     alert("Invalid or expired session.");
