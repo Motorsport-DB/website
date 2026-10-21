@@ -5,9 +5,17 @@ LABEL org.opencontainers.image.title="motorsportdb"
 RUN a2enmod rewrite headers expires deflate
 
 # APCu for in-memory caching between PHP requests
-RUN pecl install apcu && docker-php-ext-enable apcu \
- && echo "apc.enabled=1\napc.shm_size=32M\napc.ttl=86400" \
-    > /usr/local/etc/php/conf.d/apcu.ini
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+
+RUN if pecl install apcu; then \
+            docker-php-ext-enable apcu && \
+            printf "apc.enabled=1\napc.shm_size=32M\napc.ttl=86400\n" \
+                > /usr/local/etc/php/conf.d/apcu.ini; \
+        else \
+            chmod +x /usr/local/bin/install-php-extensions && \
+                install-php-extensions apcu || \
+                echo "Warning: APCu normal install failed; continuing with APCu."; \
+        fi
 
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
