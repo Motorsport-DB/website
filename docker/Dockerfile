@@ -1,4 +1,4 @@
-FROM php:8.4-apache
+FROM php:8.4.27-apache
 
 LABEL org.opencontainers.image.title="motorsportdb"
 
