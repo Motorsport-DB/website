@@ -6,15 +6,34 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "10001:80"
+    environment:
+      # Comma separated IPs of reverse proxies allowed to set X-Forwarded-For
+      MSDB_TRUSTED_PROXIES: ""
     volumes:
-      - .:/var/www/html
-    # Ensure driverdle.json is writable by www-data (the PHP process user)
-    # and that the (gitignored) games/guess-who session directory exists
-    # and is writable, so a fresh checkout doesn't break the guess-who game.
-    command: >
-      sh -c "touch /var/www/html/driverdle.json &&
-             chmod 666 /var/www/html/driverdle.json &&
-             mkdir -p /var/www/html/games/guess-who &&
-             chmod -R 777 /var/www/html/games &&
-             exec apache2-foreground"
+      # Code and data are mounted read-only: the container cannot modify them.
+      - .:/var/www/html:ro
+      # Everything the application writes (database, index, game sessions).
+      - motorsportdb-var:/var/lib/motorsportdb
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /run/apache2:size=1m
+      - /run/lock:size=1m
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1/api/search-index.php"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
+
+volumes:
+  motorsportdb-var:
