@@ -27,10 +27,8 @@ async function fetchJson(url, options) {
 }
 
 async function createGame() {
-  console.log("🎮 Creating game...");
 
   if (list_championships.length == 0) {
-    console.log("📊 Loading championships...");
     let data;
     try {
       data = await fetchJson("/assets/php/games/guess-who/get_championships.php");
@@ -39,7 +37,6 @@ async function createGame() {
       alert(err.message);
       return;
     }
-    console.log("📊 Championships data:", data);
 
     if (data.success) {
       if (typeof data.championships === "object" && data.championships !== null) {
@@ -48,7 +45,6 @@ async function createGame() {
             arr.forEach(year => list_championships.push({ year, name }));
           }
         });
-        console.log(`✅ Loaded ${list_championships.length} championships`);
       } else {
         console.error("❌ data.championships is not an object:", data.championships);
       }
@@ -64,11 +60,9 @@ async function createGame() {
     console.error("❌ Element 'championships' not found!");
     return;
   }
-  console.log("✅ Championship select element found");
   
   const listDriversEl = document.getElementById("list_drivers");
   if (listDriversEl) {
-    console.log("✅ Showing championship selector");
     listDriversEl.classList.remove("hidden");
   } else {
     console.warn("⚠️ Element 'list_drivers' not found (optional)");
@@ -78,12 +72,10 @@ async function createGame() {
   championshipSelect.innerHTML = list_championships.map(champ => `
     <option value='${JSON.stringify([champ.name, champ.year])}'>${champ.name} - ${champ.year}</option>
   `).join("");
-  console.log(`✅ Populated ${list_championships.length} championship options`);
 }
 
 async function startGame() {
   const selectedChampionships = getSelectedChampionships();
-  console.log("🎮 Starting game with championships:", selectedChampionships);
 
   let data;
   try {
@@ -97,10 +89,8 @@ async function startGame() {
     alert(err.message);
     return;
   }
-  console.log("📦 Server response:", data);
 
   if (data.success) {
-    console.log(`✅ Game created, redirecting to session ${data.session_id}`);
     // Use proper PHP path, not .html
     window.location.href = `/games/guess-who?session=${data.session_id}&player=1`;
   } else {
@@ -112,7 +102,6 @@ async function startGame() {
 async function joinGame() {
   const sessionId = prompt("Session code?");
   if (!sessionId) return;
-  console.log(`🔗 Joining game session: ${sessionId}`);
   // Use proper PHP path, not .html
   window.location.href = `/games/guess-who?session=${sessionId}&player=2`;
 }
@@ -122,7 +111,6 @@ async function loadGame() {
   const sessionId = urlParams.get("session");
   const player = urlParams.get("player");
 
-  console.log(`🎮 Loading game - Session: ${sessionId}, Player: ${player}`);
 
   if (!sessionId || !player) {
     console.warn("⚠️ Missing session or player parameter");
@@ -137,7 +125,6 @@ async function loadGame() {
     alert(err.message);
     return;
   }
-  console.log("📦 Game data received:", data);
 
   if (!data.success) {
     console.error("❌ Invalid or expired session");
@@ -151,11 +138,9 @@ async function loadGame() {
   if (gameEl) gameEl.classList.remove("hidden");
   if (menuEl) menuEl.classList.add("hidden");
 
-  console.log("👥 Pilots data:", data.pilots);
   let pilotsHtml = "";
   if (typeof data.pilots === "object" && data.pilots !== null) {
     const pilotEntries = Object.entries(data.pilots);
-    console.log(`✅ Found ${pilotEntries.length} pilots`);
     pilotsHtml = pilotEntries.map(([id, pilot]) => {
       if (typeof pilot === "object" && pilot !== null && pilot.picture) {
         return `
@@ -188,19 +173,13 @@ async function loadGame() {
       ${pilotsHtml}
     </div>
   `;
-  console.log("✅ Game interface rendered");
 }
 
 window.onload = () => {
-  console.log("🚀 Page loaded");
-  console.log("📍 URL:", window.location.href);
-  console.log("📍 Search params:", window.location.search);
   
   if (window.location.search.includes("session")) {
-    console.log("🎮 Session detected, loading game...");
     loadGame();
   } else {
-    console.log("📋 No session, showing menu");
   }
 }
 

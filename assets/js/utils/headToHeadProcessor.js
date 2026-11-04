@@ -12,7 +12,6 @@ import { calculateDriverStats, isRaceSession, isQualifyingSession } from './data
  * @returns {Object} Comprehensive comparison data
  */
 export function calculateAdvancedHeadToHead(drivers, mode = 'all') {
-    console.log(`🔄 calculateAdvancedHeadToHead: ${drivers.length} drivers, mode: ${mode}`);
     
     const driversStats = drivers.map(driver => {
         const basicStats = calculateDriverStats(driver);

@@ -157,12 +157,10 @@ class HeadToHeadPage {
                 this.selectedDrivers.map(d => apiService.getDriver(d.id))
             );
 
-            console.log('Loaded drivers data:', driversData);
 
             // Calculate comprehensive comparison
             this.comparisonData = calculateAdvancedHeadToHead(driversData, this.currentMode);
             
-            console.log('Comparison data:', this.comparisonData);
 
             // Check if mode constraints are met
             if (this.currentMode === 'same-team' && this.comparisonData.battles.commonRaces === 0) {
