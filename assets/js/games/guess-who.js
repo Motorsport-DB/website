@@ -3,6 +3,11 @@ const API_JOIN = "/assets/php/games/guess-who/join_game.php";
 
 const list_championships = [];
 
+// Escape text inserted into innerHTML templates (ids come from the URL / server).
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
 // Fetches JSON and always resolves to parsed data or throws a readable
 // Error, so callers never hit an uncaught "Unexpected token" SyntaxError
 // when the server returns something that isn't valid JSON (e.g. a PHP
@@ -155,9 +160,9 @@ async function loadGame() {
       if (typeof pilot === "object" && pilot !== null && pilot.picture) {
         return `
           <div class="border border-gray-300 dark:border-gray-600 rounded p-2 text-center bg-white dark:bg-gray-800 shadow flex flex-col pilot-card transition-all duration-200 text-black dark:text-white hover:scale-105 cursor-pointer"
-               data-pilot-id="${id}" onclick="this.classList.toggle('opacity-50'); this.classList.toggle('grayscale'); this.classList.toggle('bg-gray-200'); this.classList.toggle('dark:bg-gray-700');">
-            <img src="${pilot.picture}" alt="${id}" class="w-48 h-48 mx-auto mb-2 object-contain rounded pointer-events-none select-none">
-            <p class="pointer-events-none select-none">${id.replace(/_/g, " ")}</p>
+               data-pilot-id="${escapeHtml(id)}" onclick="this.classList.toggle('opacity-50'); this.classList.toggle('grayscale'); this.classList.toggle('bg-gray-200'); this.classList.toggle('dark:bg-gray-700');">
+            <img src="${escapeHtml(pilot.picture)}" alt="${escapeHtml(id.replace(/_/g, " "))}" loading="lazy" class="w-48 h-48 mx-auto mb-2 object-contain rounded pointer-events-none select-none">
+            <p class="pointer-events-none select-none">${escapeHtml(id.replace(/_/g, " "))}</p>
           </div>
         `;
       }
@@ -173,11 +178,11 @@ async function loadGame() {
   gameEl.innerHTML = `
     <div class="mb-4 text-gray-800 dark:text-gray-200">
       <span class="font-semibold">Game code:</span>
-      <span class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-blue-700 dark:text-blue-400">${sessionId}</span>
+      <span class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-blue-700 dark:text-blue-400">${escapeHtml(sessionId)}</span>
     </div>
     <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">
       Your opponent must guess:
-      <span class="text-red-600 dark:text-red-400">${data.secret_pilot ? data.secret_pilot.replace(/_/g, " ") : 'Unknown'}</span>
+      <span class="text-red-600 dark:text-red-400">${data.secret_pilot ? escapeHtml(data.secret_pilot.replace(/_/g, " ")) : 'Unknown'}</span>
     </h2>
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       ${pilotsHtml}
