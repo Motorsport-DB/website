@@ -1,12 +1,21 @@
 /**
  * MotorsportDB - Search Component
- * Reusable search bar with autocomplete functionality
+ * Search bar with instant, client-side autocomplete (see services/SearchIndex.js).
+ * Falls back to the server API if the index cannot be loaded.
  */
 
 import { apiService } from '../services/ApiService.js';
+import { searchIndex } from '../services/SearchIndex.js';
 import { UI_CONFIG } from '../config/constants.js';
 import { debounce, createElement } from '../utils/dom.js';
-import { sanitizeHTML } from '../utils/helpers.js';
+
+const TYPE_LABELS = {
+    driver: 'Driver',
+    team: 'Team',
+    championship: 'Championship',
+};
+
+let instances = 0;
 
 export class SearchComponent {
     constructor(containerId, options = {}) {
@@ -18,269 +27,240 @@ export class SearchComponent {
         this.options = {
             placeholder: 'Search drivers, teams, championships...',
             minLength: UI_CONFIG.SEARCH_MIN_LENGTH,
-            debounceDelay: UI_CONFIG.DEBOUNCE_DELAY,
+            debounceDelay: 60,
             showImages: true,
             maxResults: 10,
+            types: null,
             onSelect: null,
             ...options,
         };
 
-        this.searchInput = null;
-        this.resultsContainer = null;
-        this.debouncedSearch = debounce(
-            (query) => this.search(query),
-            this.options.debounceDelay
-        );
+        this.uid = `msdb-search-${++instances}`;
+        this.results = [];
+        this.activeIndex = -1;
+        this.requestId = 0;
+        this.debouncedSearch = debounce((query) => this.search(query), this.options.debounceDelay);
 
-        this.init();
-    }
-
-    /**
-     * Initialize the search component
-     */
-    init() {
         this.render();
         this.attachEventListeners();
     }
 
-    /**
-     * Render the search component
-     */
     render() {
         this.container.innerHTML = '';
-        
-        // Create search input
+        this.container.classList.add('relative');
+
+        const label = createElement('label', { for: `${this.uid}-input`, className: 'sr-only' }, this.options.placeholder);
+
         this.searchInput = createElement('input', {
-            type: 'text',
+            id: `${this.uid}-input`,
+            type: 'search',
+            autocomplete: 'off',
+            spellcheck: 'false',
+            role: 'combobox',
+            'aria-autocomplete': 'list',
+            'aria-expanded': 'false',
+            'aria-controls': `${this.uid}-list`,
             placeholder: this.options.placeholder,
             className: 'w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 ' +
-                      'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ' +
-                      'focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 ' +
-                      'transition-colors duration-200',
+                'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ' +
+                'focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 ' +
+                'transition-colors duration-200',
         });
 
-        // Create results container
-        this.resultsContainer = createElement('div', {
+        this.resultsContainer = createElement('ul', {
+            id: `${this.uid}-list`,
+            role: 'listbox',
+            'aria-label': 'Search results',
             className: 'mt-2 space-y-2',
         });
 
-        // Add to container
-        this.container.appendChild(this.searchInput);
-        this.container.appendChild(this.resultsContainer);
+        this.status = createElement('div', { className: 'sr-only', 'aria-live': 'polite' });
+
+        this.container.append(label, this.searchInput, this.resultsContainer, this.status);
     }
 
-    /**
-     * Attach event listeners
-     */
     attachEventListeners() {
+        // Start downloading the index as soon as the user shows interest.
+        this.searchInput.addEventListener('focus', () => searchIndex.load().catch(() => {}), { once: true });
+
         this.searchInput.addEventListener('input', (e) => {
             const query = e.target.value.trim();
-            
             if (query.length < this.options.minLength) {
+                this.requestId++;
                 this.clearResults();
                 return;
             }
-
             this.debouncedSearch(query);
         });
 
-        // Close results when clicking outside
         document.addEventListener('click', (e) => {
             if (!this.container.contains(e.target)) {
                 this.clearResults();
             }
         });
 
-        // Handle keyboard navigation
         this.searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.clearResults();
-                this.searchInput.blur();
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    this.setActive(this.activeIndex + 1);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    this.setActive(this.activeIndex - 1);
+                    break;
+                case 'Enter': {
+                    const result = this.results[this.activeIndex >= 0 ? this.activeIndex : 0];
+                    if (result) {
+                        e.preventDefault();
+                        this.select(result);
+                    }
+                    break;
+                }
+                case 'Escape':
+                    this.clearResults();
+                    break;
+                default:
+                    break;
             }
         });
     }
 
-    /**
-     * Perform search
-     * @param {string} query - Search query
-     */
     async search(query) {
+        const requestId = ++this.requestId;
+        let results;
         try {
-            this.showLoading();
-            
-            const results = await apiService.search(query);
-            
-            if (results.length === 0) {
-                this.showNoResults();
+            results = await searchIndex.search(query, { limit: this.options.maxResults, types: this.options.types });
+        } catch (indexError) {
+            console.warn('Search index unavailable, using the server:', indexError);
+            try {
+                this.showMessage('Searching…');
+                results = (await apiService.search(query)) || [];
+            } catch (error) {
+                console.error('Search error:', error);
+                if (requestId === this.requestId) this.showMessage('An error occurred. Please try again.', true);
                 return;
             }
-
-            this.displayResults(results.slice(0, this.options.maxResults));
-        } catch (error) {
-            console.error('Search error:', error);
-            this.showError();
         }
+        if (requestId !== this.requestId) return; // a newer query is in flight
+
+        if (!results.length) {
+            this.showMessage(`No results for “${query}”`);
+            return;
+        }
+        this.displayResults(results.slice(0, this.options.maxResults));
     }
 
-    /**
-     * Display search results
-     * @param {Array} results - Search results
-     */
     displayResults(results) {
-        this.resultsContainer.innerHTML = '';
-
-        results.forEach(result => {
-            const resultItem = this.createResultItem(result);
-            this.resultsContainer.appendChild(resultItem);
-        });
+        this.results = results;
+        this.activeIndex = -1;
+        this.resultsContainer.replaceChildren(...results.map((r, i) => this.createResultItem(r, i)));
+        this.searchInput.setAttribute('aria-expanded', 'true');
+        this.status.textContent = `${results.length} result${results.length > 1 ? 's' : ''}`;
     }
 
-    /**
-     * Create a result item element
-     * @param {Object} result - Result data
-     * @returns {HTMLElement}
-     */
-    createResultItem(result) {
-        const item = createElement('div', {
-            className: 'bg-gray-100 dark:bg-gray-800 p-4 rounded-lg flex items-center ' +
-                      'cursor-pointer transition-all duration-200 hover:scale-105 ' +
-                      'hover:shadow-lg hover:bg-gray-200 dark:hover:bg-gray-700',
+    createResultItem(result, index) {
+        const item = createElement('li', {
+            id: `${this.uid}-opt-${index}`,
+            role: 'option',
+            'aria-selected': 'false',
+            className: 'search-result text-left bg-white dark:bg-gray-800 shadow-sm p-3 rounded-lg flex items-center gap-4 ' +
+                'cursor-pointer transition-colors duration-150 hover:bg-blue-50 dark:hover:bg-gray-700',
         });
 
-        // Add image if enabled
         if (this.options.showImages && result.image) {
-            const wrapper = createElement('div', {
-                className: 'w-16 h-16 rounded-full border-2 border-blue-400 dark:border-blue-500 ' +
-                          'overflow-hidden flex-shrink-0 mr-4 bg-white dark:bg-gray-700',
-            });
             const img = createElement('img', {
                 src: result.image,
-                alt: result.name,
-                className: 'w-full h-full object-contain p-1',
+                alt: '',
+                loading: 'lazy',
+                width: '48',
+                height: '48',
+                className: 'w-12 h-12 rounded-full object-contain bg-white dark:bg-gray-700 ' +
+                    'border-2 border-blue-400 dark:border-blue-500 p-0.5 flex-shrink-0',
             });
-            wrapper.appendChild(img);
-            item.appendChild(wrapper);
+            img.addEventListener('error', () => { img.style.visibility = 'hidden'; }, { once: true });
+            item.appendChild(img);
         }
 
-        // Add content
-        const content = createElement('div', {
-            className: 'flex flex-col flex-1',
-        });
-
-        const name = createElement('a', {
+        const content = createElement('div', { className: 'flex flex-col min-w-0 flex-1' });
+        content.appendChild(createElement('a', {
             href: result.url,
-            className: 'text-lg font-bold text-gray-800 dark:text-blue-400 hover:underline',
-        }, sanitizeHTML(result.name));
+            tabindex: '-1',
+            className: 'text-base sm:text-lg font-semibold text-gray-900 dark:text-blue-300 truncate hover:underline',
+        }, result.name));
 
-        content.appendChild(name);
-
-        // Add type badge if available
-        if (result.type) {
-            const badge = createElement('span', {
-                className: 'text-xs text-gray-600 dark:text-gray-400 mt-1',
-            }, this.getTypeBadge(result.type));
-            content.appendChild(badge);
+        const details = [TYPE_LABELS[result.type] || result.type];
+        const meta = result.metadata || {};
+        if (meta.first && meta.last) {
+            details.push(meta.first === meta.last ? String(meta.first) : `${meta.first}–${meta.last}`);
         }
+        if (meta.country) details.push(String(meta.country).replace(/_/g, ' '));
+        if (result.via) details.push(`also known as ${result.via}`);
+        content.appendChild(createElement('span', {
+            className: 'text-xs text-gray-600 dark:text-gray-400 truncate',
+        }, details.join(' · ')));
 
         item.appendChild(content);
-
-        // Handle click
+        item.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus in the input
         item.addEventListener('click', (e) => {
-            if (this.options.onSelect) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.options.onSelect(result);
-            } else if (e.target.tagName !== 'A') {
-                window.location.href = result.url;
-            }
+            if (e.target.closest('a') && !this.options.onSelect) return; // native link behaviour
+            e.preventDefault();
+            this.select(result);
         });
-
+        item.addEventListener('mouseenter', () => this.setActive(index, false));
         return item;
     }
 
-    /**
-     * Get type badge text
-     * @param {string} type - Result type
-     * @returns {string}
-     */
-    getTypeBadge(type) {
-        const badges = {
-            driver: '👤 Driver',
-            team: '🏎️ Team',
-            championship: '🏆 Championship',
-        };
-        return badges[type] || type;
+    setActive(index, scroll = true) {
+        if (!this.results.length) return;
+        const count = this.results.length;
+        this.activeIndex = (index + count) % count;
+        [...this.resultsContainer.children].forEach((el, i) => {
+            const active = i === this.activeIndex;
+            el.setAttribute('aria-selected', String(active));
+            el.classList.toggle('ring-2', active);
+            el.classList.toggle('ring-blue-500', active);
+            if (active && scroll) el.scrollIntoView({ block: 'nearest' });
+        });
+        this.searchInput.setAttribute('aria-activedescendant', `${this.uid}-opt-${this.activeIndex}`);
     }
 
-    /**
-     * Show loading indicator
-     */
-    showLoading() {
-        this.resultsContainer.innerHTML = '';
-        
-        const loading = createElement('div', {
-            className: 'text-center py-4',
-        }, [
-            createElement('div', {
-                className: 'inline-block w-8 h-8 border-4 border-blue-500 ' +
-                          'border-t-transparent rounded-full animate-spin',
-            }),
-        ]);
-
-        this.resultsContainer.appendChild(loading);
+    select(result) {
+        if (this.options.onSelect) {
+            this.options.onSelect(result);
+            this.clearResults();
+        } else {
+            window.location.href = result.url;
+        }
     }
 
-    /**
-     * Show no results message
-     */
-    showNoResults() {
-        this.resultsContainer.innerHTML = '';
-        
-        const message = createElement('div', {
-            className: 'text-center py-4 text-gray-600 dark:text-gray-400',
-        }, 'No results found');
-
-        this.resultsContainer.appendChild(message);
+    showMessage(text, isError = false) {
+        this.results = [];
+        this.activeIndex = -1;
+        this.resultsContainer.replaceChildren(createElement('li', {
+            role: 'status',
+            className: `text-center py-4 ${isError ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`,
+        }, text));
+        this.searchInput.setAttribute('aria-expanded', 'false');
     }
 
-    /**
-     * Show error message
-     */
-    showError() {
-        this.resultsContainer.innerHTML = '';
-        
-        const message = createElement('div', {
-            className: 'text-center py-4 text-red-500 dark:text-red-400',
-        }, 'An error occurred. Please try again.');
-
-        this.resultsContainer.appendChild(message);
-    }
-
-    /**
-     * Clear results
-     */
     clearResults() {
-        this.resultsContainer.innerHTML = '';
+        this.results = [];
+        this.activeIndex = -1;
+        this.resultsContainer.replaceChildren();
+        this.searchInput.setAttribute('aria-expanded', 'false');
+        this.searchInput.removeAttribute('aria-activedescendant');
     }
 
-    /**
-     * Focus search input
-     */
     focus() {
         this.searchInput.focus();
     }
 
-    /**
-     * Clear search input
-     */
     clear() {
         this.searchInput.value = '';
         this.clearResults();
     }
 
-    /**
-     * Destroy the component
-     */
     destroy() {
         this.container.innerHTML = '';
     }
