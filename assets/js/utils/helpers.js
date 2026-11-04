@@ -12,7 +12,22 @@ import { DEFAULT_IMAGES } from '../config/constants.js';
  */
 export function formatDisplayName(name) {
     if (!name) return '';
-    return name.replace(/_/g, ' ');
+    const text = String(name).replace(/_/g, ' ');
+    // ids written as lower-case slugs ("mild_seven_benetton_ford") read better in Title Case
+    if (text === text.toLowerCase() && /[a-z]/.test(text)) {
+        return text.replace(/(^|[\s-])([a-z])/g, (m, sep, c) => sep + c.toUpperCase());
+    }
+    return text;
+}
+
+/**
+ * Escape a value for insertion in HTML text or attributes.
+ * @param {*} value
+ * @returns {string}
+ */
+export function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 /**
@@ -134,11 +149,7 @@ export function getDefaultImage(type) {
  * @returns {string}
  */
 export function sanitizeHTML(html) {
-    if (!html) return '';
-    
-    const div = document.createElement('div');
-    div.textContent = html;
-    return div.innerHTML;
+    return escapeHtml(html);
 }
 
 /**

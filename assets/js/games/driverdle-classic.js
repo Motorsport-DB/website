@@ -80,14 +80,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const result = [];
     const solutionUsed = Array(solution.length).fill(false);
     
-    console.log(`🔍 Verifying: "${guess}" vs "${solution}"`);
     
     // PASS 1: Find all CORRECT letters (green)
     for (let i = 0; i < guessArr.length; i++) {
       if (guessArr[i] === solutionArr[i]) {
         result[i] = { letter: guessArr[i], state: LETTER_STATE.CORRECT };
         solutionUsed[i] = true;
-        console.log(`  ✅ Position ${i}: "${guessArr[i]}" CORRECT`);
       } else {
         result[i] = { letter: guessArr[i], state: null }; // Placeholder
       }
@@ -105,14 +103,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!solutionUsed[j] && letter === solutionArr[j]) {
           solutionUsed[j] = true;
           foundElsewhere = true;
-          console.log(`  🟡 Position ${i}: "${letter}" PRESENT (found at ${j})`);
           break;
         }
       }
       
       result[i].state = foundElsewhere ? LETTER_STATE.PRESENT : LETTER_STATE.ABSENT;
       if (!foundElsewhere) {
-        console.log(`  ⚫ Position ${i}: "${letter}" ABSENT`);
       }
     }
     
@@ -133,10 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Only upgrade, never downgrade
       if (newPriority > currentPriority) {
-        console.log(`  🎹 Keyboard "${letter}": ${currentState} → ${state}`);
         keyboardState[letter] = state;
       } else {
-        console.log(`  🎹 Keyboard "${letter}": keeping ${currentState} (not ${state})`);
       }
     });
   }
@@ -145,7 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
    * Render keyboard colors based on current state
    */
   function renderKeyboard() {
-    console.log("🎨 Rendering keyboard with state:", keyboardState);
     
     const allKeys = document.querySelectorAll('.key[data-key]');
     
@@ -175,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     
-    console.log("✅ Keyboard rendered");
   }
 
   /**
@@ -189,7 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderGuessInGrid(row, guess, solution, animate = false) {
     const letterStates = verifyGuess(guess, solution);
     
-    console.log(`🎨 Rendering grid for "${guess}":`, letterStates);
     
     let guessIdx = 0;
     for (let i = 0; i < row.children.length; i++) {
@@ -333,7 +324,6 @@ document.addEventListener("DOMContentLoaded", () => {
    * Render all past attempts using new architecture
    */
   function renderPastAttempts(board, attempts, solution) {
-    console.log("🔄 Rendering past attempts:", attempts);
     
     attempts.forEach((guess, index) => {
       const row = board.children[index];
@@ -351,15 +341,12 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("❌ Virtual keyboard element not found!");
       return;
     }
-    console.log("✅ Virtual keyboard found, setting up...");
     
     const keys = keyboard.querySelectorAll(".key");
-    console.log(`✅ Found ${keys.length} keyboard keys`);
 
     keys.forEach(key => {
       key.addEventListener("click", () => {
         const keyValue = key.dataset.key;
-        console.log(`🔤 Virtual key pressed: ${keyValue}`);
         handleKeyPress(keyValue);
       });
     });
@@ -370,13 +357,10 @@ document.addEventListener("DOMContentLoaded", () => {
       
       const key = e.key.toUpperCase();
       if (/^[A-Z]$/.test(key)) {
-        console.log(`⌨️  Physical key pressed: ${key}`);
         handleKeyPress(key);
       } else if (key === "BACKSPACE") {
-        console.log("⌨️  Backspace pressed");
         handleKeyPress("BACKSPACE");
       } else if (key === "ENTER") {
-        console.log("⌨️  Enter pressed");
         handleKeyPress("ENTER");
       }
     });
@@ -450,11 +434,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const expectedLength = parseInt(board.dataset.length);
     const normalizedLastName = normalize(solution.lastname);
     
-    console.log("📝 Submit attempt:");
-    console.log(`  Solution lastname: ${solution.lastname}`);
-    console.log(`  Normalized: ${normalizedLastName}`);
-    console.log(`  Current input:`, currentInput);
-    console.log(`  Input length: ${currentInput.length}`);
     
     // Count expected letters (excluding static characters like -, ', spaces)
     let expectedLetters = 0;
@@ -462,7 +441,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (/[A-Z]/.test(normalizedLastName[i])) expectedLetters++;
     }
     
-    console.log(`  Expected letters: ${expectedLetters}`);
 
     if (currentInput.length !== expectedLetters) {
       console.warn(`❌ Length mismatch: got ${currentInput.length}, expected ${expectedLetters}`);
@@ -470,7 +448,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
-    console.log("✅ Length validation passed");
 
     // Reconstruct the guess with static characters
     let guessArray = [];

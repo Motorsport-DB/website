@@ -101,7 +101,6 @@ class TeamPage {
                 ? this.team.creationDate.join(', ') 
                 : this.team.creationDate;
             foundedElem.textContent = `Founded: ${dateDisplay}`;
-            console.log(`✅ Team founded set: ${dateDisplay}`);
         }
     }
 
@@ -125,9 +124,6 @@ class TeamPage {
     }
 
     displayTeamCharts() {
-        console.log("📊 TeamPage.displayTeamCharts() called");
-        console.log("  Team data:", this.team);
-        console.log("  Current charts Map size:", this.charts.size);
         
         if (!this.team) {
             console.warn("⚠️  No team data, skipping charts");
@@ -136,22 +132,15 @@ class TeamPage {
         
         // Destroy existing charts properly through ChartService
         const chartIds = ['performanceChart', 'resultsChart'];
-        console.log("🗑️  Destroying existing charts:", chartIds);
         chartIds.forEach(id => {
-            console.log(`    Destroying chart: ${id}`);
             chartService.destroyChart(id);
         });
         this.charts.clear();
-        console.log("✅ All charts destroyed, Map cleared");
         
-        console.log("📈 Creating performance chart...");
         this.createPerformanceChart();
         
-        console.log("📈 Creating results distribution chart...");
         this.createResultsDistributionChart();
         
-        console.log("✅ All charts created successfully");
-        console.log("  Final charts Map size:", this.charts.size);
     }
 
     createPerformanceChart() {
@@ -213,7 +202,6 @@ class TeamPage {
     }
 
     displayTeamResults() {
-        console.log("📋 displayTeamResults called");
         const container = document.getElementById('resultsContainer');
         if (!container) {
             console.error("❌ resultsContainer element not found");
@@ -226,7 +214,6 @@ class TeamPage {
             return;
         }
 
-        console.log("  Processing seasons:", Object.keys(this.team.seasons));
 
         // Initialize filter state
         if (!this.sessionFilter) {
@@ -385,7 +372,6 @@ class TeamPage {
 
         html += '</div>';
         container.innerHTML = html;
-        console.log("✅ Team results displayed successfully");
     }
 
     /**

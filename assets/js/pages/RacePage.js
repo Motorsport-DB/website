@@ -10,7 +10,7 @@ import { createCardGrid } from '../components/CardComponent.js';
 import { initTooltips } from '../components/TooltipComponent.js';
 import { showLoadingOverlay, hideLoadingOverlay } from '../components/LoadingComponent.js';
 import { isRaceSession, isQualifyingSession } from '../utils/dataProcessor.js';
-import { formatDisplayName } from '../utils/helpers.js';
+import { formatDisplayName, escapeHtml } from '../utils/helpers.js';
 import * as dom from '../utils/dom.js';
 
 class RacePage {
@@ -40,6 +40,7 @@ class RacePage {
             hideLoadingOverlay();
 
             this.displayRaceInfo();
+            this.displayStandings();
             this.displayRaceResults();
             this.displayRaceCharts();
             this.setupYearNavigation();
@@ -56,9 +57,6 @@ class RacePage {
     async loadRaceData() {
         try {
             const response = await apiService.getRace(this.raceId, this.year);
-            console.log("📦 getRace response:", response);
-            console.log("  Has events?", response?.events ? "YES" : "NO");
-            console.log("  Events keys:", response?.events ? Object.keys(response.events) : "none");
             
             if (!response || !response.events) {
                 throw new Error('Race data not found');
@@ -99,33 +97,15 @@ class RacePage {
 
         const pictureElem = document.getElementById('race-picture');
         if (pictureElem) {
-            // Always use default image for GP_Explorer and other races without specific images
-            const defaultImg = '/races/picture/default.png';
-            pictureElem.src = defaultImg;
-            pictureElem.alt = this.raceId;
-            console.log(`🖼️  Set race picture to default: ${defaultImg}`);
-            
-            // Only try specific image if NOT GP_Explorer (which we know doesn't have one)
-            if (this.raceId !== 'GP_Explorer') {
-                const specificImg = `/races/picture/${this.raceId}.png`;
-                const testImg = new Image();
-                testImg.onload = () => {
-                    pictureElem.src = specificImg;
-                    console.log(`✅ Loaded specific image: ${specificImg}`);
-                };
-                testImg.onerror = () => {
-                    console.log(`⚠️  Specific image not found, keeping default`);
-                };
-                testImg.src = specificImg;
-            }
+            pictureElem.src = this.raceData.picture ? `/${this.raceData.picture}` : '/races/picture/default.png';
+            pictureElem.alt = formatDisplayName(this.raceId);
         }
-        
+
         // Calculate and display stats
         this.displayStats();
     }
     
     displayStats() {
-        console.log("📊 Calculating race statistics...");
         if (!this.raceData || !this.raceData.events) {
             console.warn("⚠️  No race data for stats");
             return;
@@ -133,57 +113,28 @@ class RacePage {
         
         const events = this.raceData.events;
         const totalEvents = Object.keys(events).length;
-        console.log(`  Total events: ${totalEvents}`);
         
         // Count unique participants, total laps, and sessions
         const participants = new Set();
         let totalLaps = 0;
         let totalSessions = 0;
-        let lapDebug = [];
-        
-        Object.entries(events).forEach(([eventName, sessions]) => {
-            console.log(`  Processing event: ${eventName}`);
+
+        Object.values(events).forEach((sessions) => {
             Object.entries(sessions).forEach(([sessionName, results]) => {
                 totalSessions++;
-                console.log(`    Session: ${sessionName}, Results type: ${typeof results}`);
-                
-                if (typeof results === 'object' && results !== null) {
-                    Object.entries(results).forEach(([key, result]) => {
-                        // Add participants
-                        if (result.drivers) {
-                            result.drivers.forEach(driver => participants.add(driver));
-                        } else if (result.driver) {
-                            participants.add(result.driver);
-                        }
-                        
-                        // Count laps if available
-                        if (result.laps !== undefined && result.laps !== null) {
-                            const laps = parseInt(result.laps);
-                            if (!isNaN(laps) && laps > 0) {
-                                totalLaps += laps;
-                                lapDebug.push(`${sessionName} ${key}: ${laps} laps`);
-                            }
-                        }
-                    });
-                }
+                if (typeof results !== 'object' || results === null) return;
+                let raceLaps = 0;
+                Object.values(results).forEach((result) => {
+                    (result.drivers || (result.driver ? [result.driver] : [])).forEach((d) => participants.add(d));
+                    const info = result.other_info || {};
+                    const laps = parseInt(info.laps ?? info.Laps ?? result.laps, 10);
+                    if (!Number.isNaN(laps) && laps > raceLaps) raceLaps = laps;
+                });
+                // race distance = laps of the leader, summed over every race
+                if (isRaceSession(sessionName)) totalLaps += raceLaps;
             });
         });
-        
-        console.log("✅ Statistics calculated:");
-        console.log(`  Total Events: ${totalEvents}`);
-        console.log(`  Total Participants: ${participants.size}`);
-        console.log(`  Total Sessions: ${totalSessions}`);
-        console.log(`  Total Laps: ${totalLaps}`);
-        if (lapDebug.length > 0) {
-            console.log("  Lap details:");
-            lapDebug.slice(0, 10).forEach(log => console.log(`    ${log}`));
-            if (lapDebug.length > 10) {
-                console.log(`    ... and ${lapDebug.length - 10} more entries`);
-            }
-        } else {
-            console.warn("⚠️  No lap data found in any results!");
-        }
-        
+
         const totalEventsElem = document.getElementById('totalEvents');
         if (totalEventsElem) totalEventsElem.textContent = totalEvents;
         
@@ -196,7 +147,6 @@ class RacePage {
         const totalLapsElem = document.getElementById('totalLaps');
         if (totalLapsElem) {
             totalLapsElem.textContent = totalLaps > 0 ? totalLaps.toLocaleString() : 'N/A';
-            console.log(`✅ Updated totalLaps element: ${totalLaps > 0 ? totalLaps.toLocaleString() : 'N/A'}`);
         } else {
             console.error("❌ Element 'totalLaps' not found!");
         }
@@ -244,12 +194,10 @@ class RacePage {
             const filteredSessions = Object.entries(sessions).filter(([session, results]) => {
                 if (this.sessionFilter === 'all') return true;
                 if (this.sessionFilter === 'qualifying') {
-                    return session.toLowerCase().includes('qualifying') || 
-                           session.toLowerCase().includes('quali');
+                    return isQualifyingSession(session) || /^s?q\d$|hyperpole/i.test(session);
                 }
                 if (this.sessionFilter === 'race') {
-                    return session.toLowerCase().includes('race') && 
-                           !session.toLowerCase().includes('practice');
+                    return isRaceSession(session);
                 }
                 return true;
             });
@@ -262,7 +210,7 @@ class RacePage {
             // Event header (clickable accordion)
             html += `<div class="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white p-4 cursor-pointer" onclick="window.racePage.toggleAccordion('${eventId}');">`;
             html += `<div class="flex items-center justify-between">`;
-            html += `<h3 class="text-xl font-bold">${event}</h3>`;
+            html += `<h3 class="text-xl font-bold">${escapeHtml(event)}</h3>`;
             html += `<svg id="${eventId}-icon" class="w-6 h-6 accordion-icon rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">`;
             html += `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
             html += `</svg>`;
@@ -284,78 +232,140 @@ class RacePage {
         container.innerHTML = html;
     }
 
+    /**
+     * Championship standings computed from the points of every session
+     * (drivers and teams; one table per class for multi-class series).
+     */
+    computeStandings() {
+        const byClass = new Map();
+        const get = (cls) => {
+            if (!byClass.has(cls)) byClass.set(cls, { drivers: new Map(), teams: new Map() });
+            return byClass.get(cls);
+        };
+        const add = (map, id, points, win) => {
+            const row = map.get(id) || { id, points: 0, wins: 0 };
+            row.points += points;
+            row.wins += win ? 1 : 0;
+            map.set(id, row);
+        };
+        Object.values(this.raceData.events || {}).forEach((sessions) => {
+            Object.entries(sessions).forEach(([session, results]) => {
+                const race = isRaceSession(session);
+                Object.values(results || {}).forEach((r) => {
+                    const pts = parseFloat(r.points) || 0;
+                    const info = r.other_info || {};
+                    const win = race && String(info.Class_position || r.position) === '1';
+                    if (!pts && !win) return;
+                    const group = get(info.Class || info.class || '');
+                    (r.drivers || []).forEach((d) => add(group.drivers, d, pts, win));
+                    if (r.team) add(group.teams, r.team, pts, win);
+                });
+            });
+        });
+        const sort = (m) => [...m.values()].sort((a, b) => b.points - a.points || b.wins - a.wins);
+        return [...byClass.entries()]
+            .map(([cls, g]) => ({ cls, drivers: sort(g.drivers), teams: sort(g.teams) }))
+            .filter((g) => g.drivers.length)
+            .sort((a, b) => b.drivers[0].points - a.drivers[0].points);
+    }
+
+    displayStandings() {
+        const container = document.getElementById('standingsContainer');
+        if (!container || !this.raceData) return;
+        const groups = this.computeStandings();
+        if (!groups.length) {
+            container.innerHTML = '';
+            return;
+        }
+        const table = (title, rows, type) => {
+            const body = rows.slice(0, 25).map((r, i) => `
+                <tr class="border-t border-gray-200 dark:border-gray-700">
+                    <td class="px-3 py-1.5 text-gray-500 dark:text-gray-400 w-10">${i + 1}</td>
+                    <td class="px-3 py-1.5"><a class="text-blue-600 dark:text-blue-400 hover:underline" href="/${type}.php?id=${encodeURIComponent(r.id)}">${escapeHtml(formatDisplayName(r.id))}</a></td>
+                    <td class="px-3 py-1.5 text-center text-gray-600 dark:text-gray-300">${r.wins || ''}</td>
+                    <td class="px-3 py-1.5 text-right font-semibold text-gray-900 dark:text-white">${Math.round(r.points * 10) / 10}</td>
+                </tr>`).join('');
+            return `
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <h4 class="px-4 py-3 font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700">${escapeHtml(title)}</h4>
+                    <div class="overflow-x-auto"><table class="min-w-full text-sm">
+                        <thead class="text-gray-500 dark:text-gray-400 text-xs uppercase"><tr>
+                            <th class="px-3 py-2 text-left">#</th><th class="px-3 py-2 text-left">${type === 'driver' ? 'Driver' : 'Team'}</th>
+                            <th class="px-3 py-2 text-center">Wins</th><th class="px-3 py-2 text-right">Points</th>
+                        </tr></thead><tbody>${body}</tbody></table></div>
+                </div>`;
+        };
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Standings</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Computed from the points of every session in our database${this.year >= new Date().getFullYear() ? ' (season in progress)' : ''}.</p>
+            ${groups.map((g) => `
+                ${g.cls ? `<h3 class="text-lg font-semibold mt-6 mb-3 text-gray-800 dark:text-gray-200">${escapeHtml(g.cls)}</h3>` : ''}
+                <div class="grid gap-6 md:grid-cols-2">${table('Drivers', g.drivers, 'driver')}${table('Teams', g.teams, 'team')}</div>
+            `).join('')}`;
+    }
+
     createResultsTable(session, results) {
         let html = `<div class="border-t border-gray-200 dark:border-gray-700 p-6">`;
-        html += `<h4 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">${session}</h4>`;
+        html += `<h4 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">${escapeHtml(session)}</h4>`;
         html += `<div class="overflow-x-auto">`;
         html += `<table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">`;
         html += `<thead class="bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white">`;
         html += `<tr>`;
         html += `<th class="px-4 py-2 text-left text-sm font-semibold">Pos</th>`;
-        html += `<th class="px-4 py-2 text-left text-sm font-semibold">Driver</th>`;
+        html += `<th class="px-4 py-2 text-left text-sm font-semibold">Driver(s)</th>`;
         html += `<th class="px-4 py-2 text-left text-sm font-semibold">Team</th>`;
         html += `<th class="px-4 py-2 text-center text-sm font-semibold">Points</th>`;
         html += `<th class="px-4 py-2 text-center text-sm font-semibold">Fastest Lap</th>`;
         html += `<th class="px-4 py-2 text-center text-sm font-semibold">Car #</th>`;
         html += `<th class="px-4 py-2 text-center text-sm font-semibold">Laps</th>`;
-        html += `<th class="px-4 py-2 text-center text-sm font-semibold">Gap</th>`;
+        html += `<th class="px-4 py-2 text-center text-sm font-semibold">Time / Gap</th>`;
         html += `<th class="px-4 py-2 text-center text-sm font-semibold">Avg Speed</th>`;
         html += `</tr>`;
         html += `</thead>`;
         html += `<tbody>`;
 
-        // Handle both array and object formats
-        let resultsArray = [];
-        if (Array.isArray(results)) {
-            resultsArray = results;
-        } else if (typeof results === 'object' && results !== null) {
-            // Convert object to array and sort by position
-            resultsArray = Object.values(results).sort((a, b) => {
-                const posA = a.position;
-                const posB = b.position;
-                
-                // Handle DNF, DSQ, DNS - put them at the end
-                if (typeof posA === 'string' && /^(DNF|DSQ|DNS)/i.test(posA)) return 1;
-                if (typeof posB === 'string' && /^(DNF|DSQ|DNS)/i.test(posB)) return -1;
-                
-                // Normal numeric sorting
-                return (posA || 999) - (posB || 999);
-            });
-        }
+        const rank = (p) => {
+            const n = parseInt(p, 10);
+            if (!Number.isNaN(n) && String(n) === String(p).trim()) return n;
+            const order = ['NC', 'DNF', 'DNS', 'DSQ', 'EXC', 'DNQ', 'DNPQ', 'WIT'];
+            const i = order.indexOf(String(p || '').toUpperCase());
+            return 1000 + (i === -1 ? order.length : i);
+        };
+        const resultsArray = Array.isArray(results)
+            ? results
+            : Object.values(results || {}).sort((a, b) => rank(a.position) - rank(b.position));
 
-        if (resultsArray.length > 0) {
-            resultsArray.forEach((result) => {
-                const position = result.position || 'N/A';
-                const positionClass = this.getPositionClass(position, session);
-                const driver = result.drivers ? result.drivers.map(d => formatDisplayName(d)).join(', ') : (formatDisplayName(result.driver) || 'N/A');
-                const team = formatDisplayName(result.team) || 'N/A';
-                const points = result.points !== undefined ? result.points : 0;
-                const fastestLap = result.fastest_lap || result.fastestLap || '-';
-                
-                // Extract other_info fields
-                const otherInfo = result.other_info || {};
-                const carNumber = otherInfo.Car_number || otherInfo.carNumber || '-';
-                const laps = otherInfo.Laps || otherInfo.laps || '-';
-                const gap = otherInfo.Gap || otherInfo.gap || '-';
-                const avgSpeed = otherInfo.Average_speed || otherInfo.average_speed || '-';
-                
-                // Create links for driver and team names (keep underscores in URL)
-                const driverLink = result.driver ? `<a href="/driver.php?id=${result.driver}" class="text-blue-600 dark:text-blue-400 hover:underline">${driver}</a>` : driver;
-                const teamLink = result.team ? `<a href="/team.php?id=${result.team}" class="text-blue-600 dark:text-blue-400 hover:underline">${team}</a>` : team;
-                
-                html += `<tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">`;
-                html += `<td class="px-4 py-2 ${positionClass}">${position}</td>`;
-                html += `<td class="px-4 py-2 text-gray-900 dark:text-white">${driverLink}</td>`;
-                html += `<td class="px-4 py-2 text-gray-900 dark:text-white">${teamLink}</td>`;
-                html += `<td class="px-4 py-2 text-center text-gray-900 dark:text-white">${points}</td>`;
-                html += `<td class="px-4 py-2 text-center text-gray-900 dark:text-white">${fastestLap}</td>`;
-                html += `<td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400 text-sm">${carNumber}</td>`;
-                html += `<td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400 text-sm">${laps}</td>`;
-                html += `<td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400 text-sm">${gap}</td>`;
-                html += `<td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400 text-sm">${avgSpeed}</td>`;
-                html += `</tr>`;
-            });
-        }
+        const link = (type, id) => id
+            ? `<a href="/${type}.php?id=${encodeURIComponent(id)}" class="text-blue-600 dark:text-blue-400 hover:underline">${escapeHtml(formatDisplayName(id))}</a>`
+            : '<span class="text-gray-400">—</span>';
+
+        resultsArray.forEach((result) => {
+            const position = result.position || '—';
+            const positionClass = this.getPositionClass(position, session);
+            const drivers = (result.drivers || (result.driver ? [result.driver] : [])).map((d) => link('driver', d)).join('<br>');
+            const otherInfo = result.other_info || {};
+            const pick = (...keys) => {
+                for (const k of keys) {
+                    if (otherInfo[k] !== undefined && otherInfo[k] !== '') return otherInfo[k];
+                }
+                return '—';
+            };
+            const fastest = result.fastest_lap || '—';
+            const isFastest = otherInfo.fastestLapOfRace === 'yes';
+            const cls = otherInfo.Class || otherInfo.class;
+
+            html += `<tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">`;
+            html += `<td class="px-4 py-2 ${positionClass}">${escapeHtml(position)}</td>`;
+            html += `<td class="px-4 py-2 text-gray-900 dark:text-white">${drivers || '—'}${cls ? ` <span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">${escapeHtml(cls)}</span>` : ''}</td>`;
+            html += `<td class="px-4 py-2 text-gray-900 dark:text-white">${link('team', result.team)}</td>`;
+            html += `<td class="px-4 py-2 text-center text-gray-900 dark:text-white">${escapeHtml(result.points ?? 0)}</td>`;
+            html += `<td class="px-4 py-2 text-center ${isFastest ? 'font-semibold text-purple-600 dark:text-purple-400' : 'text-gray-900 dark:text-white'}">${escapeHtml(fastest)}${isFastest ? ' ⏱' : ''}</td>`;
+            html += `<td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400 text-sm">${escapeHtml(pick('carNumber', 'Car_number'))}</td>`;
+            html += `<td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400 text-sm">${escapeHtml(pick('laps', 'Laps'))}</td>`;
+            html += `<td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400 text-sm">${escapeHtml(pick('time', 'Time', 'Elapsed_time', 'gap', 'Gap', 'status', 'Status'))}</td>`;
+            html += `<td class="px-4 py-2 text-center text-gray-600 dark:text-gray-400 text-sm">${escapeHtml(pick('speed', 'Average_speed', 'average_speed'))}</td>`;
+            html += `</tr>`;
+        });
 
         html += `</tbody>`;
         html += `</table>`;
@@ -465,9 +475,6 @@ class RacePage {
     }
 
     async setupYearNavigation() {
-        console.log("🧭 Setting up year navigation...");
-        console.log(`  Current year: ${this.year}`);
-        console.log(`  Race ID: ${this.raceId}`);
         
         const prevBtn = document.getElementById('prev-year-btn');
         const nextBtn = document.getElementById('next-year-btn');
@@ -477,27 +484,22 @@ class RacePage {
         // Check previous year - but NOT if we're at year 0000
         if (prevBtn && prevYearText) {
             if (this.year === '0000') {
-                console.log("⚠️  Year is 0000, no previous year exists");
                 prevBtn.classList.add('hidden');
             } else {
                 const prevYear = String(parseInt(this.year) - 1).padStart(4, '0');
-                console.log(`🔍 Checking previous year: ${prevYear}`);
                 
                 // Only show button if data exists for previous year
                 try {
                     const response = await apiService.getRace(this.raceId, prevYear);
                     if (response && response.events) {
-                        console.log(`✅ Previous year ${prevYear} has data`);
                         prevYearText.textContent = prevYear;
                         prevBtn.classList.remove('hidden');
                         prevBtn.addEventListener('click', () => {
                             window.location.href = `?id=${this.raceId}&year=${prevYear}`;
                         });
                     } else {
-                        console.log(`⚠️  Previous year ${prevYear} has no events`);
                     }
                 } catch (error) {
-                    console.log(`⚠️  Previous year ${prevYear} doesn't exist: ${error.message}`);
                     // Previous year doesn't exist, keep button hidden
                 }
             }
@@ -509,35 +511,28 @@ class RacePage {
                 const nextYear = String(parseInt(this.year) + 1).padStart(4, '0');
                 const currentYear = new Date().getFullYear();
                 
-                console.log(`🔍 Checking next year: ${nextYear} (current: ${currentYear})`);
                 
                 if (parseInt(nextYear) <= currentYear) {
                     // Only show button if data exists for next year
                     try {
                         const response = await apiService.getRace(this.raceId, nextYear);
                         if (response && response.events) {
-                            console.log(`✅ Next year ${nextYear} has data`);
                             nextYearText.textContent = nextYear;
                             nextBtn.classList.remove('hidden');
                             nextBtn.addEventListener('click', () => {
                                 window.location.href = `?id=${this.raceId}&year=${nextYear}`;
                             });
                         } else {
-                            console.log(`⚠️  Next year ${nextYear} has no events`);
                         }
                     } catch (error) {
-                        console.log(`⚠️  Next year ${nextYear} doesn't exist or ended`);
                         // Next year doesn't exist, keep button hidden (not an error, just end of data)
                     }
                 } else {
-                    console.log(`⚠️  Next year ${nextYear} is in the future`);
                 }
             } else {
-                console.log("⚠️  Year is 0000, checking all years data");
             }
         }
         
-        console.log("✅ Year navigation setup complete");
     }
 
     async loadRandomCards() {
@@ -563,9 +558,6 @@ class RacePage {
     }
 
     displayRaceCharts() {
-        console.log("📊 RacePage.displayRaceCharts() called");
-        console.log("  Race data:", this.raceData);
-        console.log("  Events available:", this.raceData?.events ? Object.keys(this.raceData.events).length : 0);
         
         if (!this.raceData || !this.raceData.events) {
             console.warn("⚠️  No race data or events, skipping charts");
@@ -573,29 +565,21 @@ class RacePage {
         }
 
         // Destroy existing charts
-        console.log("🗑️  Destroying existing charts...");
         chartService.destroyChart('winnersChart');
         chartService.destroyChart('participantsChart');
         chartService.destroyChart('qualifyingVsRaceChart');
         chartService.destroyChart('raceEvolutionChart');
         this.charts.clear();
-        console.log("✅ Charts destroyed");
 
         // Create all charts
-        console.log("📈 Creating winners chart...");
         this.createWinnersChart();
 
-        console.log("📈 Creating participants chart...");
         this.createParticipantsChart();
         
-        console.log("📈 Creating qualifying vs race chart...");
         this.createQualifyingVsRaceChart();
         
-        console.log("📈 Creating race evolution chart...");
         this.createRaceEvolutionChart();
         
-        console.log("✅ All race charts created");
-        console.log("  Final charts Map size:", this.charts.size);
     }
 
     createWinnersChart() {
@@ -609,7 +593,6 @@ class RacePage {
             return;
         }
         
-        console.log("🏆 Creating winners chart...");
 
         // Count winners across all events
         const winnerCounts = {};
@@ -634,8 +617,6 @@ class RacePage {
             });
         });
         
-        console.log(`  Found ${totalWinners} total race wins`);
-        console.log(`  Unique winners: ${Object.keys(winnerCounts).length}`);
 
         // Sort winners by win count (show all)
         const sortedWinners = Object.entries(winnerCounts)
@@ -646,7 +627,6 @@ class RacePage {
             return;
         }
         
-        console.log("  Top winners:", sortedWinners.slice(0, 10).map(([name, wins]) => `${name}: ${wins}`).join(', '));
 
         // Show top 10 by default
         const displayLimit = 10;
@@ -671,7 +651,6 @@ class RacePage {
 
         if (chart) {
             this.charts.set('winners', chart);
-            console.log("✅ Winners chart created successfully");
         } else {
             console.error("❌ Failed to create winners chart");
         }
@@ -688,7 +667,6 @@ class RacePage {
             return;
         }
         
-        console.log("👥 Creating participants chart...");
 
         // Count appearances by participant
         const participantCounts = {};
@@ -709,7 +687,6 @@ class RacePage {
             });
         });
         
-        console.log(`  Total participants: ${Object.keys(participantCounts).length}`);
 
         // Sort participants by participation count (show all)
         const sortedParticipants = Object.entries(participantCounts)
@@ -720,7 +697,6 @@ class RacePage {
             return;
         }
         
-        console.log("  Top participants:", sortedParticipants.slice(0, 10).map(([name, count]) => `${name}: ${count}`).join(', '));
 
         // Show top 10 by default
         const displayLimit = 10;
@@ -740,7 +716,6 @@ class RacePage {
 
         if (chart) {
             this.charts.set('participants', chart);
-            console.log("✅ Participants chart created successfully");
         } else {
             console.error("❌ Failed to create participants chart");
         }
@@ -757,7 +732,6 @@ class RacePage {
             return;
         }
         
-        console.log("🏁 Creating qualifying vs race comparison chart...");
         
         // Collect data for qualifying vs race positions
         const driverData = {};
@@ -828,7 +802,6 @@ class RacePage {
             return;
         }
         
-        console.log(`  Found data for ${driverAverages.length} drivers`);
         
         // Show top 10 by default
         const displayLimit = 10;
@@ -857,7 +830,6 @@ class RacePage {
         
         if (chart) {
             this.charts.set('qualifyingVsRace', chart);
-            console.log("✅ Qualifying vs Race chart created successfully");
         } else {
             console.error("❌ Failed to create qualifying vs race chart");
         }
@@ -874,7 +846,6 @@ class RacePage {
             return;
         }
         
-        console.log("📈 Creating race-by-race evolution chart...");
         
         // Collect race results for top drivers
         const driverPositions = {};
@@ -925,7 +896,6 @@ class RacePage {
             return;
         }
         
-        console.log(`  Tracking ${allDrivers.length} drivers across ${eventNames.length} events`);
         
         // Generate enough colors for all drivers
         const colors = this._generateDriverColors(allDrivers.length);
@@ -999,7 +969,6 @@ class RacePage {
         
         if (chart) {
             this.charts.set('raceEvolution', chart);
-            console.log("✅ Race evolution chart created successfully");
         } else {
             console.error("❌ Failed to create race evolution chart");
         }
