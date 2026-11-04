@@ -283,13 +283,40 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("guess-form").onsubmit = handleSubmit;
     
     // Check if game is over
-    if (attempts.length >= MAX_ATTEMPTS) {
+    if (state.gaveUp) {
+      showEndMessage(false);
+      disableInput();
+    } else if (attempts.length >= MAX_ATTEMPTS) {
       showEndMessage(false);
       disableInput();
     } else if (attempts.some(a => normalize(a) === normalizedLastName)) {
       showEndMessage(true);
       disableInput();
+    } else {
+      setupGiveUp();
     }
+  }
+
+  /**
+   * "Give up" button: ends today's game and reveals the driver
+   */
+  function setupGiveUp() {
+    const form = document.getElementById("guess-form");
+    if (!form || document.getElementById("give-up-btn")) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "give-up-btn";
+    btn.textContent = "Give up";
+    btn.className = "mt-3 px-4 py-2 text-sm font-medium rounded-lg border border-red-300 text-red-700 " +
+      "hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30 transition-colors";
+    btn.addEventListener("click", () => {
+      if (!confirm("Give up and reveal today's driver?")) return;
+      saveState({ gaveUp: true });
+      btn.remove();
+      showEndMessage(false);
+      disableInput();
+    });
+    form.after(btn);
   }
 
   /**
@@ -528,11 +555,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (won) {
       resultBox.innerHTML = `🎉 Congratulations! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
     } else {
-      resultBox.innerHTML = `❌ Game Over! It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
+      resultBox.innerHTML = `${loadState().gaveUp ? '🏳️ You gave up.' : '❌ Game Over!'} It was ${solution.firstname} ${solution.lastname}. <a href="${link}" class="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">View profile</a>`;
     }
   }
 
   function disableInput() {
+    document.getElementById("give-up-btn")?.remove();
     const keys = document.querySelectorAll("#virtual-keyboard .key");
     keys.forEach(key => {
       key.style.opacity = "0.5";
