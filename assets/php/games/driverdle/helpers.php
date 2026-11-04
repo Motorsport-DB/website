@@ -1,214 +1,164 @@
 <?php
-// Shared helpers for driverdle comparison modes (F1 and All)
+declare(strict_types=1);
 
-if (!defined('DRIVERS_DIR')) {
-    define('DRIVERS_DIR', __DIR__ . '/../../../../drivers/');
+// Shared helpers for the driverdle game modes (classic, F1 and All).
+// Statistics are precomputed by bin/build.php (table driver_stats), so no
+// endpoint needs to scan the drivers/ directory anymore.
+
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+header('Content-Type: application/json; charset=UTF-8');
+header('X-Content-Type-Options: nosniff');
+header('Cache-Control: no-store');
+
+require_once __DIR__ . '/../../../../src/api/autoload.php';
+
+use MotorsportDB\API\Data\Database;
+
+const DRIVERDLE_MODES = [
+    // mode => SQL condition on driver_stats (alias s)
+    'classic' => 's.sessions >= 30 AND s.last_year >= :lastYear',
+    'f1'      => '(s.f1_wins >= 1 OR s.f1_starts >= 14)',
+    'all'     => 's.race_sessions >= 150',
+];
+
+function jsonOut(array $data, int $status = 200): never
+{
+    http_response_code($status);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
-if (!defined('DRIVERDLE_CACHE')) {
-    define('DRIVERDLE_CACHE', __DIR__ . '/../../../../driverdle.json');
+/** Read the JSON body of a POST request (max 4 KiB). */
+function jsonInput(): array
+{
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        jsonOut(['error' => 'Method not allowed'], 405);
+    }
+    $raw = file_get_contents('php://input', false, null, 0, 4096);
+    $data = json_decode((string) $raw, true);
+    return is_array($data) ? $data : [];
 }
 
-function readDriverdleCache(): array {
-    // 1. APCu (in-memory, fastest)
+function validDriverId(mixed $id): ?string
+{
+    if (!is_string($id)) {
+        return null;
+    }
+    $id = trim($id);
+    return $id !== '' && strlen($id) <= 200 ? $id : null;
+}
+
+/** @return list<string> eligible driver ids for a mode, sorted */
+function eligibleDrivers(string $mode): array
+{
+    static $cache = [];
+    if (isset($cache[$mode])) {
+        return $cache[$mode];
+    }
+    $apcuKey = 'driverdle_list_' . $mode . '_' . date('Y-m-d') . '_' . @filemtime(Database::path());
     if (function_exists('apcu_fetch')) {
-        $data = apcu_fetch('driverdle_cache', $ok);
-        if ($ok) return $data;
-    }
-    // 2. File fallback
-    if (!file_exists(DRIVERDLE_CACHE)) return [];
-    $f = fopen(DRIVERDLE_CACHE, 'r');
-    if (!$f) return [];
-    flock($f, LOCK_SH);
-    $content = stream_get_contents($f);
-    flock($f, LOCK_UN);
-    fclose($f);
-    $data = $content ? (json_decode($content, true) ?: []) : [];
-    // Warm APCu from file
-    if ($data && function_exists('apcu_store')) {
-        apcu_store('driverdle_cache', $data, strtotime('tomorrow midnight') - time());
-    }
-    return $data;
-}
-
-function writeDriverdleSections(array $updates): void {
-    $f = fopen(DRIVERDLE_CACHE, 'c+');
-    if ($f) {
-        flock($f, LOCK_EX);
-        $content = stream_get_contents($f);
-        $cache   = $content ? (json_decode($content, true) ?: []) : [];
-        foreach ($updates as $key => $data) {
-            $cache[$key] = $data;
-        }
-        ftruncate($f, 0);
-        rewind($f);
-        fwrite($f, json_encode($cache, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        flock($f, LOCK_UN);
-        fclose($f);
-    } else {
-        // File not writable — read from APCu/recompute current state
-        $cache = readDriverdleCache();
-        foreach ($updates as $key => $data) {
-            $cache[$key] = $data;
+        $list = apcu_fetch($apcuKey, $ok);
+        if ($ok) {
+            return $cache[$mode] = $list;
         }
     }
-    // Always update APCu
+    $params = $mode === 'classic' ? [':lastYear' => (int) date('Y') - 1] : [];
+    $list = Database::column(
+        'SELECT s.driver_id FROM driver_stats s JOIN drivers d ON d.id = s.driver_id WHERE '
+        . DRIVERDLE_MODES[$mode] . ' ORDER BY s.driver_id',
+        $params
+    );
     if (function_exists('apcu_store')) {
-        apcu_store('driverdle_cache', $cache, strtotime('tomorrow midnight') - time());
+        apcu_store($apcuKey, $list, 86400);
+    }
+    return $cache[$mode] = $list;
+}
+
+function isEligible(string $id, string $mode): bool
+{
+    return in_array($id, eligibleDrivers($mode), true);
+}
+
+/** Deterministic driver of the day for a mode. */
+function dailyDriverId(string $mode): ?string
+{
+    $list = eligibleDrivers($mode);
+    if (!$list) {
+        return null;
+    }
+    $suffix = $mode === 'classic' ? '' : $mode;
+    return $list[abs(crc32(date('Y-m-d') . $suffix)) % count($list)];
+}
+
+function driverRow(string $id): ?array
+{
+    return Database::one(
+        'SELECT d.id, d.first_name, d.last_name, d.date_of_birth, d.date_of_death, s.*
+         FROM drivers d JOIN driver_stats s ON s.driver_id = d.id WHERE d.id = ?',
+        [$id]
+    );
+}
+
+/** First and last name, from the identity file or the id ("First_Last Name"). */
+function driverNames(array $row): array
+{
+    $parts = explode('_', $row['id'], 2);
+    $first = $row['first_name'] ?: $parts[0];
+    $last  = $row['last_name'] ?: str_replace('_', ' ', $parts[1] ?? '');
+    return [$first, $last];
+}
+
+/** Age today, or age at death for deceased drivers. */
+function driverAge(array $row): ?int
+{
+    try {
+        if (empty($row['date_of_birth'])) {
+            return null;
+        }
+        $end = !empty($row['date_of_death']) ? new DateTime($row['date_of_death']) : new DateTime();
+        return (new DateTime($row['date_of_birth']))->diff($end)->y;
+    } catch (Exception) {
+        return null;
     }
 }
 
-// --- Driver eligibility ---
-
-function hasAtLeastNRaces(array $data, int $n): bool {
-    $count = 0;
-    foreach ($data['seasons'] ?? [] as $champs) {           // year
-        foreach ($champs as $races) {                        // championship
-            foreach ($races as $sessions) {                  // race weekend
-                foreach ($sessions as $sessionName => $s) { // session
-                    if (stripos($sessionName, 'race') !== false) {
-                        if (++$count >= $n) return true;
-                    }
-                }
-            }
-        }
-    }
-    return false;
+function lastnameLength(string $last): int
+{
+    return mb_strlen(preg_replace("/[\\s\\-'_.]/u", '', $last));
 }
 
-function isF1Driver(array $data): bool {
-    if (!isset($data['seasons'])) return false;
-    $raceCount = 0;
-    $winCount  = 0;
-    foreach ($data['seasons'] as $champs) {
-        if (!isset($champs['Formula_1'])) continue;
-        foreach ($champs['Formula_1'] as $sessions) {
-            foreach ($sessions as $sessionName => $session) {
-                if (stripos($sessionName, 'race') !== false) {
-                    $raceCount++;
-                    if (($session['position'] ?? '') === '1') {
-                        $winCount++;
-                    }
-                }
-            }
-        }
-    }
-    return $winCount >= 1 || $raceCount >= 14;
-}
-
-// --- Stats computation ---
-
-function computeF1Stats(array $data, string $filename): array {
-    $parts = explode('_', pathinfo($filename, PATHINFO_FILENAME), 2);
-    $firstname = $parts[0];
-    $lastname = $parts[1] ?? '';
-
-    $f1Years = [];
-    $teams = [];
-    $wins = 0;
-    $otherChamps = [];
-    $firstF1Year = null;
-
-    foreach ($data['seasons'] as $year => $champs) {
-        if (!isset($champs['Formula_1'])) continue;
-        $f1Years[] = (int)$year;
-        foreach ($champs['Formula_1'] as $sessions) {
-            foreach ($sessions as $sessionName => $session) {
-                if (!empty($session['team'])) {
-                    $teams[] = $session['team'];
-                }
-                if (stripos($sessionName, 'race') !== false
-                    && ($session['position'] ?? '') === '1') {
-                    $wins++;
-                }
-            }
-        }
-    }
-
-    if ($f1Years) {
-        $firstF1Year = min($f1Years);
-        $lastF1Year  = max($f1Years);
-
-        foreach ($data['seasons'] as $year => $champs) {
-            if ((int)$year < $firstF1Year) continue;
-            foreach ($champs as $champ => $races) {
-                if ($champ !== 'Formula_1') {
-                    $otherChamps[] = $champ;
-                }
-            }
-        }
-    }
-
-    $age = null;
-    if (!empty($data['dateOfBirth'])) {
-        $dob = new DateTime($data['dateOfBirth']);
-        $age = (int)(new DateTime())->diff($dob)->y;
-    }
-
-    $lastnameDisplay = str_replace('_', ' ', $lastname);
-
-    return [
-        'id'              => pathinfo($filename, PATHINFO_FILENAME),
-        'firstname'       => $firstname,
-        'lastname'        => $lastnameDisplay,
-        'firstF1Year'     => $f1Years ? min($f1Years) : null,
-        'lastF1Year'      => $f1Years ? max($f1Years) : null,
-        'teams'           => array_values(array_unique($teams)),
-        'f1Wins'          => $wins,
-        'age'             => $age,
-        'lastnameLength'  => strlen(str_replace([' ', '-', "'", '_'], '', $lastnameDisplay)),
-        'otherChamps'     => array_values(array_unique($otherChamps)),
+function computeStats(array $row, string $mode): array
+{
+    [$first, $last] = driverNames($row);
+    $base = [
+        'id'             => $row['id'],
+        'firstname'      => $first,
+        'lastname'       => $last,
+        'age'            => driverAge($row),
+        'lastnameLength' => lastnameLength($last),
     ];
-}
-
-function computeAllStats(array $data, string $filename): array {
-    $parts = explode('_', pathinfo($filename, PATHINFO_FILENAME), 2);
-    $firstname = $parts[0];
-    $lastname = $parts[1] ?? '';
-
-    $allYears = [];
-    $series   = [];
-    $wins     = 0;
-
-    foreach ($data['seasons'] as $year => $champs) {
-        $allYears[] = (int)$year;
-        foreach ($champs as $champ => $races) {
-            $series[] = $champ;
-            foreach ($races as $sessions) {
-                foreach ($sessions as $sessionName => $session) {
-                    if (stripos($sessionName, 'race') !== false
-                        && ($session['position'] ?? '') === '1') {
-                        $wins++;
-                    }
-                }
-            }
-        }
+    if ($mode === 'f1') {
+        return $base + [
+            'firstF1Year' => $row['f1_first'] !== null ? (int) $row['f1_first'] : null,
+            'lastF1Year'  => $row['f1_last'] !== null ? (int) $row['f1_last'] : null,
+            'teams'       => json_decode($row['f1_teams'], true) ?: [],
+            'f1Wins'      => (int) $row['f1_wins'],
+            'otherChamps' => json_decode($row['other_since_f1'], true) ?: [],
+        ];
     }
-
-    $age = null;
-    if (!empty($data['dateOfBirth'])) {
-        $dob = new DateTime($data['dateOfBirth']);
-        $age = (int)(new DateTime())->diff($dob)->y;
-    }
-
-    $lastnameDisplay = str_replace('_', ' ', $lastname);
-
-    return [
-        'id'             => pathinfo($filename, PATHINFO_FILENAME),
-        'firstname'      => $firstname,
-        'lastname'       => $lastnameDisplay,
-        'firstYear'      => $allYears ? min($allYears) : null,
-        'lastYear'       => $allYears ? max($allYears) : null,
-        'series'         => array_values(array_unique($series)),
-        'wins'           => $wins,
-        'age'            => $age,
-        'lastnameLength' => strlen(str_replace([' ', '-', "'", '_'], '', $lastnameDisplay)),
+    return $base + [
+        'firstYear' => (int) $row['first_year'],
+        'lastYear'  => (int) $row['last_year'],
+        'series'    => json_decode($row['championships'], true) ?: [],
+        'wins'      => (int) $row['wins'],
     ];
 }
 
 // --- Comparison ---
 
-function compareNumeric(?int $guessVal, ?int $targetVal, int $threshold): array {
+function compareNumeric(?int $guessVal, ?int $targetVal, int $threshold): array
+{
     if ($guessVal === null || $targetVal === null) {
         return ['result' => 'red', 'arrow' => null];
     }
@@ -218,51 +168,101 @@ function compareNumeric(?int $guessVal, ?int $targetVal, int $threshold): array 
     return ['result' => $result, 'arrow' => $arrow];
 }
 
-function compareLists(array $guessList, array $targetList): array {
-    $guessSet  = array_unique($guessList);
-    $targetSet = array_unique($targetList);
+function compareLists(array $guessList, array $targetList): array
+{
+    $guessSet  = array_values(array_unique($guessList));
+    $targetSet = array_values(array_unique($targetList));
     sort($guessSet);
     sort($targetSet);
-    $common = array_intersect($guessSet, $targetSet);
-    if ($guessSet == $targetSet) {
+    if ($guessSet === $targetSet) {
         return ['result' => 'green'];
     }
-    return count($common) > 0 ? ['result' => 'orange'] : ['result' => 'red'];
+    return array_intersect($guessSet, $targetSet) ? ['result' => 'orange'] : ['result' => 'red'];
 }
 
-function compareF1Stats(array $guess, array $target): array {
-    return [
-        'firstF1Year'    => compareNumeric($guess['firstF1Year'], $target['firstF1Year'], 3),
-        'lastF1Year'     => compareNumeric($guess['lastF1Year'],  $target['lastF1Year'],  3),
-        'teams'          => compareLists($guess['teams'],         $target['teams']),
-        'f1Wins'         => compareNumeric($guess['f1Wins'],      $target['f1Wins'],      10),
-        'age'            => compareNumeric($guess['age'],         $target['age'],         3),
-        'lastnameLength' => compareNumeric($guess['lastnameLength'], $target['lastnameLength'], 1),
-        'otherChamps'    => compareLists($guess['otherChamps'],   $target['otherChamps']),
-    ];
-}
-
-function compareAllStats(array $guess, array $target): array {
-    return [
-        'firstYear'      => compareNumeric($guess['firstYear'],  $target['firstYear'],   3),
-        'lastYear'       => compareNumeric($guess['lastYear'],   $target['lastYear'],    3),
-        'series'         => compareLists($guess['series'],       $target['series']),
-        'wins'           => compareNumeric($guess['wins'],       $target['wins'],        10),
-        'age'            => compareNumeric($guess['age'],        $target['age'],         3),
+function compareStats(array $guess, array $target, string $mode): array
+{
+    $common = [
+        'age'            => compareNumeric($guess['age'], $target['age'], 3),
         'lastnameLength' => compareNumeric($guess['lastnameLength'], $target['lastnameLength'], 1),
     ];
+    if ($mode === 'f1') {
+        return [
+            'firstF1Year' => compareNumeric($guess['firstF1Year'], $target['firstF1Year'], 3),
+            'lastF1Year'  => compareNumeric($guess['lastF1Year'], $target['lastF1Year'], 3),
+            'teams'       => compareLists($guess['teams'], $target['teams']),
+            'f1Wins'      => compareNumeric($guess['f1Wins'], $target['f1Wins'], 10),
+        ] + $common + [
+            'otherChamps' => compareLists($guess['otherChamps'], $target['otherChamps']),
+        ];
+    }
+    return [
+        'firstYear' => compareNumeric($guess['firstYear'], $target['firstYear'], 3),
+        'lastYear'  => compareNumeric($guess['lastYear'], $target['lastYear'], 3),
+        'series'    => compareLists($guess['series'], $target['series']),
+        'wins'      => compareNumeric($guess['wins'], $target['wins'], 10),
+    ] + $common;
 }
 
-// --- Daily driver selection ---
+// --- Endpoints shared by the F1 and All modes ---
 
-function pickDailyDriver(array $drivers, string $mode = ''): string {
-    sort($drivers);
-    $index = abs(crc32(date('Y-m-d') . $mode)) % count($drivers);
-    return $drivers[$index];
+function handleDriverOfToday(string $mode): never
+{
+    $id = dailyDriverId($mode);
+    $row = $id !== null ? driverRow($id) : null;
+    if ($row === null) {
+        jsonOut(['error' => 'No drivers available'], 500);
+    }
+    // Only the date is needed client-side, never the identity is needed client-side, never the name of the answer.
+    jsonOut(['date' => date('Y-m-d'), 'mode' => $mode]);
 }
 
-function loadDriverData(string $id): ?array {
-    $path = DRIVERS_DIR . $id . '.json';
-    if (!file_exists($path)) return null;
-    return json_decode(file_get_contents($path), true) ?: null;
+function handleSearch(string $mode): never
+{
+    $q = trim((string) ($_GET['q'] ?? ''));
+    if (mb_strlen($q) < 2 || mb_strlen($q) > 60) {
+        jsonOut([]);
+    }
+    $norm = fn(string $s) => strtolower((string) @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', str_replace(['-', '_'], ' ', $s)));
+    $nq = $norm($q);
+    $results = [];
+    foreach (eligibleDrivers($mode) as $id) {
+        if (str_contains($norm($id), $nq)) {
+            $results[] = ['id' => $id, 'name' => str_replace('_', ' ', $id)];
+            if (count($results) >= 20) {
+                break;
+            }
+        }
+    }
+    usort($results, fn($a, $b) => strcmp($a['name'], $b['name']));
+    jsonOut($results);
+}
+
+function handleCompare(string $mode): never
+{
+    $input = jsonInput();
+    $guessId = validDriverId($input['guess'] ?? null);
+    if ($guessId === null) {
+        jsonOut(['error' => 'Missing guess'], 400);
+    }
+    $targetRow = ($tid = dailyDriverId($mode)) !== null ? driverRow($tid) : null;
+    if ($targetRow === null) {
+        jsonOut(['error' => 'No drivers available'], 500);
+    }
+    $guessRow = driverRow($guessId);
+    if ($guessRow === null) {
+        jsonOut(['error' => 'Unknown driver'], 404);
+    }
+    if (!isEligible($guessId, $mode)) {
+        jsonOut(['error' => $mode === 'f1' ? 'This driver is not eligible (F1 winner or 14+ F1 races)' : 'This driver is not eligible (150+ races)'], 422);
+    }
+    $target = computeStats($targetRow, $mode);
+    $guess  = computeStats($guessRow, $mode);
+    $won    = $guessId === $target['id'];
+    jsonOut([
+        'won'        => $won,
+        'guessStats' => $guess,
+        'comparison' => compareStats($guess, $target, $mode),
+        'target'     => $won ? ['id' => $target['id'], 'firstname' => $target['firstname'], 'lastname' => $target['lastname']] : null,
+    ]);
 }

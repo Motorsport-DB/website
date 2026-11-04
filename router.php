@@ -9,6 +9,14 @@
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $query = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
 
+// Never serve sources, tooling or generated data
+if (preg_match('#^/(\.git|\.github|bin|docker|includes|node_modules|script|src|tests|var)(/|$)#', $uri)
+    || preg_match('#/\.|\.(sqlite|py|sh|md|ya?ml)$#', $uri)
+    || in_array($uri, ['/router.php', '/sitemap-serve.php', '/config.json', '/package.json', '/package-lock.json'], true)) {
+    http_response_code(403);
+    return true;
+}
+
 // Sitemap
 if ($uri === '/sitemap.xml') {
     require __DIR__ . '/sitemap-serve.php';

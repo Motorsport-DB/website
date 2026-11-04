@@ -30,7 +30,7 @@ class RaceController
             ResponseHandler::badRequest('Championship ID is required');
         }
         
-        $championshipId = SecurityMiddleware::validateId($_GET['id']);
+        $championshipId = SecurityMiddleware::validateChampionshipId($_GET['id']);
         if ($championshipId === null) {
             ResponseHandler::badRequest('Invalid championship ID');
         }
@@ -67,7 +67,7 @@ class RaceController
             ResponseHandler::badRequest('Championship ID is required');
         }
         
-        $championshipId = SecurityMiddleware::validateId($_GET['id']);
+        $championshipId = SecurityMiddleware::validateChampionshipId($_GET['id']);
         if ($championshipId === null) {
             ResponseHandler::badRequest('Invalid championship ID');
         }

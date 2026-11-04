@@ -1,31 +1,34 @@
 <?php
-ini_set('display_errors', '0');
-error_reporting(0);
-header('Content-Type: application/json');
+declare(strict_types=1);
 
-function normalize($str) {
-    return strtoupper(preg_replace('~[^\pL\d-]+~u', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str)));
+// Classic driverdle: a guess is valid when it is the last name of a known driver.
+require_once __DIR__ . '/helpers.php';
+
+use MotorsportDB\API\Data\Database;
+
+function normalizeGuess(string $str): string
+{
+    return strtoupper((string) preg_replace('~[^\pL\d-]+~u', '', (string) @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str)));
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-$guess = isset($input['guess']) ? normalize($input['guess']) : '';
-
+$input = jsonInput();
+$guess = is_string($input['guess'] ?? null) ? normalizeGuess(mb_substr($input['guess'], 0, 60)) : '';
 if (strlen($guess) < 2) {
-    echo json_encode(['success' => false]);
-    exit;
+    jsonOut(['success' => false]);
 }
 
-$dir = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'drivers/';
-$files = glob($dir . '*.json');
-
-foreach ($files as $file) {
-    $basename = pathinfo($file, PATHINFO_FILENAME);
-    if (strpos($basename, '_') === false) continue;
-
-    [$first, $last] = explode('_', $basename, 2);
-    if (strtolower(normalize($last)) == strtolower($guess)) {
-        die(json_encode(['success' => true]));
+$key = 'driverdle_lastnames_' . @filemtime(Database::path());
+$names = function_exists('apcu_fetch') ? apcu_fetch($key) : false;
+if (!is_array($names)) {
+    $names = [];
+    foreach (Database::column('SELECT id FROM drivers') as $id) {
+        $parts = explode('_', $id, 2);
+        if (isset($parts[1])) {
+            $names[normalizeGuess($parts[1])] = true;
+        }
+    }
+    if (function_exists('apcu_store')) {
+        apcu_store($key, $names, 86400);
     }
 }
-
-echo json_encode(['success' => false]);
+jsonOut(['success' => isset($names[$guess])]);

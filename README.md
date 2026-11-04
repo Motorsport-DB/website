@@ -15,15 +15,15 @@ MotorsportDB is a comprehensive database of motorsport information including:
 - **Backend:** PHP 8+ (OOP, PSR-4)
 - **Frontend:** Modern JavaScript (ES6+ modules), Tailwind CSS
 - **Architecture:** MVC-like structure with service layer
-- **Data:** JSON files for easy contribution
+- **Data:** JSON files for easy contribution, compiled into a read-only SQLite database
 - **Charts:** Chart.js for analytics visualization
 
 ## 🚀 **Requires**
 - **Serveur Web**: Apache2 2.4+
-- **PHP**: 8.0+ avec extensions:
-  - `php-json`
-  - `php-mbstring`
-  - `php-curl`
+- **PHP**: 8.5.12+ (fixes PHP2Shell, CVE-2026-109618 / CVE-2026-109619) with extensions:
+  - `pdo_sqlite`
+  - `mbstring`, `iconv`
+  - `apcu` (optional, recommended)
 - **Node.js**: 18+ (for Tailwind CSS)
 - **NPM**: 8+
 
@@ -67,15 +67,39 @@ MotorsportDB/
    git clone https://github.com/motorsportdb/races.git
    ```
 
-2. Start development server with clean URLs:
+2. Build the database (`var/`, regenerated only when the data changed):
+   ```bash
+   php bin/build.php            # --force to rebuild, --check to list data problems
+   ```
+
+3. Start development server with clean URLs:
    ```bash
    php -S localhost:8080 router.php
    ```
 
-3. Open your browser:
+   Or with Docker/Podman (the build runs automatically at every start):
+   ```bash
+   docker compose up -d --build   # http://localhost:10001
+   ```
+
+4. Open your browser:
    ```
    http://localhost:8080
    ```
+
+## 🗄️ **Data model**
+
+`races/` is the **single source of truth** for results. `drivers/` and `teams/`
+only describe identities (name, country, dates, aliases, lineage), so a result
+can never disagree between a driver page, a team page and a race page.
+
+`bin/build.php` reads the three repositories and generates, in `var/`:
+- `motorsportdb.sqlite`: indexed database queried by the API (read-only);
+- `search-index.json`: compact index used by the client-side search
+  (accent/typo tolerant, follows team `aliases` and `previous`/`next`).
+
+It also validates the data: unknown driver/team ids, duplicates differing only
+by case/accents, empty teams… (`php bin/build.php --check`).
 
 ## 🤝 **Contributing**
 

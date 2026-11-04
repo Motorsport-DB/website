@@ -1,30 +1,29 @@
 <?php
+declare(strict_types=1);
+
 /**
  * MotorsportDB - Card Generator Utility
- * Generates random cards for homepage with caching
+ * Random cards and global statistics for the homepage, served from the
+ * generated database and cached in APCu (or var/cards.json).
  */
 
 namespace MotorsportDB\API\Utils;
 
+use MotorsportDB\API\Data\Database;
+
 class CardGenerator
 {
-    private string $rootPath;
     private string $cacheFile;
     private int $cacheDuration;
 
-    public function __construct(string $rootPath = null)
+    public function __construct(?string $rootPath = null)
     {
-        $this->rootPath = $rootPath ?? realpath(__DIR__ . '/../../../');
-        $this->cacheFile = $this->rootPath . '/cards.json';
-        
-        // Load cache duration from config
-        $configFile = $this->rootPath . '/config.json';
-        if (file_exists($configFile)) {
-            $config = json_decode(file_get_contents($configFile), true);
-            $this->cacheDuration = $config['REFRESH_TIME_PROPOSAL'][0] ?? 3600;
-        } else {
-            $this->cacheDuration = 3600; // 1 hour default
-        }
+        $rootPath ??= dirname(__DIR__, 3);
+        $this->cacheFile = Database::varDir() . '/cards.json';
+        $config = is_file($rootPath . '/config.json')
+            ? json_decode((string) file_get_contents($rootPath . '/config.json'), true)
+            : null;
+        $this->cacheDuration = max(10, (int) ($config['REFRESH_TIME_PROPOSAL'][0] ?? 120));
     }
 
     /**
@@ -32,260 +31,85 @@ class CardGenerator
      */
     public function getCards(): array
     {
-        // Check cache
-        if ($this->isCacheValid()) {
-            return $this->loadCache();
+        $key = 'msdb_cards_' . @filemtime(Database::path());
+        if (function_exists('apcu_fetch')) {
+            $data = apcu_fetch($key, $ok);
+            if ($ok) {
+                return $data;
+            }
+        } elseif (is_file($this->cacheFile) && time() - (int) filemtime($this->cacheFile) < $this->cacheDuration) {
+            $data = json_decode((string) file_get_contents($this->cacheFile), true);
+            if (is_array($data)) {
+                return $data;
+            }
         }
 
-        // Generate new cards
-        return $this->generateCards();
-    }
-
-    /**
-     * Check if cache is still valid
-     */
-    private function isCacheValid(): bool
-    {
-        if (!file_exists($this->cacheFile)) {
-            return false;
+        $data = $this->generateCards();
+        if (function_exists('apcu_store')) {
+            apcu_store($key, $data, $this->cacheDuration);
+        } else {
+            @file_put_contents($this->cacheFile, json_encode($data), LOCK_EX);
         }
-
-        $data = json_decode(file_get_contents($this->cacheFile), true);
-        if (!isset($data['generated_at'])) {
-            return false;
-        }
-
-        $generatedTimestamp = strtotime($data['generated_at']);
-        $currentTimestamp = time();
-
-        return ($currentTimestamp - $generatedTimestamp) < $this->cacheDuration;
+        return $data;
     }
 
-    /**
-     * Load data from cache
-     */
-    private function loadCache(): array
-    {
-        return json_decode(file_get_contents($this->cacheFile), true);
-    }
-
-    /**
-     * Generate new cards data
-     */
     private function generateCards(): array
     {
-        $drivers = $this->loadDrivers();
-        $teams = $this->loadTeams();
-        $racesData = $this->loadRaces();
-
         $statistics = [
-            'numbers_of_drivers' => count($drivers),
-            'numbers_of_teams' => count($teams),
-            'numbers_of_championship' => count($racesData['championships']),
-            'numbers_of_races' => $racesData['totalRaces'],
+            'numbers_of_drivers'      => (int) Database::one('SELECT count(*) n FROM drivers')['n'],
+            'numbers_of_teams'        => (int) Database::one('SELECT count(*) n FROM teams')['n'],
+            'numbers_of_championship' => (int) Database::one('SELECT count(*) n FROM championships')['n'],
+            'numbers_of_races'        => (int) Database::one("SELECT count(*) n FROM sessions WHERE kind IN ('race','sprint')")['n'],
         ];
 
-        // Generate random cards (8 cards total: mix of drivers, teams, championships)
         $cards = [];
-        
-        // Add 4 random drivers
-        for ($i = 0; $i < 4; $i++) {
-            $driver = $this->getRandomElement($drivers);
-            if ($driver) {
-                $cards[] = $this->formatDriverCard($driver);
-            }
+        // Drivers with a picture and some results make better cards.
+        foreach (Database::all(
+            'SELECT d.id, d.first_name, d.last_name, d.picture FROM drivers d
+             JOIN driver_stats s ON s.driver_id = d.id
+             WHERE d.picture IS NOT NULL ORDER BY random() LIMIT 4'
+        ) as $d) {
+            [$first, $last] = array_pad(explode('_', $d['id'], 2), 2, '');
+            $first = $d['first_name'] ?: $first;
+            $last  = $d['last_name'] ?: str_replace('_', ' ', $last);
+            $cards[] = [
+                'type'      => 'driver',
+                'name'      => trim("$first $last"),
+                'firstName' => $first,
+                'lastName'  => $last,
+                'image'     => '/' . $d['picture'],
+                'url'       => '/driver?id=' . rawurlencode($d['id']),
+            ];
         }
-        
-        // Add 2 random teams
-        for ($i = 0; $i < 2; $i++) {
-            $team = $this->getRandomElement($teams);
-            if ($team) {
-                $cards[] = $this->formatTeamCard($team);
-            }
+        foreach (Database::all(
+            'SELECT t.id, t.name, t.picture FROM teams t JOIN team_stats s ON s.team_id = t.id
+             WHERE t.picture IS NOT NULL ORDER BY random() LIMIT 2'
+        ) as $t) {
+            $cards[] = [
+                'type'  => 'team',
+                'name'  => str_replace('_', ' ', (string) $t['name']),
+                'image' => '/' . $t['picture'],
+                'url'   => '/team?id=' . rawurlencode($t['id']),
+            ];
         }
-        
-        // Add 2 random championships
-        for ($i = 0; $i < 2; $i++) {
-            $championship = $this->getRandomElement($racesData['championships']);
-            if ($championship) {
-                $cards[] = $this->formatChampionshipCard($championship);
-            }
-        }
-
-        $response = [
-            'cards' => $cards,
-            'statistics' => $statistics,
-            'generated_at' => date('Y-m-d H:i:s'),
-        ];
-
-        // Save to cache
-        file_put_contents($this->cacheFile, json_encode($response, JSON_PRETTY_PRINT));
-
-        return $response;
-    }
-
-    /**
-     * Load all drivers
-     */
-    private function loadDrivers(): array
-    {
-        $driversDir = $this->rootPath . '/drivers';
-        $files = glob($driversDir . '/*.json');
-        $drivers = [];
-
-        foreach ($files as $file) {
-            $filename = basename($file, '.json');
-            if (strpos($filename, '_') !== false) {
-                list($firstName, $lastName) = explode('_', $filename, 2);
-                $drivers[] = [
-                    'firstName' => $firstName,
-                    'lastName' => $lastName,
-                    'id' => $filename,
-                ];
-            }
-        }
-
-        return $drivers;
-    }
-
-    /**
-     * Load all teams
-     */
-    private function loadTeams(): array
-    {
-        $teamsDir = $this->rootPath . '/teams';
-        $files = glob($teamsDir . '/*.json');
-        $teams = [];
-
-        foreach ($files as $file) {
-            $filename = basename($file, '.json');
-            $teams[] = [
-                'name' => $filename,
-                'id' => $filename,
+        foreach (Database::all(
+            'SELECT ev.championship AS id, ev.year, c.picture FROM events ev
+             JOIN championships c ON c.id = ev.championship
+             GROUP BY ev.championship, ev.year ORDER BY random() LIMIT 2'
+        ) as $c) {
+            $cards[] = [
+                'type'  => 'championship',
+                'name'  => str_replace('_', ' ', $c['id']),
+                'year'  => $c['year'],
+                'image' => $c['picture'] ? '/' . $c['picture'] : null,
+                'url'   => '/race?id=' . rawurlencode($c['id']) . '&year=' . rawurlencode((string) $c['year']),
             ];
         }
 
-        return $teams;
-    }
-
-    /**
-     * Load all races/championships
-     */
-    private function loadRaces(): array
-    {
-        $racesDir = $this->rootPath . '/races';
-        $championships = [];
-        $totalRaces = 0;
-
-        $championshipDirs = glob($racesDir . '/*', GLOB_ONLYDIR);
-
-        foreach ($championshipDirs as $championshipDir) {
-            $championshipName = basename($championshipDir);
-            $yearFiles = glob($championshipDir . '/*.json');
-
-            foreach ($yearFiles as $yearFile) {
-                $year = basename($yearFile, '.json');
-                $championships[] = [
-                    'name' => $championshipName,
-                    'year' => $year,
-                    'id' => $championshipName,
-                ];
-
-                // Count races in this year
-                $raceData = json_decode(file_get_contents($yearFile), true);
-                if ($raceData && isset($raceData['events'])) {
-                    foreach ($raceData['events'] as $event => $sessions) {
-                        foreach ($sessions as $session => $sessionData) {
-                            if (stripos($session, 'race') !== false) {
-                                $totalRaces++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         return [
-            'championships' => $championships,
-            'totalRaces' => $totalRaces,
+            'cards'        => $cards,
+            'statistics'   => $statistics,
+            'generated_at' => date('Y-m-d H:i:s'),
         ];
-    }
-
-    /**
-     * Format driver card
-     */
-    private function formatDriverCard(array $driver): array
-    {
-        $picture = $this->findPicture('drivers/picture', $driver['id']);
-        
-        return [
-            'type' => 'driver',
-            'name' => $driver['firstName'] . ' ' . $driver['lastName'],
-            'firstName' => $driver['firstName'],
-            'lastName' => $driver['lastName'],
-            'image' => $picture,
-            'url' => '/driver?id=' . urlencode($driver['id']),
-        ];
-    }
-
-    /**
-     * Format team card
-     */
-    private function formatTeamCard(array $team): array
-    {
-        $picture = $this->findPicture('teams/picture', $team['id']);
-        
-        return [
-            'type' => 'team',
-            'name' => str_replace('_', ' ', $team['name']),
-            'image' => $picture,
-            'url' => '/team?id=' . urlencode($team['id']),
-        ];
-    }
-
-    /**
-     * Format championship card
-     */
-    private function formatChampionshipCard(array $championship): array
-    {
-        $picture = $this->findPicture('races/picture', $championship['id']);
-        
-        return [
-            'type' => 'championship',
-            'name' => str_replace('_', ' ', $championship['name']),
-            'year' => $championship['year'],
-            'image' => $picture,
-            'url' => '/race?id=' . urlencode($championship['id']) . '&year=' . urlencode($championship['year']),
-        ];
-    }
-
-    /**
-     * Find picture for entity
-     */
-    private function findPicture(string $directory, string $baseName): ?string
-    {
-        $dir = $this->rootPath . '/' . $directory;
-        $extensions = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
-
-        foreach ($extensions as $ext) {
-            $file = $dir . '/' . $baseName . '.' . $ext;
-            if (file_exists($file)) {
-                // Return relative path from root
-                return '/' . $directory . '/' . $baseName . '.' . $ext;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Get random element from array
-     */
-    private function getRandomElement(array $array)
-    {
-        if (empty($array)) {
-            return null;
-        }
-        return $array[array_rand($array)];
     }
 }

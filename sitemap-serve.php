@@ -1,5 +1,11 @@
 <?php
-$sitemapFile = __DIR__ . '/sitemap.xml';
+declare(strict_types=1);
+
+require_once __DIR__ . '/src/api/autoload.php';
+
+use MotorsportDB\API\Data\Database;
+
+$sitemapFile = Database::varDir() . '/sitemap.xml';
 
 // Serve from disk cache if fresh (≤24h) and readable
 if (file_exists($sitemapFile) && (time() - filemtime($sitemapFile)) <= 86400) {
@@ -31,26 +37,14 @@ function generateSitemap(): string {
         ['loc' => $base . '/games/guess-who.php',       'priority' => '0.7', 'changefreq' => 'weekly'],
     ];
 
-    $driversDir = __DIR__ . '/drivers/';
-    if (is_dir($driversDir)) {
-        foreach (glob($driversDir . '*.json') as $file) {
-            $urls[] = [
-                'loc'        => $base . '/driver?id=' . rawurlencode(pathinfo($file, PATHINFO_FILENAME)),
-                'priority'   => '0.6',
-                'changefreq' => 'monthly',
-            ];
-        }
+    foreach (Database::column('SELECT id FROM drivers ORDER BY id') as $id) {
+        $urls[] = ['loc' => $base . '/driver?id=' . rawurlencode($id), 'priority' => '0.6', 'changefreq' => 'monthly'];
     }
-
-    $teamsDir = __DIR__ . '/teams/';
-    if (is_dir($teamsDir)) {
-        foreach (glob($teamsDir . '*.json') as $file) {
-            $urls[] = [
-                'loc'        => $base . '/team?id=' . rawurlencode(pathinfo($file, PATHINFO_FILENAME)),
-                'priority'   => '0.5',
-                'changefreq' => 'monthly',
-            ];
-        }
+    foreach (Database::column('SELECT id FROM teams ORDER BY id') as $id) {
+        $urls[] = ['loc' => $base . '/team?id=' . rawurlencode($id), 'priority' => '0.5', 'changefreq' => 'monthly'];
+    }
+    foreach (Database::all('SELECT DISTINCT championship, year FROM events ORDER BY championship, year') as $r) {
+        $urls[] = ['loc' => $base . '/race?id=' . rawurlencode($r['championship']) . '&year=' . rawurlencode($r['year']), 'priority' => '0.5', 'changefreq' => 'monthly'];
     }
 
     $xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -58,7 +52,7 @@ function generateSitemap(): string {
 
     foreach ($urls as $url) {
         $xml .= "  <url>\n";
-        $xml .= "    <loc>" . htmlspecialchars($url['loc']) . "</loc>\n";
+        $xml .= "    <loc>" . htmlspecialchars($url['loc'], ENT_XML1 | ENT_QUOTES, 'UTF-8') . "</loc>\n";
         $xml .= "    <lastmod>{$today}</lastmod>\n";
         $xml .= "    <changefreq>{$url['changefreq']}</changefreq>\n";
         $xml .= "    <priority>{$url['priority']}</priority>\n";
