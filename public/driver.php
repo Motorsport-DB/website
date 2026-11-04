@@ -17,6 +17,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <img id="driver-picture" src="/drivers/picture/default.png" alt="Driver Picture"
                         class="w-full h-full object-cover">
                 </div>
+                <p id="driver-picture-credit" class="hidden mt-2 max-w-[12rem] text-[10px] leading-tight text-gray-500 dark:text-gray-400 text-center sm:order-last"></p>
                 <div>
                     <h3 id="driver-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Driver Name</h3>
                     <div class="flex flex-col">

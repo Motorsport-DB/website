@@ -16,6 +16,10 @@ Options -Indexes +FollowSymLinks
     RewriteRule ^node_modules/ - [F,L]
     RewriteRule ^script/ - [F,L]
     RewriteRule ^tests/ - [F,L]
+    # Build script and generated data (SQLite database, sessions)
+    RewriteRule ^bin/ - [F,L]
+    RewriteRule ^var/ - [F,L]
+    RewriteRule \.sqlite$ - [F,L]
 
     # Block direct access to utility PHP files (not for direct HTTP requests)
     RewriteRule ^sitemap-serve\.php$ - [F,L]

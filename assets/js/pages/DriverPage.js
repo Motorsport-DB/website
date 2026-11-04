@@ -113,15 +113,31 @@ class DriverPage {
         // Driver picture
         const pictureElem = document.getElementById('driver-picture');
         if (pictureElem && this.driver.picture) {
-            pictureElem.src = this.driver.picture;
+            pictureElem.src = `/${String(this.driver.picture).replace(/^\/+/, '')}`;
             pictureElem.alt = `${this.driver.firstName} ${this.driver.lastName}`;
+        }
+
+        // Picture credit (free licences such as CC BY-SA require attribution)
+        const creditElem = document.getElementById('driver-picture-credit');
+        const credit = this.driver.pictureCredit;
+        if (creditElem && credit && credit.license) {
+            creditElem.textContent = '';
+            const link = document.createElement('a');
+            link.href = /^https:\/\//.test(credit.source || '') ? credit.source : '#';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.className = 'underline hover:text-blue-600';
+            link.textContent = `${credit.author || 'Unknown'}, ${credit.license}`;
+            creditElem.append('Photo: ', link, ' via Wikimedia Commons');
+            creditElem.classList.remove('hidden');
         }
 
         // Country flag
         const countryElem = document.getElementById('driver-country-img');
         if (countryElem && this.driver.country) {
             countryElem.src = `/assets/flags/${this.driver.country.toLowerCase()}.png`;
-            countryElem.alt = this.driver.country;
+            countryElem.alt = this.driver.country.replace(/_/g, ' ');
+            countryElem.addEventListener('error', () => { countryElem.src = '/assets/flags/default.png'; }, { once: true });
         }
 
         // Date of birth
