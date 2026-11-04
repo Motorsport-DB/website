@@ -43,19 +43,15 @@ class DriverPage {
 
             // Load driver data
             await this.loadDriverData();
-            console.log("data loaded");
             // Hide loading
             hideLoadingOverlay();
-            console.log("test");
             // Display driver info
             this.displayDriverProfile();
             this.displayDriverStats();
             this.displayDriverCharts();
             this.displayDriverResults();
-            console.log("test");
             // Load random cards
             await this.loadRandomCards();
-            console.log("test");
             // Initialize tooltips (deferred)
             this.deferredInit();
 
@@ -112,21 +108,36 @@ class DriverPage {
         const nameElem = document.getElementById('driver-name');
         if (nameElem) {
             nameElem.textContent = formattedName;
-            console.log(`✅ Driver name set: ${formattedName}`);
         }
 
         // Driver picture
         const pictureElem = document.getElementById('driver-picture');
         if (pictureElem && this.driver.picture) {
-            pictureElem.src = this.driver.picture;
+            pictureElem.src = `/${String(this.driver.picture).replace(/^\/+/, '')}`;
             pictureElem.alt = `${this.driver.firstName} ${this.driver.lastName}`;
+        }
+
+        // Picture credit (free licences such as CC BY-SA require attribution)
+        const creditElem = document.getElementById('driver-picture-credit');
+        const credit = this.driver.pictureCredit;
+        if (creditElem && credit && credit.license) {
+            creditElem.textContent = '';
+            const link = document.createElement('a');
+            link.href = /^https:\/\//.test(credit.source || '') ? credit.source : '#';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.className = 'underline hover:text-blue-600';
+            link.textContent = `${credit.author || 'Unknown'}, ${credit.license}`;
+            creditElem.append('Photo: ', link, ' via Wikimedia Commons');
+            creditElem.classList.remove('hidden');
         }
 
         // Country flag
         const countryElem = document.getElementById('driver-country-img');
         if (countryElem && this.driver.country) {
             countryElem.src = `/assets/flags/${this.driver.country.toLowerCase()}.png`;
-            countryElem.alt = this.driver.country;
+            countryElem.alt = this.driver.country.replace(/_/g, ' ');
+            countryElem.addEventListener('error', () => { countryElem.src = '/assets/flags/default.png'; }, { once: true });
         }
 
         // Date of birth
@@ -258,9 +269,6 @@ class DriverPage {
      * Display driver performance charts
      */
     displayDriverCharts() {
-        console.log("📊 DriverPage.displayDriverCharts() called");
-        console.log("  Driver data:", this.driver);
-        console.log("  Current charts Map size:", this.charts.size);
         
         if (!this.driver) {
             console.warn("⚠️  No driver data, skipping charts");
@@ -276,32 +284,23 @@ class DriverPage {
             'finishRateChart'
         ];
         
-        console.log("🗑️  Destroying existing charts:", chartIds);
         chartIds.forEach(id => {
-            console.log(`    Destroying chart: ${id}`);
             chartService.destroyChart(id);
         });
         this.charts.clear();
-        console.log("✅ All charts destroyed, Map cleared");
 
         // Performance over time chart
-        console.log("📈 Creating performance chart...");
         this.createPerformanceChart();
 
         // Results distribution charts
-        console.log("📈 Creating results distribution charts...");
         this.createResultsDistributionCharts();
 
         // Performance radar chart
-        console.log("📈 Creating radar chart...");
         this.createRadarChart();
 
         // Finish rate chart
-        console.log("📈 Creating finish rate chart...");
         this.createFinishRateChart();
         
-        console.log("✅ All charts created successfully");
-        console.log("  Final charts Map size:", this.charts.size);
     }
 
     /**
@@ -425,7 +424,6 @@ class DriverPage {
      * Display detailed driver results
      */
     displayDriverResults() {
-        console.log("📋 displayDriverResults called");
         const container = document.getElementById('resultsContainer');
         if (!container) {
             console.error("❌ resultsContainer element not found");
@@ -438,7 +436,6 @@ class DriverPage {
             return;
         }
 
-        console.log("  Processing seasons:", Object.keys(this.driver.seasons));
 
         // Initialize filter state
         if (!this.sessionFilter) {
@@ -588,7 +585,6 @@ class DriverPage {
 
         html += '</div>';
         container.innerHTML = html;
-        console.log("✅ Results displayed successfully");
     }
 
     /**

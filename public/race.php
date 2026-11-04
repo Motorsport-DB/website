@@ -119,6 +119,9 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- Dynamic other info content will be inserted here -->
     </div>
 
+    <!-- Championship standings -->
+    <section id="standingsContainer" class="container mx-auto px-6 py-6" aria-live="polite"></section>
+
     <!-- Results Container -->
     <div id="resultsContainer" class="mt-8">
         <!-- Dynamic content will be inserted here -->

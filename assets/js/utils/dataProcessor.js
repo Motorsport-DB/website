@@ -25,10 +25,33 @@ export function isRaceSession(session) {
     }
     
     // Include race sessions
-    return sessionLower.includes('race') || 
-           sessionLower === 'final' || 
+    return sessionLower.includes('race') ||
+           sessionLower === 'final' ||
            sessionLower === 'feature' ||
-           sessionLower === 'sprint';
+           sessionLower === 'sprint' ||
+           sessionLower === 'rally';
+}
+
+/**
+ * Check if a session decides the pole position (final qualifying only,
+ * not Q1/Q2, qualifying groups or sprint qualifying).
+ * @param {string} session - Session name
+ * @returns {boolean}
+ */
+export function isPoleSession(session) {
+    if (!session) return false;
+    const s = session.toLowerCase().trim();
+    return s === 'qualifying' || s === 'qualifying session' || s === 'q3' || s.endsWith('hyperpole');
+}
+
+/**
+ * Was this result the fastest lap of the race?
+ * @param {Object} result - Session result
+ * @returns {boolean}
+ */
+export function hasFastestLapOfRace(result) {
+    const info = result && result.other_info;
+    return !!info && (info.fastestLapOfRace === 'yes' || info.fastest_lap_of_race === 'yes');
 }
 
 /**
@@ -47,7 +70,6 @@ export function isQualifyingSession(session) {
  * @returns {Object}
  */
 export function calculateDriverStats(driver) {
-    console.log("📊 calculateDriverStats called with driver:", driver);
     
     if (!driver || !driver.seasons) {
         console.warn("⚠️  No driver or no seasons data");
@@ -76,15 +98,12 @@ export function calculateDriverStats(driver) {
     let disqualifications = 0;
     let championships = 0;
 
-    console.log("  Processing seasons:", Object.keys(driver.seasons));
 
     // Iterate through all years
     Object.entries(driver.seasons).forEach(([year, yearData]) => {
-        console.log(`    Year ${year}:`, Object.keys(yearData));
         
         // Iterate through championships in that year
         Object.entries(yearData).forEach(([championship, championshipData]) => {
-            console.log(`      Championship ${championship}:`, Object.keys(championshipData));
             
             // Iterate through events
             Object.entries(championshipData).forEach(([event, eventData]) => {
@@ -97,11 +116,11 @@ export function calculateDriverStats(driver) {
                         
                         totalRaces++;
                         
-                        // Check for DNF, DNS, DSQ, or missing position (these are not numeric positions)
-                        if (!result.position || posStr.includes('DNF') || posStr.includes('DNS') || !pos || pos === 0) {
-                            dnfs++;
-                        } else if (posStr.includes('DSQ') || posStr.includes('DISQUALIFIED')) {
+                        // Disqualifications first, then any other non-numeric status (DNF, DNS, NC…)
+                        if (posStr.includes('DSQ') || posStr.includes('DISQUALIFIED') || posStr === 'EXC') {
                             disqualifications++;
+                        } else if (!result.position || !pos || pos === 0) {
+                            dnfs++;
                         } else {
                             // Valid numeric position
                             if (pos === 1) wins++;
@@ -111,13 +130,13 @@ export function calculateDriverStats(driver) {
                         }
                     }
                     
-                    // Count poles from qualifying
-                    if (isQualifyingSession(session) && result.position === '1') {
+                    // Pole positions: final qualifying session only
+                    if (isPoleSession(session) && String(result.position) === '1') {
                         poles++;
                     }
-                    
-                    // Fastest laps
-                    if (result.fastest_lap || result.fastestLap) {
+
+                    // Fastest lap of the race (not every recorded lap time)
+                    if (isRaceSession(session) && hasFastestLapOfRace(result)) {
                         fastestLaps++;
                     }
                 });
@@ -130,7 +149,6 @@ export function calculateDriverStats(driver) {
 
     const finishes = totalRaces - dnfs;
 
-    console.log("✅ Driver stats calculated:", { totalRaces, wins, podiums, poles, top10Finishes, outsideTop10, dnfs, disqualifications, championships });
 
     return {
         totalRaces,
@@ -191,7 +209,7 @@ export function getSeasonPerformance(driver) {
                         }
                     }
                     
-                    if (isQualifyingSession(session) && result.position === '1') {
+                    if (isPoleSession(session) && String(result.position) === '1') {
                         poles++;
                     }
                 });
@@ -212,7 +230,6 @@ export function getSeasonPerformance(driver) {
         }
     });
 
-    console.log("📊 Season performance aggregated by year:", performance);
     return performance;
 }
 
@@ -249,7 +266,6 @@ export function getPositionDistribution(driver) {
  * @returns {Object}
  */
 export function calculateTeamStats(team) {
-    console.log("📊 calculateTeamStats called with team:", team);
     
     if (!team || !team.seasons) {
         console.warn("⚠️  No team or no seasons data");
@@ -275,7 +291,6 @@ export function calculateTeamStats(team) {
     let dnf = 0; // DNF/DSQ/DNS
     let poles = 0;
 
-    console.log("  Processing seasons:", Object.keys(team.seasons));
 
     Object.entries(team.seasons).forEach(([year, yearData]) => {
         Object.entries(yearData).forEach(([championship, championshipData]) => {
@@ -316,7 +331,7 @@ export function calculateTeamStats(team) {
                             }
                         }
                         
-                        if (isQualifyingSession(session) && result.position === '1') {
+                        if (isPoleSession(session) && String(result.position) === '1') {
                             poles++;
                         }
                     });
@@ -329,7 +344,6 @@ export function calculateTeamStats(team) {
         ? team.constructorChampionships.length 
         : 0;
 
-    console.log("✅ Team stats calculated:", { totalRaces, wins, podiums, top10, other, dnf, poles, constructorTitles });
 
     return {
         totalRaces,
@@ -397,7 +411,6 @@ export function getTeamSeasonPerformance(team) {
         };
     });
 
-    console.log("📊 Team season performance aggregated by year:", performance);
     return performance;
 }
 

@@ -216,7 +216,6 @@ class ApiService {
      */
     clearCache() {
         this.cache.clear();
-        console.log('API cache cleared');
     }
 
     /**

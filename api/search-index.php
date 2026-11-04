@@ -29,7 +29,12 @@ header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 header('Cache-Control: public, max-age=3600, stale-while-revalidate=86400');
 header('ETag: ' . $etag);
-if (trim($_SERVER['HTTP_IF_NONE_MATCH'] ?? '') === $etag) {
+// mod_deflate appends "-gzip" to the ETag of compressed responses: compare the base value
+$sent = array_map(
+    fn($t) => preg_replace('/^W\//', '', str_replace('-gzip"', '"', trim($t))),
+    explode(',', $_SERVER['HTTP_IF_NONE_MATCH'] ?? '')
+);
+if (in_array($etag, $sent, true)) {
     http_response_code(304);
     exit;
 }
