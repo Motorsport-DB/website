@@ -183,11 +183,13 @@ if (!$check) {
         out("cannot create $varDir");
         exit(1);
     }
+    // SQLite temporary files (sorts, index builds) go next to the database, not to /tmp
+    putenv('SQLITE_TMPDIR=' . $varDir);
     $tmp = $dbFile . '.tmp';
     @unlink($tmp);
     $db = new Pdo\Sqlite('sqlite:' . $tmp);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $db->exec('PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF; PRAGMA page_size=8192;');
+    $db->exec('PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF; PRAGMA page_size=8192; PRAGMA temp_store=FILE;');
     $db->exec(<<<SQL
         CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
         CREATE TABLE drivers (
@@ -464,7 +466,10 @@ $meta->execute(['fingerprint', $fp]);
 $meta->execute(['version', (string) BUILD_VERSION]);
 $meta->execute(['problems', (string) count($errors)]);
 $db->commit();
-$db->exec('ANALYZE; VACUUM;');
+// No VACUUM: the database is created from scratch so it is already compact, and
+// VACUUM needs a temporary copy as large as the database (it filled the 64 MB /tmp
+// tmpfs of the container: "database or disk is full").
+$db->exec('ANALYZE;');
 unset($db, $insEvent, $insSession, $insEntry, $insED, $insD, $insT, $insC, $insDS, $insTS, $meta);
 
 // ---------------------------------------------------------------- search index
