@@ -12,11 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
       today:   '/assets/php/games/driverdle/getDriverOfTodayF1.php',
       search:  '/assets/php/games/driverdle/searchDriversF1.php',
       compare: '/assets/php/games/driverdle/compareDriverF1.php',
+      giveUp:  '/assets/php/games/driverdle/giveUpF1.php',
     },
     all: {
       today:   '/assets/php/games/driverdle/getDriverOfTodayAll.php',
       search:  '/assets/php/games/driverdle/searchDriversAll.php',
       compare: '/assets/php/games/driverdle/compareDriverAll.php',
+      giveUp:  '/assets/php/games/driverdle/giveUpAll.php',
     },
   };
 
@@ -28,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // State
   let guesses       = [];
   let won           = false;
+  let gaveUp        = null; // revealed target after giving up
   let targetName    = '';
   let targetId      = '';
   let isSubmitting  = false;
@@ -86,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saved = loadSavedGuesses();
     guesses  = saved.guesses;
     won      = saved.won;
+    gaveUp   = saved.gaveUp || null;
     targetId = saved.targetId || targetId;
 
     // Persist targetId so it's available in localStorage for inspection
@@ -94,8 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const g of guesses) renderGuessRow(g);
 
     if (won) showWinBanner();
+    else if (gaveUp) showGiveUpBanner();
 
     setupSearch();
+    setupGiveUp();
     updateGuessCount();
   }
 
@@ -218,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function selectDriver(id, name) {
     hideDropdown();
     searchInput.value = '';
-    if (won) return;
+    if (won || gaveUp) return;
 
     // Already guessed
     if (guesses.some(g => g.guessStats.id === id)) {
@@ -343,10 +349,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Win banner ────────────────────────────────────────────────────────────────
   function showWinBanner() {
+    document.getElementById('give-up-btn')?.remove();
     winBanner.classList.remove('hidden');
     guessCount.textContent = guesses.length;
     searchInput.disabled   = true;
     searchInput.placeholder = 'Found it!';
+  }
+
+  // ── Give up ───────────────────────────────────────────────────────────────────
+  function setupGiveUp() {
+    if (won || gaveUp) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'give-up-btn';
+    btn.textContent = 'Give up';
+    btn.className = 'mt-3 px-4 py-2 text-sm font-medium rounded-lg border border-red-300 text-red-700 ' +
+      'hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30 transition-colors';
+    btn.addEventListener('click', async () => {
+      if (!confirm("Give up and reveal today's driver?")) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch(ep.giveUp, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        const data = await res.json();
+        if (!data.target) throw new Error(data.error || 'error');
+        gaveUp = data.target;
+        incrementStats(false);
+        saveGuesses();
+        showGiveUpBanner();
+      } catch {
+        btn.disabled = false;
+        showError('Could not reveal the driver. Please try again.');
+      }
+    });
+    searchInput.closest('div').after(btn);
+  }
+
+  function showGiveUpBanner() {
+    document.getElementById('give-up-btn')?.remove();
+    searchInput.disabled = true;
+    searchInput.placeholder = 'Game over';
+    const box = document.createElement('div');
+    box.className = 'bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-xl p-4 text-center text-gray-900 dark:text-white';
+    const link = document.createElement('a');
+    link.href = `/driver.php?id=${encodeURIComponent(gaveUp.id)}`;
+    link.className = 'font-semibold underline text-blue-600 dark:text-blue-400';
+    link.textContent = `${gaveUp.firstname} ${gaveUp.lastname}`;
+    box.append("You gave up. Today's driver was ", link, '. Come back tomorrow!');
+    winBanner.after(box);
   }
 
   // ── Error display ─────────────────────────────────────────────────────────────
@@ -369,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Persistence ───────────────────────────────────────────────────────────────
   function saveGuesses() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: TODAY, guesses, won, targetId }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: TODAY, guesses, won, gaveUp, targetId }));
   }
 
   function loadSavedGuesses() {

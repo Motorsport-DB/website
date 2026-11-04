@@ -266,3 +266,15 @@ function handleCompare(string $mode): never
         'target'     => $won ? ['id' => $target['id'], 'firstname' => $target['firstname'], 'lastname' => $target['lastname']] : null,
     ]);
 }
+
+/** Reveal the driver of the day when the player gives up (POST only). */
+function handleGiveUp(string $mode): never
+{
+    jsonInput();
+    $row = ($tid = dailyDriverId($mode)) !== null ? driverRow($tid) : null;
+    if ($row === null) {
+        jsonOut(['error' => 'No drivers available'], 500);
+    }
+    $stats = computeStats($row, $mode);
+    jsonOut(['target' => ['id' => $stats['id'], 'firstname' => $stats['firstname'], 'lastname' => $stats['lastname']]]);
+}
