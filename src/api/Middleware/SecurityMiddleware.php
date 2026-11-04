@@ -11,30 +11,36 @@ namespace MotorsportDB\API\Middleware;
 class SecurityMiddleware
 {
     /**
-     * Validate and sanitize ID parameter
-     * 
+     * Validate an ID parameter (driver, team or championship).
+     *
+     * IDs are looked up with prepared statements, so legitimate characters
+     * such as apostrophes ("Pato_O'Ward") or dots ("Jr.") are allowed; only
+     * path separators, control characters and parent references are refused.
+     *
      * @param string $id The ID to validate
-     * @return string|null Sanitized ID or null if invalid
+     * @return string|null The ID or null if invalid
      */
     public static function validateId(string $id): ?string
     {
-        // Remove any whitespace
         $id = trim($id);
-        
-        // Check for invalid characters (path traversal, code injection, etc.)
-        if (preg_match('/[\/\.\~\`\$<>\|\\\;\(\)\{\}\[\]\'\"]/', $id)) {
+        if ($id === '' || strlen($id) > 200 || !preg_match('//u', $id)) {
             return null;
         }
-        
-        // Check length
-        if (strlen($id) > 255 || strlen($id) < 1) {
+        if (preg_match('~[/\\\\\x00-\x1F\x7F<>]~u', $id) || str_contains($id, '..')) {
             return null;
         }
-        
-        // Sanitize the ID
-        return htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+        return $id;
     }
-    
+
+    /**
+     * Validate a championship ID, which maps to a directory name.
+     */
+    public static function validateChampionshipId(string $id): ?string
+    {
+        $id = trim($id);
+        return preg_match('/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/', $id) ? $id : null;
+    }
+
     /**
      * Validate search query
      * 
@@ -50,10 +56,12 @@ class SecurityMiddleware
             return null;
         }
         
-        // Remove potentially dangerous characters
-        $query = preg_replace('/[<>]/', '', $query);
-        
-        return htmlspecialchars($query, ENT_QUOTES, 'UTF-8');
+        if (!preg_match('//u', $query)) {
+            return null;
+        }
+
+        // Output is JSON-encoded, the query is only used in prepared statements
+        return preg_replace('/[\x00-\x1F\x7F<>]/', '', $query);
     }
     
     /**
@@ -108,9 +116,10 @@ class SecurityMiddleware
     }
     
     /**
-     * Check rate limiting
-     * 
-     * @param string $identifier Client identifier (IP, user ID, etc.)
+     * Check rate limiting (fixed window). Uses APCu when available, falls back
+     * to a small file in the system temp directory.
+     *
+     * @param string $identifier Client identifier (IP)
      * @return bool True if request is allowed, false if rate limit exceeded
      */
     public static function checkRateLimit(string $identifier): bool
@@ -118,50 +127,51 @@ class SecurityMiddleware
         if (!RATE_LIMIT_ENABLED) {
             return true;
         }
-        
-        // Simple file-based rate limiting (consider using Redis/Memcached in production)
-        $cacheFile = sys_get_temp_dir() . '/motorsportdb_rate_' . md5($identifier) . '.txt';
-        
-        if (!file_exists($cacheFile)) {
-            file_put_contents($cacheFile, '1:' . time());
+        $window = intdiv(time(), RATE_LIMIT_WINDOW);
+        $key = 'msdb_rl_' . hash('xxh128', $identifier) . '_' . $window;
+
+        if (function_exists('apcu_enabled') && apcu_enabled()) {
+            apcu_add($key, 0, RATE_LIMIT_WINDOW * 2);
+            $count = apcu_inc($key);
+            return $count === false || $count <= RATE_LIMIT_MAX_REQUESTS;
+        }
+
+        $file = sys_get_temp_dir() . '/msdb_rl_' . hash('xxh128', $identifier);
+        $fh = @fopen($file, 'c+');
+        if ($fh === false) {
             return true;
         }
-        
-        $data = explode(':', file_get_contents($cacheFile));
-        $count = (int)($data[0] ?? 0);
-        $timestamp = (int)($data[1] ?? 0);
-        
-        // Reset if window has passed
-        if (time() - $timestamp > RATE_LIMIT_WINDOW) {
-            file_put_contents($cacheFile, '1:' . time());
-            return true;
-        }
-        
-        // Check if limit exceeded
-        if ($count >= RATE_LIMIT_MAX_REQUESTS) {
-            return false;
-        }
-        
-        // Increment counter
-        file_put_contents($cacheFile, ($count + 1) . ':' . $timestamp);
-        return true;
+        flock($fh, LOCK_EX);
+        [$w, $count] = array_map('intval', explode(':', (string) stream_get_contents($fh)) + [0, 0]);
+        $count = $w === $window ? $count + 1 : 1;
+        ftruncate($fh, 0);
+        rewind($fh);
+        fwrite($fh, $window . ':' . $count);
+        flock($fh, LOCK_UN);
+        fclose($fh);
+        return $count <= RATE_LIMIT_MAX_REQUESTS;
     }
-    
+
     /**
-     * Get client identifier for rate limiting
-     * 
+     * Get client identifier for rate limiting.
+     *
+     * X-Forwarded-For is only trusted when the direct peer is listed in the
+     * MSDB_TRUSTED_PROXIES environment variable (comma separated), otherwise
+     * anyone could bypass the rate limit by forging the header.
+     *
      * @return string Client identifier
      */
     public static function getClientIdentifier(): string
     {
-        // Use X-Forwarded-For if behind a proxy, otherwise use REMOTE_ADDR
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        
-        // Take only the first IP if there are multiple
-        if (strpos($ip, ',') !== false) {
-            $ip = explode(',', $ip)[0];
+        $remote = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $trusted = array_filter(array_map('trim', explode(',', (string) getenv('MSDB_TRUSTED_PROXIES'))));
+        if ($trusted && in_array($remote, $trusted, true) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $hops = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+            $client = end($hops);
+            if (filter_var($client, FILTER_VALIDATE_IP)) {
+                return $client;
+            }
         }
-        
-        return trim($ip);
+        return $remote;
     }
 }

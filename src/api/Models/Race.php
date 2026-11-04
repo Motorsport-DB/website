@@ -7,6 +7,8 @@
 
 namespace MotorsportDB\API\Models;
 
+use MotorsportDB\API\Data\Database;
+
 class Race
 {
     private string $racesDir;
@@ -81,187 +83,60 @@ class Race
         
         $data['id'] = $championshipId;
         $data['year'] = $year;
-        $data['picture'] = $this->getPicturePath($championshipId);
+        $data['picture'] = Database::one('SELECT picture FROM championships WHERE id = ?', [$championshipId])['picture'] ?? null;
         
         return $data;
     }
     
     /**
      * Get latest year for a championship
-     * 
-     * @param string $championshipDir Championship directory
-     * @return int|null Latest year or null if no years found
      */
-    private function getLatestYear(string $championshipDir): ?int
+    private function getLatestYear(string $championshipDir): ?string
     {
-        $files = glob($championshipDir . '*.json');
-        $years = [];
-        
-        foreach ($files as $file) {
-            $year = basename($file, '.json');
-            if (is_numeric($year)) {
-                $years[] = (int)$year;
-            }
-        }
-        
-        return empty($years) ? null : max($years);
+        $row = Database::one('SELECT last_year FROM championships WHERE id = ?', [basename(rtrim($championshipDir, '/'))]);
+        return $row['last_year'] ?? null;
     }
-    
+
     /**
-     * Get all available years for a championship
-     * 
-     * @param string $championshipId Championship ID
-     * @return array Array of available years
+     * Get all available years for a championship (most recent first)
+     *
+     * @return list<string>
      */
     public function getAvailableYears(string $championshipId): array
     {
-        $championshipDir = $this->racesDir . $championshipId . '/';
-        
-        if (!is_dir($championshipDir)) {
-            return [];
-        }
-        
-        $files = glob($championshipDir . '*.json');
-        $years = [];
-        
-        foreach ($files as $file) {
-            $year = basename($file, '.json');
-            if (is_numeric($year)) {
-                $years[] = (int)$year;
-            }
-        }
-        
-        rsort($years); // Sort descending
+        $row = Database::one('SELECT years FROM championships WHERE id = ?', [$championshipId]);
+        $years = $row ? (json_decode($row['years'], true) ?: []) : [];
+        $years = array_map('intval', $years);
+        rsort($years);
         return $years;
     }
-    
+
     /**
      * Get all championships
-     * 
+     *
      * @return array List of championship IDs
      */
     public function getAllChampionships(): array
     {
-        $championships = [];
-        $dirs = glob($this->racesDir . '*', GLOB_ONLYDIR);
-        
-        foreach ($dirs as $dir) {
-            $championshipId = basename($dir);
-            
-            // Skip .git and picture directories
-            if ($championshipId !== '.git' && $championshipId !== 'picture') {
-                $championships[] = $championshipId;
-            }
-        }
-        
-        sort($championships);
-        return $championships;
+        return Database::column('SELECT id FROM championships ORDER BY id');
     }
-    
+
     /**
-     * Search championships by name
-     * 
-     * @param string $query Search query
-     * @param int $limit Maximum number of results
-     * @return array Array of matching championships
+     * Search championships by name (server-side fallback, the site searches client-side)
      */
     public function search(string $query, int $limit = 10): array
     {
-        $query = strtolower($query);
-        $results = [];
-        
-        $dirs = glob($this->racesDir . '*', GLOB_ONLYDIR);
-        
-        foreach ($dirs as $dir) {
-            if (count($results) >= $limit) {
-                break;
-            }
-            
-            $championshipId = basename($dir);
-            
-            // Skip .git and picture directories
-            if ($championshipId === '.git' || $championshipId === 'picture') {
-                continue;
-            }
-            
-            $name = $this->normalizeString($championshipId);
-            
-            // Check if query matches
-            if ($this->isSimilar($name, $query)) {
-                $latestYear = $this->getLatestYear($dir . '/');
-                
-                if ($latestYear !== null) {
-                    $results[] = [
-                        'id' => $championshipId,
-                        'name' => $this->formatName($championshipId),
-                        'latestYear' => $latestYear,
-                        'picture' => $this->getPicturePath($championshipId)
-                    ];
-                }
-            }
-        }
-        
-        return $results;
-    }
-    
-    /**
-     * Get picture path for a championship
-     * 
-     * @param string $championshipId Championship ID
-     * @return string|null Picture path or null if not found
-     */
-    private function getPicturePath(string $championshipId): ?string
-    {
-        $extensions = ['png', 'jpg', 'jpeg', 'webp', 'svg'];
-        
-        foreach ($extensions as $ext) {
-            $picturePath = $this->picturesDir . $championshipId . '.' . $ext;
-            if (file_exists($picturePath)) {
-                return 'races/picture/' . $championshipId . '.' . $ext;
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Normalize string for comparison
-     * 
-     * @param string $string String to normalize
-     * @return string Normalized string
-     */
-    private function normalizeString(string $string): string
-    {
-        return strtolower(str_replace(['_', '-'], ' ', $string));
-    }
-    
-    /**
-     * Check if text is similar to query
-     * 
-     * @param string $text Text to check
-     * @param string $query Query string
-     * @return bool True if similar
-     */
-    private function isSimilar(string $text, string $query): bool
-    {
-        // Exact match
-        if (strpos($text, $query) !== false) {
-            return true;
-        }
-        
-        // Approximate match (70% similarity)
-        similar_text($text, $query, $percent);
-        return $percent > 70;
-    }
-    
-    /**
-     * Format championship name for display
-     * 
-     * @param string $championshipId Championship ID
-     * @return string Formatted name
-     */
-    private function formatName(string $championshipId): string
-    {
-        return ucwords(str_replace('_', ' ', $championshipId));
+        $like = '%' . str_replace(['\\', '%', '_', ' '], ['\\\\', '\\%', '\\_', '%'], $query) . '%';
+        $rows = Database::all(
+            "SELECT id, picture, last_year FROM championships
+             WHERE replace(id, '_', ' ') LIKE :q ESCAPE '\\' ORDER BY id LIMIT :l",
+            [':q' => $like, ':l' => $limit]
+        );
+        return array_map(fn(array $r) => [
+            'id'         => $r['id'],
+            'name'       => str_replace('_', ' ', $r['id']),
+            'latestYear' => $r['last_year'],
+            'picture'    => $r['picture'],
+        ], $rows);
     }
 }
