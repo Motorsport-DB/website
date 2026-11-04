@@ -306,7 +306,9 @@ foreach (glob($dirs['races'] . '/*', GLOB_ONLYDIR) ?: [] as $champDir) {
                         if (!isset($drivers[$d])) {
                             $warn("$where: unknown driver \"$d\"");
                         }
-                        if (isset($inSession[$d]) && $inSession[$d] !== $car) {
+                        // shared drives were common in early F1 (and relief drivers at Indianapolis)
+                        $sharedDrivesEra = $champ === 'Formula_1' && $yi < 1970;
+                        if (!$sharedDrivesEra && isset($inSession[$d]) && $inSession[$d] !== $car) {
                             $warn("$where: driver \"$d\" also in car #{$inSession[$d]}");
                         }
                         $inSession[$d] = (string) $car;
