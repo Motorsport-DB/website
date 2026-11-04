@@ -179,7 +179,12 @@ class SearchIndex {
             }
 
             // Other names: "Renault" -> Alpine, "Toro Rosso" -> Racing Bulls…
-            for (const alias of score < 70 ? e.aliases || [] : []) {
+            for (const alias of score < 100 ? e.aliases || [] : []) {
+                if (alias.words.join(' ') === q && score < 92) {
+                    score = 92; // exact former name ("Renault" -> Alpine) beats partial matches
+                    via = alias.name;
+                    continue;
+                }
                 const m = matchWords(qWords, alias.words);
                 if (m && 35 + 35 * m > score) {
                     score = 35 + 35 * m;
