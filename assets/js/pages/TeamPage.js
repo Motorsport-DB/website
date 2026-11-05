@@ -10,7 +10,7 @@ import { createCardGrid } from '../components/CardComponent.js';
 import { initTooltips } from '../components/TooltipComponent.js';
 import { showLoadingOverlay, hideLoadingOverlay } from '../components/LoadingComponent.js';
 import { calculateTeamStats, getTeamSeasonPerformance } from '../utils/dataProcessor.js';
-import { formatDate, formatName } from '../utils/helpers.js';
+import { formatDate, formatName, renderAliases, renderPictureCredit } from '../utils/helpers.js';
 import * as dom from '../utils/dom.js';
 
 class TeamPage {
@@ -87,6 +87,9 @@ class TeamPage {
             pictureElem.src = this.team.picture;
             pictureElem.alt = teamDisplayName;
         }
+
+        renderPictureCredit(document.getElementById('team-picture-credit'), this.team.pictureCredit, 'Logo');
+        renderAliases(document.getElementById('team-aliases'), this.team.aliases, [teamDisplayName]);
 
         const countryElem = document.getElementById('team-country-img');
         if (countryElem && this.team.country) {
