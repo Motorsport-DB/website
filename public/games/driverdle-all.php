@@ -38,6 +38,9 @@ require_once __DIR__ . '/../../includes/header.php';
       <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Guesses: <span id="current-guess-count">0</span></p>
     </div>
 
+    <!-- Browsable list of every eligible driver -->
+    <div id="driver-browser"></div>
+
     <!-- Win banner -->
     <div id="win-banner" class="hidden bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-xl p-4 text-center">
       <p class="text-lg font-bold text-green-800 dark:text-green-300">🎉 Correct! Found in <span id="guess-count">0</span> guess(es).</p>
@@ -60,9 +63,9 @@ require_once __DIR__ . '/../../includes/header.php';
   <div class="max-w-5xl w-full bg-white dark:bg-gray-900 rounded-xl shadow p-4 sm:p-6">
     <h3 class="font-bold text-gray-900 dark:text-gray-100 mb-3">How to Play</h3>
     <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside">
-      <li>Search and select any driver from the MotorsportDB database.</li>
+      <li>Pick any driver with at least 150 race starts (search box or the browsable list).</li>
       <li>Each guess reveals how close you are to the mystery driver.</li>
-      <li>You have <strong>unlimited tries</strong> — a new driver is revealed each day at midnight.</li>
+      <li>You have <strong>unlimited tries</strong> — a new driver is revealed each day at midnight (UTC).</li>
     </ul>
     <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4 mb-2">Color legend</h4>
     <div class="flex flex-wrap gap-3 text-xs">
@@ -107,6 +110,6 @@ require_once __DIR__ . '/../../includes/header.php';
   import { themeService } from '/assets/js/services/ThemeService.js';
   themeService.initToggleButton();
 </script>
-<script src="/assets/js/games/driverdle-comparison.js"></script>
+<script type="module" src="/assets/js/games/driverdle-comparison.js"></script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

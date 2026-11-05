@@ -1,6 +1,6 @@
 <?php
 $pageTitle = 'Driverdle Classic - Daily Driver Name Guessing';
-$pageDescription = 'Classic Wordle-style: guess the motorsport driver\'s last name in 6 tries.';
+$pageDescription = 'Classic Wordle-style: guess the motorsport driver\'s last name in 5 tries.';
 require_once __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -88,16 +88,20 @@ require_once __DIR__ . '/../../includes/header.php';
         <div class="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
             <h3 class="font-bold mb-2 text-gray-900 dark:text-gray-100">How to Play</h3>
             <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside">
-                <li>Guess the motorsport driver in 6 tries</li>
-                <li>Each guess must be a valid driver name</li>
-                <li>The color of the tiles will change to show how close your guess was</li>
-                <li>🟩 Green: Correct attribute</li>
-                <li>🟨 Yellow: Close but not exact</li>
-                <li>⬜ Gray: Wrong attribute</li>
-                <li>A new driver is available each day at midnight</li>
+                <li>Guess the last name of today's driver in 5 tries</li>
+                <li>The tiles show the length of the name, but you may try any known driver last name, shorter or longer</li>
+                <li>🟩 Green: right letter, right place</li>
+                <li>🟨 Orange: the letter is in the name, somewhere else</li>
+                <li>⬜ Gray: the letter is not in the name (or no more of it)</li>
+                <li>Letters typed beyond the last tile (dashed) can only be orange or gray</li>
+                <li>The answer is a driver who raced this season or the last one: browse them in the list below</li>
+                <li>A new driver is available each day at midnight (UTC)</li>
             </ul>
         </div>
     </div>
+
+    <!-- Browsable list of the possible answers -->
+    <div id="driver-browser" class="max-w-xl w-full mx-auto"></div>
 
     <!-- Leaderboard/Stats -->
     <div class="max-w-xl w-full mx-auto p-4 bg-white dark:bg-gray-900 rounded-xl shadow">
@@ -125,6 +129,6 @@ import { themeService } from '/assets/js/services/ThemeService.js';
 themeService.initToggleButton();
 </script>
 
-<script src="/assets/js/games/driverdle-classic.js"></script>
+<script type="module" src="/assets/js/games/driverdle-classic.js"></script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

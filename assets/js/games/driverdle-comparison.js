@@ -1,40 +1,25 @@
 /**
  * DRIVERDLE COMPARISON GAME
  * Mode is set by data-mode="f1" or data-mode="all" on <div id="comparison-game">.
+ * Everything runs client-side from the driverdle data downloaded once.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, mountDriverBrowser } from './driverdle-data.js';
+
+{
   const container = document.getElementById('comparison-game');
   const mode = container?.dataset.mode || 'f1';
-
-  const ENDPOINTS = {
-    f1: {
-      today:   '/assets/php/games/driverdle/getDriverOfTodayF1.php',
-      search:  '/assets/php/games/driverdle/searchDriversF1.php',
-      compare: '/assets/php/games/driverdle/compareDriverF1.php',
-      giveUp:  '/assets/php/games/driverdle/giveUpF1.php',
-    },
-    all: {
-      today:   '/assets/php/games/driverdle/getDriverOfTodayAll.php',
-      search:  '/assets/php/games/driverdle/searchDriversAll.php',
-      compare: '/assets/php/games/driverdle/compareDriverAll.php',
-      giveUp:  '/assets/php/games/driverdle/giveUpAll.php',
-    },
-  };
-
-  const ep          = ENDPOINTS[mode];
-  const TODAY       = new Date().toISOString().slice(0, 10);
+  const TODAY       = todayUTC();
   const STORAGE_KEY = `driverdle_comparison_${mode}`;
-  const COOLDOWN_MS = 500; // min ms between submissions
 
   // State
   let guesses       = [];
   let won           = false;
   let gaveUp        = null; // revealed target after giving up
-  let targetName    = '';
-  let targetId      = '';
-  let isSubmitting  = false;
-  let lastSubmitAt  = 0;
+  let drivers       = [];   // eligible drivers of the mode (stats objects)
+  let byId          = new Map();
+  let target        = null;
+  let teamNames     = {};
 
   const COLUMNS_F1 = [
     { key: 'firstF1Year',    label: '1st F1 Year',  type: 'number' },
@@ -70,29 +55,94 @@ document.addEventListener('DOMContentLoaded', () => {
   const statsWins    = document.getElementById('stats-wins');
   const statsStreak  = document.getElementById('stats-streak');
 
+  // ── Data ──────────────────────────────────────────────────────────────────────
+  function toStats(row) {
+    if (mode === 'f1') {
+      const [id, firstname, lastname, dob, dod, firstF1Year, lastF1Year, teams, f1Wins, otherChamps] = row;
+      return { id, firstname, lastname, age: ageOf(dob, dod), lastnameLength: lastnameLength(lastname),
+        firstF1Year, lastF1Year, teams, f1Wins, otherChamps };
+    }
+    const [id, firstname, lastname, dob, dod, firstYear, lastYear, series, wins] = row;
+    return { id, firstname, lastname, age: ageOf(dob, dod), lastnameLength: lastnameLength(lastname),
+      firstYear, lastYear, series, wins };
+  }
+
+  function compareNumeric(guessVal, targetVal, threshold) {
+    if (guessVal === null || guessVal === undefined || targetVal === null || targetVal === undefined) {
+      return { result: 'red', arrow: null };
+    }
+    const diff = Math.abs(guessVal - targetVal);
+    return {
+      result: diff === 0 ? 'green' : diff <= threshold ? 'orange' : 'red',
+      arrow: guessVal === targetVal ? null : targetVal > guessVal ? 'up' : 'down',
+    };
+  }
+
+  function compareLists(guessList, targetList) {
+    const g = [...new Set(guessList)].sort();
+    const t = new Set(targetList);
+    if (g.length === t.size && g.every((x) => t.has(x))) return { result: 'green' };
+    return g.some((x) => t.has(x)) ? { result: 'orange' } : { result: 'red' };
+  }
+
+  function compareStats(guess, tgt) {
+    const common = {
+      age:            compareNumeric(guess.age, tgt.age, 3),
+      lastnameLength: compareNumeric(guess.lastnameLength, tgt.lastnameLength, 1),
+    };
+    if (mode === 'f1') {
+      return {
+        firstF1Year: compareNumeric(guess.firstF1Year, tgt.firstF1Year, 3),
+        lastF1Year:  compareNumeric(guess.lastF1Year, tgt.lastF1Year, 3),
+        teams:       compareLists(guess.teams, tgt.teams),
+        f1Wins:      compareNumeric(guess.f1Wins, tgt.f1Wins, 10),
+        ...common,
+        otherChamps: compareLists(guess.otherChamps, tgt.otherChamps),
+      };
+    }
+    return {
+      firstYear: compareNumeric(guess.firstYear, tgt.firstYear, 3),
+      lastYear:  compareNumeric(guess.lastYear, tgt.lastYear, 3),
+      series:    compareLists(guess.series, tgt.series),
+      wins:      compareNumeric(guess.wins, tgt.wins, 10),
+      ...common,
+    };
+  }
+
+  function guessResult(id) {
+    const guess = byId.get(id);
+    return {
+      won: id === target.id,
+      guessStats: guess,
+      comparison: compareStats(guess, target),
+    };
+  }
+
   // ── Init ─────────────────────────────────────────────────────────────────────
   async function init() {
     renderHeaders();
     loadStats();
 
     try {
-      const res  = await fetch(ep.today);
-      const data = await res.json();
-      if (data.error) { showError(data.error); return; }
-      targetName = data.name;
-      targetId   = data.id ?? '';
+      const data = await loadDriverdleData();
+      drivers   = data[mode].map(toStats);
+      teamNames = data.teams || {};
     } catch {
       showError("Could not load today's driver. Please refresh.");
       return;
     }
+    byId   = new Map(drivers.map((d) => [d.id, d]));
+    target = dailyPick(drivers, mode);
+    if (!target) { showError('No drivers available'); return; }
 
     const saved = loadSavedGuesses();
-    guesses  = saved.guesses;
-    won      = saved.won;
-    gaveUp   = saved.gaveUp || null;
-    targetId = saved.targetId || targetId;
+    won    = saved.won;
+    gaveUp = saved.gaveUp ? { id: target.id, firstname: target.firstname, lastname: target.lastname } : null;
+    // results are recomputed from the ids: always consistent with today's data
+    const ids = (saved.guesses || []).map((g) => (typeof g === 'string' ? g : g?.guessStats?.id)).filter((id) => byId.has(id));
+    guesses = ids.map(guessResult);
+    won = guesses.some((g) => g.won);
 
-    // Persist targetId so it's available in localStorage for inspection
     saveGuesses();
 
     for (const g of guesses) renderGuessRow(g);
@@ -102,7 +152,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupSearch();
     setupGiveUp();
+    setupBrowser();
     updateGuessCount();
+  }
+
+  function setupBrowser() {
+    const items = drivers.map((d) => ({
+      id: d.id,
+      label: `${d.firstname} ${d.lastname}`,
+      sortKey: fold(`${d.lastname} ${d.firstname}`),
+      search: fold(`${d.firstname} ${d.lastname}`),
+      meta: mode === 'f1' ? `F1 ${d.firstF1Year}–${d.lastF1Year}` : `${d.firstYear}–${d.lastYear}`,
+    }));
+    mountDriverBrowser(document.getElementById('driver-browser'), items, {
+      title: mode === 'f1' ? 'Browse all eligible F1 drivers' : 'Browse all eligible drivers',
+      onPick: (it) => selectDriver(it.id),
+    });
   }
 
   // ── Table headers ─────────────────────────────────────────────────────────────
@@ -136,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
       clearTimeout(debounceTimer);
       const q = searchInput.value.trim();
       if (q.length < 2) { hideDropdown(); return; }
-      debounceTimer = setTimeout(() => fetchSuggestions(q), 250);
+      debounceTimer = setTimeout(() => fetchSuggestions(q), 80);
     });
 
     searchInput.addEventListener('keydown', (e) => {
@@ -152,14 +217,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function fetchSuggestions(q) {
-    try {
-      const res  = await fetch(`${ep.search}?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      renderDropdown(data);
-    } catch {
-      hideDropdown();
+  function fetchSuggestions(q) {
+    const nq = fold(q);
+    const results = [];
+    for (const d of drivers) {
+      if (fold(`${d.firstname} ${d.lastname}`).includes(nq) || fold(d.id).includes(nq)) {
+        results.push({ id: d.id, name: `${d.firstname} ${d.lastname}` });
+      }
     }
+    results.sort((a, b) => a.name.localeCompare(b.name));
+    renderDropdown(results.slice(0, 20));
   }
 
   function renderDropdown(items) {
@@ -185,11 +252,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowDown') { (btn.nextElementSibling || btn).focus(); e.preventDefault(); }
         if (e.key === 'ArrowUp')   { (btn.previousElementSibling || btn).focus(); e.preventDefault(); }
-        if (e.key === 'Enter')     { selectDriver(item.id, item.name); }
+        if (e.key === 'Enter')     { selectDriver(item.id); }
         if (e.key === 'Escape')    { hideDropdown(); searchInput.focus(); }
       });
 
-      btn.addEventListener('click', () => selectDriver(item.id, item.name));
+      btn.addEventListener('click', () => selectDriver(item.id));
       dropdown.appendChild(btn);
     }
 
@@ -221,59 +288,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── Submit a guess ────────────────────────────────────────────────────────────
-  async function selectDriver(id, name) {
+  function selectDriver(id) {
     hideDropdown();
     searchInput.value = '';
-    if (won || gaveUp) return;
+    if (won || gaveUp || !byId.has(id)) return;
 
-    // Already guessed
     if (guesses.some(g => g.guessStats.id === id)) {
       showError('Already guessed this driver!');
       return;
     }
-
-    // Rate limit
-    const now = Date.now();
-    if (isSubmitting || now - lastSubmitAt < COOLDOWN_MS) {
-      showError('Please wait a moment before guessing again.');
-      return;
-    }
-
-    isSubmitting = true;
-    lastSubmitAt = now;
-    searchInput.disabled = true;
     clearError();
 
-    try {
-      const res = await fetch(ep.compare, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ guess: id }),
-      });
+    const data = guessResult(id);
+    guesses.push(data);
+    won = data.won;
 
-      if (res.status === 404) { showError('Driver not found.'); return; }
-      if (res.status === 422) { showError('This driver never started an F1 Race (qualifying only).'); return; }
-      if (!res.ok)            { showError('Server error, please try again.'); return; }
+    renderGuessRow(data);
+    saveGuesses();
+    updateGuessCount();
 
-      const data = await res.json();
-      if (data.error) { showError(data.error); return; }
-
-      guesses.push(data);
-      won = data.won;
-
-      renderGuessRow(data);
-      saveGuesses();
-      updateGuessCount();
-
-      if (data.won) {
-        incrementStats(true);
-        showWinBanner();
-      }
-    } catch {
-      showError('Network error. Please try again.');
-    } finally {
-      isSubmitting = false;
-      if (!won) searchInput.disabled = false;
+    if (data.won) {
+      incrementStats(true);
+      showWinBanner();
+    } else {
       searchInput.focus();
     }
   }
@@ -320,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (col.type === 'list') {
       const display = Array.isArray(value) && value.length
-        ? value.map(formatSeriesName).join(', ')
+        ? value.map((v) => formatSeriesName(col.key === 'teams' ? (teamNames[v] || v) : v)).join(', ')
         : '—';
       div.innerHTML = `<span class="text-xs leading-tight text-center">${escapeHtml(display)}</span>`;
     } else {
@@ -365,21 +402,12 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = 'Give up';
     btn.className = 'mt-3 px-4 py-2 text-sm font-medium rounded-lg border border-red-300 text-red-700 ' +
       'hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30 transition-colors';
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       if (!confirm("Give up and reveal today's driver?")) return;
-      btn.disabled = true;
-      try {
-        const res = await fetch(ep.giveUp, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-        const data = await res.json();
-        if (!data.target) throw new Error(data.error || 'error');
-        gaveUp = data.target;
-        incrementStats(false);
-        saveGuesses();
-        showGiveUpBanner();
-      } catch {
-        btn.disabled = false;
-        showError('Could not reveal the driver. Please try again.');
-      }
+      gaveUp = { id: target.id, firstname: target.firstname, lastname: target.lastname };
+      incrementStats(false);
+      saveGuesses();
+      showGiveUpBanner();
     });
     searchInput.closest('div').after(btn);
   }
@@ -418,28 +446,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Persistence ───────────────────────────────────────────────────────────────
   function saveGuesses() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: TODAY, guesses, won, gaveUp, targetId }));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: TODAY, guesses: guesses.map(g => g.guessStats.id), won, gaveUp: !!gaveUp }));
+    } catch { /* private mode: the game still works for this page view */ }
   }
 
   function loadSavedGuesses() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { guesses: [], won: false, targetId: '' };
+      if (!raw) return { guesses: [], won: false };
       const parsed = JSON.parse(raw);
       // Stale day → start fresh
-      if (parsed.date !== TODAY) return { guesses: [], won: false, targetId: '' };
+      if (parsed.date !== TODAY) return { guesses: [], won: false };
       return parsed;
     } catch {
-      return { guesses: [], won: false, targetId: '' };
+      return { guesses: [], won: false };
     }
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────────
   const STATS_KEY = `driverdle_comparison_stats_${mode}`;
 
+  function readStats() {
+    try {
+      return JSON.parse(localStorage.getItem(STATS_KEY)) || { played: 0, wins: 0, streak: 0, lastWon: '' };
+    } catch {
+      return { played: 0, wins: 0, streak: 0, lastWon: '' };
+    }
+  }
+
   function loadStats() {
-    const raw   = localStorage.getItem(STATS_KEY);
-    const stats = raw ? JSON.parse(raw) : { played: 0, wins: 0, streak: 0, lastWon: '' };
+    const stats = readStats();
     if (statsPlayed) statsPlayed.textContent = stats.played;
     if (statsWins)   statsWins.textContent   = stats.wins;
     if (statsStreak) statsStreak.textContent = stats.streak;
@@ -447,8 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function incrementStats(didWin) {
-    const raw   = localStorage.getItem(STATS_KEY);
-    const stats = raw ? JSON.parse(raw) : { played: 0, wins: 0, streak: 0, lastWon: '' };
+    const stats = readStats();
     stats.played++;
     if (didWin) {
       stats.wins++;
@@ -459,11 +495,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       stats.streak = 0;
     }
-    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch { /* ignore */ }
     if (statsPlayed) statsPlayed.textContent = stats.played;
     if (statsWins)   statsWins.textContent   = stats.wins;
     if (statsStreak) statsStreak.textContent = stats.streak;
   }
 
   init();
-});
+}
