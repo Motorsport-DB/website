@@ -17,8 +17,10 @@ require_once __DIR__ . '/../includes/header.php';
                     <img id="team-picture" src="/teams/picture/default.png" alt="Team Logo"
                         class="w-full h-full object-contain p-3">
                 </div>
+                <p id="team-picture-credit" class="hidden mt-2 max-w-[12rem] text-[10px] leading-tight text-gray-500 dark:text-gray-400 text-center sm:order-last"></p>
                 <div>
                     <h3 id="team-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Team Name</h3>
+                    <p id="team-aliases" class="hidden text-xs text-gray-500 dark:text-gray-400 max-w-sm"></p>
                     <div class="flex h-12">
                         <img id="team-country-img" src="/assets/flags/default.png" alt="Team Country"
                             class="inline-block object-contain h-full aspect-[3/2] rounded p-2">

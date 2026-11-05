@@ -10,7 +10,7 @@ import { createCardGrid } from '../components/CardComponent.js';
 import { initTooltips } from '../components/TooltipComponent.js';
 import { showLoadingOverlay, hideLoadingOverlay } from '../components/LoadingComponent.js';
 import { calculateDriverStats, getSeasonPerformance, getDriverRadarData } from '../utils/dataProcessor.js';
-import { calculateAge, formatDate, formatName } from '../utils/helpers.js';
+import { calculateAge, formatDate, formatName, renderAliases, renderPictureCredit } from '../utils/helpers.js';
 import * as dom from '../utils/dom.js';
 
 class DriverPage {
@@ -118,18 +118,21 @@ class DriverPage {
         }
 
         // Picture credit (free licences such as CC BY-SA require attribution)
-        const creditElem = document.getElementById('driver-picture-credit');
-        const credit = this.driver.pictureCredit;
-        if (creditElem && credit && credit.license) {
-            creditElem.textContent = '';
-            const link = document.createElement('a');
-            link.href = /^https:\/\//.test(credit.source || '') ? credit.source : '#';
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.className = 'underline hover:text-blue-600';
-            link.textContent = `${credit.author || 'Unknown'}, ${credit.license}`;
-            creditElem.append('Photo: ', link, ' via Wikimedia Commons');
-            creditElem.classList.remove('hidden');
+        renderPictureCredit(document.getElementById('driver-picture-credit'), this.driver.pictureCredit);
+
+        // Nickname and other names (former names, full name, spelling variants)
+        const nickElem = document.getElementById('driver-nickname');
+        if (nickElem && this.driver.nickname) {
+            nickElem.textContent = `"${this.driver.nickname}"`;
+            nickElem.classList.remove('hidden');
+        }
+        renderAliases(document.getElementById('driver-aliases'), this.driver.aliases, [fullName, this.driver.nickname]);
+
+        // Wikidata identity (source of the dates and of the other names)
+        const wdElem = document.getElementById('driver-wikidata');
+        if (wdElem && /^Q\d+$/.test(this.driver.wikidata || '')) {
+            wdElem.href = `https://www.wikidata.org/wiki/${this.driver.wikidata}`;
+            wdElem.classList.remove('hidden');
         }
 
         // Country flag

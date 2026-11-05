@@ -382,3 +382,49 @@ export const storage = {
         }
     },
 };
+
+/**
+ * Credit of a picture or logo ({author, license, source}): "Photo: Author, CC BY-SA 4.0 via Wikimedia Commons".
+ * Free licences require the attribution; other pictures name their source (© owner).
+ */
+export function renderPictureCredit(elem, credit, label = 'Photo') {
+    if (!elem || !credit || !credit.license) return;
+    elem.textContent = '';
+    const safe = /^https:\/\//.test(credit.source || '') ? credit.source : '';
+    let host = '';
+    try {
+        host = safe ? new URL(safe).hostname.replace(/^www\./, '') : '';
+    } catch {
+        host = '';
+    }
+    const where = host === 'commons.wikimedia.org' ? 'Wikimedia Commons' : host;
+    const text = `${credit.author || 'Unknown'}, ${credit.license}`;
+    if (safe) {
+        const link = document.createElement('a');
+        link.href = safe;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.className = 'underline hover:text-blue-600';
+        link.textContent = text;
+        elem.append(`${label}: `, link, where ? ` via ${where}` : '');
+    } else {
+        elem.append(`${label}: ${text}`);
+    }
+    elem.classList.remove('hidden');
+}
+
+/**
+ * "Also known as: …" line (other names of a driver or a team).
+ */
+export function renderAliases(elem, aliases, exclude = []) {
+    if (!elem) return;
+    const skip = new Set(exclude.filter(Boolean).map((s) => String(s).toLowerCase()));
+    const list = [...new Set((Array.isArray(aliases) ? aliases : [])
+        .filter((a) => typeof a === 'string' && a.trim() && !skip.has(a.trim().toLowerCase())))];
+    if (!list.length) {
+        elem.classList.add('hidden');
+        return;
+    }
+    elem.textContent = `Also known as: ${list.join(', ')}`;
+    elem.classList.remove('hidden');
+}
