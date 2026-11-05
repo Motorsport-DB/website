@@ -135,6 +135,8 @@ export function createDriverPicker(items, { input, dropdown, isUsed = () => fals
     const q = fold(input.value.trim());
     const n = lettersInput && lettersInput.value ? parseInt(lettersInput.value, 10) : null;
     matches = sorted.filter((it) => (!q || it.search.includes(q)) && (n === null || it.letters === n));
+    // drivers already played go to the end of the list
+    matches = [...matches.filter((it) => !isUsed(it)), ...matches.filter((it) => isUsed(it))];
     dropdown.innerHTML = '';
     shown = 0;
     if (!matches.length) {
