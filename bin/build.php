@@ -10,6 +10,7 @@ declare(strict_types=1);
  *   - var/motorsportdb.sqlite   : indexed database queried by the PHP API
  *   - var/search-index.json     : compact index used by the client-side search
  *   - var/driverdle.json        : driver lists and statistics of the driverdle games
+ *   - var/ranking.json          : ELO ranking of the drivers (settings: elo.json, engine: bin/elo.php)
  *
  * Usage: php bin/build.php [--force] [--check] [--strict]
  *   --force   rebuild even if the data fingerprint did not change
@@ -22,7 +23,9 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-const BUILD_VERSION = 5;
+const BUILD_VERSION = 6;
+
+require_once __DIR__ . '/elo.php';
 
 $root   = dirname(__DIR__);
 $varDir = rtrim(getenv('MSDB_VAR_DIR') ?: $root . '/var', '/');
@@ -46,7 +49,7 @@ function out(string $msg): void
 function sessionKind(string $name): string
 {
     $n = strtolower($name);
-    if (preg_match('/qualif|hyperpole|shootout|^sq\d/', $n)) {
+    if (preg_match('/qualif|hyperpole|shootout|^sq\d|^q\d$|^e-?pole$|^ep$/', $n)) {
         return 'qualifying';
     }
     if (str_contains($n, 'grid') && !str_contains($n, 'race')) {
@@ -55,7 +58,7 @@ function sessionKind(string $name): string
     if (preg_match('/sprint|reverse grid/', $n)) {
         return 'sprint';
     }
-    if (preg_match('/race|^final|^heat/', $n)) {
+    if (preg_match('/race|^final|^heat|^rally$|prefinal|super heat/', $n)) {
         return 'race';
     }
     if (preg_match('/practice|prologue|warm|test/', $n)) {
@@ -116,7 +119,8 @@ function pictureMap(string $dir): array
 function fingerprint(array $dirs): string
 {
     $ctx = hash_init('sha256');
-    hash_update($ctx, 'v' . BUILD_VERSION . filemtime(__FILE__));
+    hash_update($ctx, 'v' . BUILD_VERSION . filemtime(__FILE__) . @filemtime(__DIR__ . '/elo.php')
+        . @file_get_contents(dirname(__DIR__) . '/elo.json'));
     foreach ($dirs as $dir) {
         $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
         $list = [];
@@ -142,7 +146,7 @@ $fp = fingerprint($dirs);
 $dbFile = $varDir . '/motorsportdb.sqlite';
 $fpFile = $varDir . '/fingerprint';
 if (!$check && !$force && is_file($dbFile) && is_file($varDir . '/search-index.json')
-    && is_file($varDir . '/driverdle.json') && @file_get_contents($fpFile) === $fp) {
+    && is_file($varDir . '/driverdle.json') && is_file($varDir . '/ranking.json') && @file_get_contents($fpFile) === $fp) {
     out('data unchanged, nothing to do');
     exit(0);
 }
@@ -483,10 +487,39 @@ $meta->execute(['fingerprint', $fp]);
 $meta->execute(['version', (string) BUILD_VERSION]);
 $meta->execute(['problems', (string) count($errors)]);
 $db->commit();
+
+// ---------------------------------------------------------------- ELO
+$eloCfg = json_decode((string) @file_get_contents($root . '/elo.json'), true) ?: [];
+$thisYear = (int) gmdate('Y');
+$elo = msdb_elo($db, $eloCfg, $thisYear)['drivers'];
+$activeFrom = $thisYear - max(1, (int) ($eloCfg['active_years'] ?? 2)) + 1;
+$lastYear = fn($d) => isset($dStats[$d]) ? max(array_keys($dStats[$d]['years'])) : 0;
+$minN = (int) ($eloCfg['rank_min_sessions'] ?? 30);
+$ranked = array_filter(array_keys($elo), fn($d) => $elo[$d]['sessions'] >= $minN);
+// all drivers: by peak rating (a great career is not erased by its last seasons); active: current rating
+$all = $ranked;
+usort($all, fn($a, $b) => ($elo[$b]['peak'] ?? $elo[$b]['elo']) <=> ($elo[$a]['peak'] ?? $elo[$a]['elo']));
+$active = array_values(array_filter($ranked, fn($d) => $lastYear($d) >= $activeFrom));
+usort($active, fn($a, $b) => $elo[$b]['elo'] <=> $elo[$a]['elo']);
+$rank = array_flip($all);
+$rankActive = array_flip($active);
+array_walk($rank, fn(&$v) => $v++);
+array_walk($rankActive, fn(&$v) => $v++);
+$db->exec('CREATE TABLE driver_elo (driver_id TEXT PRIMARY KEY, elo REAL, peak REAL, sessions INTEGER,
+    rank INTEGER, rank_active INTEGER, active INTEGER, history TEXT)');
+$db->beginTransaction();
+$insElo = $db->prepare('INSERT INTO driver_elo VALUES (?,?,?,?,?,?,?,?)');
+foreach ($elo as $d => $e) {
+    $insElo->execute([$d, $e['elo'], $e['peak'], $e['sessions'], $rank[$d] ?? null, $rankActive[$d] ?? null,
+        (int) ($lastYear($d) >= $activeFrom), json_encode($e['history'])]);
+}
+$db->commit();
+out(sprintf('ELO: %d drivers rated', count($elo)));
 // No VACUUM: the database is created from scratch so it is already compact, and
 // VACUUM needs a temporary copy as large as the database (it filled the 64 MB /tmp
 // tmpfs of the container: "database or disk is full").
 $db->exec('ANALYZE;');
+unset($insElo);
 unset($db, $insEvent, $insSession, $insEntry, $insED, $insD, $insT, $insC, $insDS, $insTS, $meta);
 
 // ---------------------------------------------------------------- search index
@@ -556,6 +589,24 @@ foreach ($champs as $id => $years) {
 }
 file_put_contents($varDir . '/search-index.json.tmp', json_encode($index, $jsonFlags));
 
+// ---------------------------------------------------------------- ELO ranking
+/**
+ * Ranked drivers (elo.json "rank_min_sessions"), for the ranking page:
+ * [id, name, country, elo, peak, sessions, rank (all, by peak), rank among the active
+ *  drivers (by current rating) or 0, first year, last year, picture, [championships], [year, rating]…]
+ */
+$ranking = ['v' => BUILD_VERSION, 'built' => gmdate('c'), 'active_from' => $activeFrom, 'd' => []];
+foreach ($all as $d) {
+    $e = $elo[$d];
+    $id = $drivers[$d] ?? [];
+    $label = trim(($id['firstName'] ?? '') . ' ' . ($id['lastName'] ?? '')) ?: str_replace('_', ' ', $d);
+    $years = isset($dStats[$d]) ? array_keys($dStats[$d]['years']) : [0];
+    $ranking['d'][] = [$d, $label, $id['country'] ?? '', $e['elo'], $e['peak'] ?? $e['elo'], $e['sessions'], $rank[$d],
+        $rankActive[$d] ?? 0, min($years), max($years), $driverPics[$d] ?? '',
+        isset($dStats[$d]) ? array_keys($dStats[$d]['champs']) : []];
+}
+file_put_contents($varDir . '/ranking.json.tmp', json_encode($ranking, $jsonFlags));
+
 // ---------------------------------------------------------------- driverdle
 /**
  * Everything the three driverdle modes need, downloaded once by the browser:
@@ -585,8 +636,10 @@ foreach ($drivers as $id => $d) {
     $years = array_keys($s['years']);
     $dob = (string) ($d['dateOfBirth'] ?? '');
     $dod = (string) ($d['dateOfDeath'] ?? '');
-    if ($s['sessions'] >= 30 && strlen($letters) >= 2) {
-        $dl['classic'][] = [(string) $id, $first, $last, $pattern, max($years)];
+    $e = $elo[$id] ?? null;
+    $dlc = $eloCfg['driverdle'] ?? [];
+    if ($e && strlen($letters) >= 2 && isset($rankActive[$id]) && $e['elo'] >= ($dlc['classic']['min_elo'] ?? 0)) {
+        $dl['classic'][] = [(string) $id, $first, $last, $pattern, max($years), $e['elo']];
     }
     if ($s['f1wins'] >= 1 || $s['f1starts'] >= 14) {
         $f1 = array_keys($s['f1years']);
@@ -603,9 +656,9 @@ foreach ($drivers as $id => $d) {
         }
         $dl['f1'][] = [(string) $id, $first, $last, $dob, $dod, $f1first, max($f1), $f1teams, $s['f1wins'], $other];
     }
-    if ($s['race_sessions'] >= 150) {
+    if ($e && $e['peak'] !== null && $e['peak'] >= ($dlc['all']['min_peak'] ?? 0)) {
         asort($s['champs']);
-        $dl['all'][] = [(string) $id, $first, $last, $dob, $dod, min($years), max($years), array_keys($s['champs']), $s['wins']];
+        $dl['all'][] = [(string) $id, $first, $last, $dob, $dod, min($years), max($years), array_keys($s['champs']), $s['wins'], $e['peak']];
     }
 }
 $dl['names'] = array_keys($dlNames);
@@ -619,6 +672,11 @@ foreach (['classic', 'f1', 'all'] as $mode) {
     }
 }
 sort($dl['names']);
+// the best ratings only (elo.json "limit"), then the extra rating column is dropped
+foreach (['classic' => 5, 'all' => 9] as $mode => $col) {
+    usort($dl[$mode], fn($a, $b) => $b[$col] <=> $a[$col]);
+    $dl[$mode] = array_map(fn($r) => array_slice($r, 0, $col), array_slice($dl[$mode], 0, (int) ($dlc[$mode]['limit'] ?? 500)));
+}
 foreach (['classic', 'f1', 'all'] as $mode) {
     // the daily driver is picked by index: the order must be stable (sorted by id)
     usort($dl[$mode], fn($a, $b) => strcmp($a[0], $b[0]));
@@ -628,10 +686,12 @@ file_put_contents($varDir . '/driverdle.json.tmp', json_encode($dl, $jsonFlags))
 rename($tmp, $dbFile);
 rename($varDir . '/search-index.json.tmp', $varDir . '/search-index.json');
 rename($varDir . '/driverdle.json.tmp', $varDir . '/driverdle.json');
+rename($varDir . '/ranking.json.tmp', $varDir . '/ranking.json');
 file_put_contents($fpFile, $fp);
 @chmod($dbFile, 0644);
 @chmod($varDir . '/search-index.json', 0644);
 @chmod($varDir . '/driverdle.json', 0644);
+@chmod($varDir . '/ranking.json', 0644);
 
 out(sprintf(
     'built %d drivers, %d teams, %d championships in %.1fs (%d data problem(s), run with --check to list them)',

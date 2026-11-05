@@ -47,6 +47,7 @@ class DriverPage {
             hideLoadingOverlay();
             // Display driver info
             this.displayDriverProfile();
+            this.displayElo();
             this.displayDriverStats();
             this.displayDriverCharts();
             this.displayDriverResults();
@@ -96,6 +97,32 @@ class DriverPage {
     /**
      * Display driver profile information
      */
+    /**
+     * ELO card: current / peak rating, world ranks, rating at the end of each season
+     */
+    displayElo() {
+        const box = document.getElementById('driver-elo');
+        const elo = this.driver && this.driver.elo;
+        if (!box || !elo) return;
+        const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+        set('elo-rating', Math.round(elo.rating));
+        set('elo-peak', elo.peak ? Math.round(elo.peak) : '—');
+        set('elo-rank-active', elo.rankActive ? `#${elo.rankActive} of the active drivers` : (elo.rank ? 'not active' : "ranked after 30 races"));
+        set('elo-rank', elo.rank ? `#${elo.rank} all time` : '');
+        box.classList.remove('hidden');
+        const years = Object.keys(elo.history || {});
+        if (years.length > 1 && typeof chartService !== 'undefined') {
+            try {
+                chartService.createLineChart('eloChart', {
+                    labels: years,
+                    datasets: [{ label: 'ELO', data: years.map((y) => elo.history[y]), borderColor: '#2563eb', tension: 0.3, pointRadius: 0 }],
+                }, { plugins: { legend: { display: false } }, scales: { x: { display: false } } });
+            } catch (e) {
+                console.warn('ELO chart', e);
+            }
+        }
+    }
+
     displayDriverProfile() {
         if (!this.driver) return;
 

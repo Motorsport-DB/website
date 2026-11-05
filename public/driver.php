@@ -32,6 +32,26 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
             </div>
 
+            <!-- ELO -->
+            <section id="driver-elo" class="hidden driver-card p-6 mb-10 bg-gray-200 dark:bg-gray-700 rounded-lg shadow-md min-w-[16rem]">
+                <h3 class="text-xl font-bold text-blue-600 dark:text-blue-400 mb-3 text-center">
+                    <a href="/ranking.php" class="hover:underline">ELO</a>
+                </h3>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Current</p>
+                        <p id="elo-rating" class="text-2xl font-bold">?</p>
+                        <p id="elo-rank-active" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Peak</p>
+                        <p id="elo-peak" class="text-2xl font-bold">?</p>
+                        <p id="elo-rank" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                    </div>
+                </div>
+                <div class="mt-3 h-24"><canvas id="eloChart"></canvas></div>
+            </section>
+
             <!-- Driver Stats -->
             <section class="driver-card p-6 mb-10 bg-gray-200 dark:bg-gray-700 rounded-lg shadow-md transition-shadow duration-300 hover:shadow-lg">
                 <h3 class="text-xl font-bold text-blue-600 dark:text-blue-400 mb-4 text-center">Career Stats</h3>

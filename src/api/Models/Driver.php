@@ -33,6 +33,16 @@ class Driver
         $data['seasons'] = Results::forDriver($driverId);
         $data['picture'] = $row['picture'];
         $data['id'] = $driverId;
+        // ELO (bin/build.php + elo.json): ratings, world ranks, rating at the end of each season
+        $elo = Database::one('SELECT elo, peak, sessions, rank, rank_active, active, history FROM driver_elo WHERE driver_id = ?', [$driverId]);
+        if ($elo !== null) {
+            $data['elo'] = [
+                'rating' => (float) $elo['elo'], 'peak' => $elo['peak'] !== null ? (float) $elo['peak'] : null,
+                'sessions' => (int) $elo['sessions'], 'rank' => $elo['rank'] !== null ? (int) $elo['rank'] : null,
+                'rankActive' => $elo['rank_active'] !== null ? (int) $elo['rank_active'] : null,
+                'history' => json_decode((string) $elo['history'], true) ?: [],
+            ];
+        }
         return $data;
     }
 
