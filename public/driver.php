@@ -13,9 +13,12 @@ require_once __DIR__ . '/../includes/header.php';
         
         <div class="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0 md:space-x-8">
             <div class="flex flex-col sm:flex-row items-center space-x-6">
+                <div class="relative flex-shrink-0">
+                <span id="driver-rank-badge" class="hidden absolute -top-1 -right-1 z-10 px-2 py-1 rounded-full bg-yellow-400 text-gray-900 text-sm font-extrabold shadow ring-2 ring-white dark:ring-gray-900" title="World rank of the active drivers (rating)"></span>
                 <div class="w-48 h-48 rounded-full border-4 border-blue-600 dark:border-blue-400 overflow-hidden flex-shrink-0">
                     <img id="driver-picture" src="/drivers/picture/default.png" alt="Driver Picture"
                         class="w-full h-full object-cover">
+                </div>
                 </div>
                 <p id="driver-picture-credit" class="hidden mt-2 max-w-[12rem] text-[10px] leading-tight text-gray-500 dark:text-gray-400 text-center sm:order-last"></p>
                 <div>
@@ -54,6 +57,19 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
             </section>
+        </div>
+    </section>
+
+    <!-- ELO (rating built from every race, see /ranking) -->
+    <section id="driver-elo" class="hidden container mx-auto px-6 mt-8">
+        <div class="w-full md:w-4/5 mx-auto driver-card bg-gray-200 dark:bg-gray-800 rounded-lg p-4 shadow-md flex flex-col sm:flex-row items-center gap-4">
+            <div class="text-center sm:text-left min-w-[12rem]">
+                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Rating <a href="/ranking.php" class="text-xs text-blue-600 dark:text-blue-400 underline">how it works</a></p>
+                <p class="text-sm text-gray-600 dark:text-gray-400"><span id="elo-rating" class="text-lg font-bold text-gray-900 dark:text-gray-100">?</span> now · peak <span id="elo-peak" class="font-semibold">?</span></p>
+                <p id="elo-rank-active" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                <p id="elo-rank" class="text-xs text-gray-500 dark:text-gray-400"></p>
+            </div>
+            <div class="flex-1 w-full h-24"><canvas id="eloChart"></canvas></div>
         </div>
     </section>
 

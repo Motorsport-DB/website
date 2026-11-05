@@ -160,6 +160,9 @@ class HeadToHeadPage {
 
             // Calculate comprehensive comparison
             this.comparisonData = calculateAdvancedHeadToHead(driversData, this.currentMode);
+            // rating (ELO) of each driver, from the driver API
+            const eloById = Object.fromEntries(driversData.map((d) => [d.id, d.elo || null]));
+            this.comparisonData.drivers.forEach((d) => { d.elo = eloById[d.id] || null; });
             
 
             // Check if mode constraints are met
@@ -226,6 +229,10 @@ class HeadToHeadPage {
                     </div>
                     
                     <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400"><a href="/ranking.php" class="underline decoration-dotted" title="Rating built from every race, see the ranking page">Rating</a>:</span>
+                            <span class="font-bold text-gray-900 dark:text-white">${driver.elo ? `${Math.round(driver.elo.rating)} <span class="text-xs font-normal text-gray-500">(peak ${driver.elo.peak ? Math.round(driver.elo.peak) : '—'}${driver.elo.rankActive ? `, #${driver.elo.rankActive} active` : ''})</span>` : '—'}</span>
+                        </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Total Races:</span>
                             <span class="font-bold text-gray-900 dark:text-white">${stats.totalRaces}</span>

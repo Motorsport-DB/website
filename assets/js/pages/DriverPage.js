@@ -47,6 +47,7 @@ class DriverPage {
             hideLoadingOverlay();
             // Display driver info
             this.displayDriverProfile();
+            this.displayElo();
             this.displayDriverStats();
             this.displayDriverCharts();
             this.displayDriverResults();
@@ -96,6 +97,38 @@ class DriverPage {
     /**
      * Display driver profile information
      */
+    /**
+     * ELO card: current / peak rating, world ranks, rating at the end of each season
+     */
+    displayElo() {
+        const box = document.getElementById('driver-elo');
+        const elo = this.driver && this.driver.elo;
+        if (!box || !elo) return;
+        const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+        set('elo-rating', Math.round(elo.rating));
+        set('elo-peak', elo.peak ? Math.round(elo.peak) : '—');
+        set('elo-rank-active', elo.rankActive ? `#${elo.rankActive} of the active drivers` : (elo.rank ? '' : 'ranked after 30 races'));
+        set('elo-rank', elo.rank ? `#${elo.rank} all time` : '');
+        // a small badge on the picture for the best active drivers
+        const badge = document.getElementById('driver-rank-badge');
+        if (badge && elo.rankActive && elo.rankActive <= 10) {
+            badge.textContent = `#${elo.rankActive}`;
+            badge.classList.remove('hidden');
+        }
+        box.classList.remove('hidden');
+        const years = Object.keys(elo.history || {});
+        if (years.length > 1 && typeof chartService !== 'undefined') {
+            try {
+                chartService.createLineChart('eloChart', {
+                    labels: years,
+                    datasets: [{ label: 'ELO', data: years.map((y) => elo.history[y]), borderColor: '#2563eb', tension: 0.3, pointRadius: 0 }],
+                }, { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } });
+            } catch (e) {
+                console.warn('ELO chart', e);
+            }
+        }
+    }
+
     displayDriverProfile() {
         if (!this.driver) return;
 
@@ -324,11 +357,13 @@ class DriverPage {
                 data: avgPositions,
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4,
+                fill: false, // the axis is reversed: filling to the origin would paint above the line
+                tension: 0.3,
             }]
         }, {
-            reverse: true, // Lower position is better
-            title: 'Average Position by Season'
+            // P1 at the top: a lower position is better, there is no P0
+            scales: { y: { reverse: true, min: 1, ticks: { precision: 0, callback: (v) => `P${v}` } } },
+            plugins: { legend: { display: false } },
         });
 
         this.charts.set('performance', chart);

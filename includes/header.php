@@ -56,6 +56,9 @@
                 <a href="/head-to-head.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
                     Head to Head
                 </a>
+                <a href="/ranking.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+                    Ranking
+                </a>
                 <div class="relative group">
                     <button class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium flex items-center gap-1">
                         Games
@@ -117,6 +120,9 @@
                 </a>
                 <a href="/head-to-head.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
                     Head to Head
+                </a>
+                <a href="/ranking.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+                    Ranking
                 </a>
                 <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
                     <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Games</p>
