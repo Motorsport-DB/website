@@ -16,6 +16,19 @@ require_once __DIR__ . '/../../includes/header.php';
         <!-- Game grid (dynamically generated via JS) -->
         <div id="driverdle-board" class="space-y-2 mb-4 sm:mb-6"></div>
 
+        <!-- Every driver who can be the answer: a click fills the current row -->
+        <div class="driver-picker relative mb-4">
+            <div class="flex gap-2">
+                <input id="classic-search" type="search" autocomplete="off" spellcheck="false"
+                    placeholder="Click to see the possible drivers, or type a name"
+                    class="flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
+                <input id="classic-letters" type="number" min="1" max="30" placeholder="Letters" title="Number of letters of the last name"
+                    class="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
+            </div>
+            <div id="classic-dropdown"
+                class="hidden absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto p-1"></div>
+        </div>
+
         <!-- Hidden input for form submission -->
         <form id="guess-form" class="mb-6">
             <!-- Error message container -->
@@ -94,14 +107,11 @@ require_once __DIR__ . '/../../includes/header.php';
                 <li>🟨 Orange: the letter is in the name, somewhere else</li>
                 <li>⬜ Gray: the letter is not in the name (or no more of it)</li>
                 <li>Letters typed beyond the last tile (dashed) can only be orange or gray</li>
-                <li>The answer is a driver who raced this season or the last one: browse them in the list below</li>
+                <li>The answer is a driver who raced this season or the last one: click the field above the keyboard to see them all (already played names are greyed out)</li>
                 <li>A new driver is available each day at midnight (UTC)</li>
             </ul>
         </div>
     </div>
-
-    <!-- Browsable list of the possible answers -->
-    <div id="driver-browser" class="max-w-xl w-full mx-auto"></div>
 
     <!-- Leaderboard/Stats -->
     <div class="max-w-xl w-full mx-auto p-4 bg-white dark:bg-gray-900 rounded-xl shadow">

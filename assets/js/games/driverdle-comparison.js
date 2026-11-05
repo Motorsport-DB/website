@@ -4,7 +4,7 @@
  * Everything runs client-side from the driverdle data downloaded once.
  */
 
-import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, mountDriverBrowser } from './driverdle-data.js';
+import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, createDriverPicker, driverThumb } from './driverdle-data.js';
 
 {
   const container = document.getElementById('comparison-game');
@@ -20,6 +20,8 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, mo
   let byId          = new Map();
   let target        = null;
   let teamNames     = {};
+  let pictures      = {};
+  let picker        = null;
 
   const COLUMNS_F1 = [
     { key: 'firstF1Year',    label: '1st F1 Year',  type: 'number' },
@@ -127,6 +129,7 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, mo
       const data = await loadDriverdleData();
       drivers   = data[mode].map(toStats);
       teamNames = data.teams || {};
+      pictures  = data.pictures || {};
     } catch {
       showError("Could not load today's driver. Please refresh.");
       return;
@@ -150,22 +153,24 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, mo
     if (won) showWinBanner();
     else if (gaveUp) showGiveUpBanner();
 
-    setupSearch();
     setupGiveUp();
-    setupBrowser();
+    setupPicker();
     updateGuessCount();
   }
 
-  function setupBrowser() {
+  function setupPicker() {
     const items = drivers.map((d) => ({
       id: d.id,
       label: `${d.firstname} ${d.lastname}`,
       sortKey: fold(`${d.lastname} ${d.firstname}`),
-      search: fold(`${d.firstname} ${d.lastname}`),
+      search: fold(`${d.firstname} ${d.lastname} ${d.id}`),
+      picture: pictures[d.id],
       meta: mode === 'f1' ? `F1 ${d.firstF1Year}–${d.lastF1Year}` : `${d.firstYear}–${d.lastYear}`,
     }));
-    mountDriverBrowser(document.getElementById('driver-browser'), items, {
-      title: mode === 'f1' ? 'Browse all eligible F1 drivers' : 'Browse all eligible drivers',
+    picker = createDriverPicker(items, {
+      input: searchInput,
+      dropdown,
+      isUsed: (it) => guesses.some((g) => g.guessStats.id === it.id),
       onPick: (it) => selectDriver(it.id),
     });
   }
@@ -193,103 +198,9 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, mo
     }
   }
 
-  // ── Search / autocomplete ─────────────────────────────────────────────────────
-  function setupSearch() {
-    let debounceTimer;
-
-    searchInput.addEventListener('input', () => {
-      clearTimeout(debounceTimer);
-      const q = searchInput.value.trim();
-      if (q.length < 2) { hideDropdown(); return; }
-      debounceTimer = setTimeout(() => fetchSuggestions(q), 80);
-    });
-
-    searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') hideDropdown();
-      if (e.key === 'ArrowDown') {
-        const first = dropdown.querySelector('.suggestion');
-        if (first) { first.focus(); e.preventDefault(); }
-      }
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('#search-container')) hideDropdown();
-    });
-  }
-
-  function fetchSuggestions(q) {
-    const nq = fold(q);
-    const results = [];
-    for (const d of drivers) {
-      if (fold(`${d.firstname} ${d.lastname}`).includes(nq) || fold(d.id).includes(nq)) {
-        results.push({ id: d.id, name: `${d.firstname} ${d.lastname}` });
-      }
-    }
-    results.sort((a, b) => a.name.localeCompare(b.name));
-    renderDropdown(results.slice(0, 20));
-  }
-
-  function renderDropdown(items) {
-    dropdown.innerHTML = '';
-
-    // Filter out already-guessed drivers
-    const guessedIds = new Set(guesses.map(g => g.guessStats.id));
-    const available  = items.filter(item => !guessedIds.has(item.id));
-
-    if (!available.length) { hideDropdown(); return; }
-
-    for (const item of available) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'suggestion w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 focus:bg-blue-50 dark:focus:bg-gray-700 focus:outline-none transition-colors flex items-center gap-2';
-      btn.dataset.id = item.id;
-
-      // Small thumbnail in dropdown
-      const thumb = driverPhotoEl(item.id, 'w-6 h-6 rounded-full object-cover flex-shrink-0');
-      btn.appendChild(thumb);
-      btn.append(item.name);
-
-      btn.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowDown') { (btn.nextElementSibling || btn).focus(); e.preventDefault(); }
-        if (e.key === 'ArrowUp')   { (btn.previousElementSibling || btn).focus(); e.preventDefault(); }
-        if (e.key === 'Enter')     { selectDriver(item.id); }
-        if (e.key === 'Escape')    { hideDropdown(); searchInput.focus(); }
-      });
-
-      btn.addEventListener('click', () => selectDriver(item.id));
-      dropdown.appendChild(btn);
-    }
-
-    dropdown.classList.remove('hidden');
-  }
-
-  function hideDropdown() {
-    dropdown.classList.add('hidden');
-  }
-
-  // ── Driver photo helper ───────────────────────────────────────────────────────
-  function driverPhotoEl(id, extraClass = '') {
-    const img = document.createElement('img');
-    img.alt   = '';
-    img.className = `${extraClass} bg-gray-200 dark:bg-gray-700`;
-    img.src   = `/drivers/picture/${id}.jpg`;
-
-    img.onerror = function () {
-      if (!this.dataset.triedPng) {
-        this.dataset.triedPng = '1';
-        this.src = `/drivers/picture/${id}.png`;
-      } else {
-        this.onerror = null;
-        this.src = '/drivers/picture/default.png';
-      }
-    };
-
-    return img;
-  }
-
   // ── Submit a guess ────────────────────────────────────────────────────────────
   function selectDriver(id) {
-    hideDropdown();
+    picker?.hide();
     searchInput.value = '';
     if (won || gaveUp || !byId.has(id)) return;
 
@@ -324,7 +235,7 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, mo
     // Photo cell
     const photoTd = document.createElement('td');
     photoTd.className = 'px-2 py-2';
-    photoTd.appendChild(driverPhotoEl(guessStats.id, 'w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600'));
+    photoTd.appendChild(driverThumb(pictures[guessStats.id], 'w-10 h-10 border border-gray-200 dark:border-gray-600'));
     tr.appendChild(photoTd);
 
     // Name cell
