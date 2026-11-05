@@ -24,22 +24,19 @@ require_once __DIR__ . '/../../includes/header.php';
   <div id="comparison-game" data-mode="all" class="max-w-5xl w-full space-y-4">
 
     <!-- Search -->
-    <div id="search-container" class="bg-white dark:bg-gray-900 rounded-xl shadow p-4 relative">
+    <div id="search-container" class="driver-picker bg-white dark:bg-gray-900 rounded-xl shadow p-4 relative">
       <label for="driver-search" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Search any driver</label>
       <div class="relative">
         <input id="driver-search" type="text" autocomplete="off" spellcheck="false"
-          placeholder="e.g. Senna, Loeb, Rossi…"
+          placeholder="Click to see every driver, or type a name (e.g. Rossi)"
           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
         <div id="search-dropdown"
-          class="hidden absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          class="hidden absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto p-1">
         </div>
       </div>
       <div id="error-msg" class="hidden mt-2 text-sm text-red-600 dark:text-red-400 font-semibold"></div>
       <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Guesses: <span id="current-guess-count">0</span></p>
     </div>
-
-    <!-- Browsable list of every eligible driver -->
-    <div id="driver-browser"></div>
 
     <!-- Win banner -->
     <div id="win-banner" class="hidden bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-xl p-4 text-center">
@@ -63,7 +60,7 @@ require_once __DIR__ . '/../../includes/header.php';
   <div class="max-w-5xl w-full bg-white dark:bg-gray-900 rounded-xl shadow p-4 sm:p-6">
     <h3 class="font-bold text-gray-900 dark:text-gray-100 mb-3">How to Play</h3>
     <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside">
-      <li>Pick any driver with at least 150 race starts (search box or the browsable list).</li>
+      <li>Pick any driver with at least 150 race starts (click the field to see them all, already played drivers are greyed out).</li>
       <li>Each guess reveals how close you are to the mystery driver.</li>
       <li>You have <strong>unlimited tries</strong> — a new driver is revealed each day at midnight (UTC).</li>
     </ul>

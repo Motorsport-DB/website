@@ -72,84 +72,124 @@ export function fold(str) {
     .toLowerCase();
 }
 
+/** Small round picture of a driver (default silhouette when there is none). */
+export function driverThumb(picture, className = 'w-8 h-8') {
+  const img = document.createElement('img');
+  img.alt = '';
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.className = `${className} rounded-full object-cover flex-shrink-0 bg-gray-200 dark:bg-gray-700`;
+  img.src = picture ? `/${String(picture).replace(/^\/+/, '')}` : '/drivers/picture/default.png';
+  img.addEventListener('error', () => { img.src = '/drivers/picture/default.png'; }, { once: true });
+  return img;
+}
+
 /**
- * Collapsible, filterable list of every driver of a mode, so players can
- * browse the candidates. items: [{ id, label, meta, search, letters? }]
+ * Driver picker: the search field opens the list of every driver of the mode
+ * (photo, name, details), filtered while typing. Drivers already played stay
+ * in the list, greyed out and not selectable.
+ *
+ * items: [{ id, label, meta, search, picture, letters? }]
+ * options: { input, dropdown, isUsed(item), onPick(item), lettersInput? }
  */
-export function mountDriverBrowser(container, items, { title, onPick, lettersFilter = false } = {}) {
-  if (!container) return;
+export function createDriverPicker(items, { input, dropdown, isUsed = () => false, onPick, lettersInput = null }) {
   const sorted = [...items].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  const PAGE = 80;
+  let matches = [];
+  let shown = 0;
 
-  container.innerHTML = '';
-  const details = document.createElement('details');
-  details.className = 'bg-white dark:bg-gray-900 rounded-xl shadow p-4';
-
-  const summary = document.createElement('summary');
-  summary.className = 'cursor-pointer font-semibold text-gray-900 dark:text-gray-100 select-none';
-  summary.textContent = `${title} (${sorted.length})`;
-  details.appendChild(summary);
-
-  const controls = document.createElement('div');
-  controls.className = 'flex flex-wrap gap-2 mt-3';
-  const input = document.createElement('input');
-  input.type = 'search';
-  input.placeholder = 'Filter by name…';
-  input.autocomplete = 'off';
-  input.spellcheck = false;
-  input.className = 'flex-1 min-w-[10rem] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm';
-  controls.appendChild(input);
-
-  let lettersInput = null;
-  if (lettersFilter) {
-    lettersInput = document.createElement('input');
-    lettersInput.type = 'number';
-    lettersInput.min = '1';
-    lettersInput.max = '30';
-    lettersInput.placeholder = 'Letters';
-    lettersInput.title = 'Number of letters of the last name';
-    lettersInput.className = 'w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm';
-    controls.appendChild(lettersInput);
+  function row(it) {
+    const used = isUsed(it);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'picker-item w-full flex items-center gap-3 px-3 py-1.5 text-left text-sm rounded ' +
+      (used
+        ? 'opacity-40 line-through cursor-not-allowed text-gray-500 dark:text-gray-500'
+        : 'text-gray-800 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 focus:bg-blue-50 dark:focus:bg-gray-700 focus:outline-none');
+    btn.disabled = used;
+    btn.title = used ? 'Already played' : '';
+    const name = document.createElement('span');
+    name.className = 'flex-1 truncate';
+    name.textContent = it.label;
+    const meta = document.createElement('span');
+    meta.className = 'text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap';
+    meta.textContent = it.meta || '';
+    btn.append(driverThumb(it.picture), name, meta);
+    if (!used) {
+      btn.addEventListener('click', () => pick(it));
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); pick(it); }
+      });
+    }
+    return btn;
   }
-  details.appendChild(controls);
 
-  const count = document.createElement('p');
-  count.className = 'mt-2 text-xs text-gray-500 dark:text-gray-400';
-  details.appendChild(count);
+  function more() {
+    const frag = document.createDocumentFragment();
+    for (const it of matches.slice(shown, shown + PAGE)) frag.appendChild(row(it));
+    shown = Math.min(matches.length, shown + PAGE);
+    dropdown.querySelector('.picker-count')?.before(frag) || dropdown.appendChild(frag);
+  }
 
-  const list = document.createElement('ul');
-  list.className = 'mt-2 max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 text-sm';
-  details.appendChild(list);
-
-  const MAX_SHOWN = 300;
   function render() {
     const q = fold(input.value.trim());
     const n = lettersInput && lettersInput.value ? parseInt(lettersInput.value, 10) : null;
-    const matches = sorted.filter((it) => (!q || it.search.includes(q)) && (n === null || it.letters === n));
-    list.innerHTML = '';
-    for (const it of matches.slice(0, MAX_SHOWN)) {
-      const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'w-full flex justify-between gap-3 px-2 py-1.5 text-left text-gray-800 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-800 rounded';
-      const name = document.createElement('span');
-      name.textContent = it.label;
-      const meta = document.createElement('span');
-      meta.className = 'text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap';
-      meta.textContent = it.meta;
-      btn.append(name, meta);
-      if (onPick) btn.addEventListener('click', () => onPick(it));
-      li.appendChild(btn);
-      list.appendChild(li);
+    matches = sorted.filter((it) => (!q || it.search.includes(q)) && (n === null || it.letters === n));
+    dropdown.innerHTML = '';
+    shown = 0;
+    if (!matches.length) {
+      const empty = document.createElement('p');
+      empty.className = 'px-3 py-2 text-sm text-gray-500 dark:text-gray-400';
+      empty.textContent = 'No driver matches';
+      dropdown.appendChild(empty);
+    } else {
+      const count = document.createElement('p');
+      count.className = 'picker-count px-3 py-1 text-xs text-gray-400 dark:text-gray-500';
+      count.textContent = `${matches.length} driver(s)`;
+      dropdown.appendChild(count);
+      more();
     }
-    count.textContent = matches.length > MAX_SHOWN
-      ? `${matches.length} drivers, first ${MAX_SHOWN} shown: refine the filter`
-      : `${matches.length} driver(s)`;
+    dropdown.classList.remove('hidden');
+    dropdown.scrollTop = 0;
   }
-  let timer;
-  const schedule = () => { clearTimeout(timer); timer = setTimeout(render, 120); };
-  input.addEventListener('input', schedule);
-  lettersInput?.addEventListener('input', schedule);
-  details.addEventListener('toggle', () => { if (details.open) render(); }, { once: true });
 
-  container.appendChild(details);
+  function pick(it) {
+    hide();
+    input.value = '';
+    onPick?.(it);
+  }
+
+  function hide() { dropdown.classList.add('hidden'); }
+
+  let timer;
+  input.addEventListener('focus', render);
+  input.addEventListener('click', render);
+  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 60); });
+  lettersInput?.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 60); });
+  dropdown.addEventListener('scroll', () => {
+    if (shown < matches.length && dropdown.scrollTop + dropdown.clientHeight > dropdown.scrollHeight - 200) more();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hide();
+    if (e.key === 'ArrowDown') {
+      dropdown.querySelector('.picker-item:not([disabled])')?.focus();
+      e.preventDefault();
+    }
+    if (e.key === 'Enter') {
+      const first = matches.find((it) => !isUsed(it));
+      if (first && input.value.trim()) { e.preventDefault(); pick(first); }
+    }
+  });
+  dropdown.addEventListener('keydown', (e) => {
+    const all = [...dropdown.querySelectorAll('.picker-item:not([disabled])')];
+    const i = all.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { (all[i + 1] || all[i])?.focus(); e.preventDefault(); }
+    if (e.key === 'ArrowUp') { (i > 0 ? all[i - 1] : input).focus(); e.preventDefault(); }
+    if (e.key === 'Escape') { hide(); input.focus(); }
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.driver-picker')) hide();
+  });
+
+  return { refresh: () => { if (!dropdown.classList.contains('hidden')) render(); }, hide };
 }

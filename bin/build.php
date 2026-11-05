@@ -22,7 +22,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-const BUILD_VERSION = 4;
+const BUILD_VERSION = 5;
 
 $root   = dirname(__DIR__);
 $varDir = rtrim(getenv('MSDB_VAR_DIR') ?: $root . '/var', '/');
@@ -565,6 +565,7 @@ file_put_contents($varDir . '/search-index.json.tmp', json_encode($index, $jsonF
  *   f1      : [id, first, last, dob, dod, firstF1, lastF1, [teams], f1Wins, [otherSeries]]
  *   all     : [id, first, last, dob, dod, firstYear, lastYear, [series], wins]
  *   teams   : team id => display name (for the F1 "Teams" column)
+ *   pictures: driver id => picture path (drivers of the three lists)
  */
 $dlNames = [];
 $dl = ['v' => BUILD_VERSION, 'built' => gmdate('c'), 'names' => [], 'classic' => [], 'f1' => [], 'all' => [], 'teams' => []];
@@ -608,6 +609,15 @@ foreach ($drivers as $id => $d) {
     }
 }
 $dl['names'] = array_keys($dlNames);
+// pictures of the drivers listed in the games (id => path), for the pickers
+$dl['pictures'] = [];
+foreach (['classic', 'f1', 'all'] as $mode) {
+    foreach ($dl[$mode] as $row) {
+        if (isset($driverPics[$row[0]])) {
+            $dl['pictures'][$row[0]] = $driverPics[$row[0]];
+        }
+    }
+}
 sort($dl['names']);
 foreach (['classic', 'f1', 'all'] as $mode) {
     // the daily driver is picked by index: the order must be stable (sorted by id)

@@ -10,7 +10,7 @@
  * Everything runs client-side from the driverdle data (driverdle-data.js).
  */
 
-import { loadDriverdleData, dailyPick, todayUTC, fold, mountDriverBrowser } from './driverdle-data.js';
+import { loadDriverdleData, dailyPick, todayUTC, fold, createDriverPicker } from './driverdle-data.js';
 
 {
   const MAX_ATTEMPTS = 5;
@@ -387,16 +387,19 @@ import { loadDriverdleData, dailyPick, todayUTC, fold, mountDriverBrowser } from
     resizeBoard();
     window.addEventListener('resize', resizeBoard);
 
-    mountDriverBrowser(document.getElementById('driver-browser'), pool.map(([pid, f, l, p, lastYear]) => {
+    const pics = data.pictures || {};
+    createDriverPicker(pool.map(([pid, f, l, p, lastYear]) => {
       const letters = p.replace(/[^A-Z]/g, '');
       return {
-        id: pid, label: `${f} ${l}`, letters,
+        id: pid, label: `${f} ${l}`, value: letters, letters: letters.length, picture: pics[pid],
         sortKey: fold(`${l} ${f}`), search: fold(`${f} ${l}`),
-        meta: `${letters.length} letters · last season ${lastYear}`,
+        meta: `${letters.length} letters · ${lastYear}`,
       };
-    }).map((it) => ({ ...it, letters: it.letters.length, value: it.letters })), {
-      title: 'Browse the drivers who can be the answer',
-      lettersFilter: true,
+    }), {
+      input: document.getElementById('classic-search'),
+      dropdown: document.getElementById('classic-dropdown'),
+      lettersInput: document.getElementById('classic-letters'),
+      isUsed: (it) => attempts.includes(it.value),
       onPick: (it) => {
         if (finished) return;
         currentInput = [...it.value].slice(0, MAX_LETTERS);
