@@ -32,15 +32,32 @@ final class Results
         $seasons = new \stdClass();
         foreach ($rows as $r) {
             $node = self::path($seasons, [$r['year'], $r['championship'], $r['event']]);
+            [$position, $info] = self::classResult($r['position'], $r['other_info']);
             $node->{$r['session']} = [
-                'position'    => $r['position'],
+                'position'    => $position,
                 'points'      => json_decode($r['points']),
                 'team'        => $r['team'],
                 'fastest_lap' => $r['fastest_lap'],
-                'other_info'  => json_decode($r['other_info']),
+                'other_info'  => $info,
             ];
         }
         return $seasons;
+    }
+
+    /**
+     * Multi-class races (endurance): for a driver or a team the result is the
+     * position in the class; the overall position stays in other_info.Overall.
+     * @return array{0: string, 1: mixed}
+     */
+    private static function classResult(string $position, string $otherInfo): array
+    {
+        $info = json_decode($otherInfo);
+        $cp = is_object($info) ? (string) ($info->Class_position ?? '') : '';
+        if (isset($info->Class) && ctype_digit($cp) && ctype_digit($position)) {
+            $info->Overall = $position;
+            return [$cp, $info];
+        }
+        return [$position, $info];
     }
 
     /** seasons[year][championship][event][session][car] = {position, points, fastest_lap, drivers, other_info} */
@@ -53,12 +70,13 @@ final class Results
         $seasons = new \stdClass();
         foreach ($rows as $r) {
             $node = self::path($seasons, [$r['year'], $r['championship'], $r['event'], $r['session']]);
+            [$position, $info] = self::classResult($r['position'], $r['other_info']);
             $node->{$r['car']} = [
-                'position'    => $r['position'],
+                'position'    => $position,
                 'points'      => json_decode($r['points']),
                 'fastest_lap' => $r['fastest_lap'],
                 'drivers'     => json_decode($r['drivers']),
-                'other_info'  => json_decode($r['other_info']),
+                'other_info'  => $info,
             ];
         }
         return $seasons;

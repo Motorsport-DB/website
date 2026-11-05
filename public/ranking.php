@@ -13,6 +13,25 @@ require_once __DIR__ . '/../includes/header.php';
         </p>
     </section>
 
+    <details class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4 text-sm text-gray-700 dark:text-gray-300">
+        <summary class="cursor-pointer font-semibold text-gray-900 dark:text-gray-100">How the rating works</summary>
+        <ul class="list-disc list-inside space-y-1 mt-3">
+            <li>Every race, sprint and qualifying session of the database is replayed in chronological order.
+                A driver gains points when he finishes ahead of a driver he is compared with, and loses points when behind:
+                beating a highly rated driver brings more than beating a rookie (ELO, as in chess).</li>
+            <li><strong>Different cars</strong> (Formula 1, Grand Prix motorcycles): compared with the teammate only.
+                <strong>Similar cars</strong> (endurance, rally, Formula E…): with the 4 cars ranked just above and the 4 just below.
+                <strong>Identical cars</strong> (F2, F3, F1 Academy…): with the whole field.</li>
+            <li>Endurance: cars are only compared within their class, and the crew shares the result of the car.
+                The lower classes (LMP2, GT, Am) weigh less.</li>
+            <li>A race counts fully, a sprint 60 %, a qualifying session 10 %. A retirement counts as a defeat with half the weight.</li>
+            <li>A newcomer starts at the level of his championship (Formula 1 higher than Formula 4), then only his results matter.</li>
+            <li><strong>Active drivers</strong>: raced this season or the last one, ranked by current rating.
+                <strong>All time</strong>: ranked by the best rating reached in the career. A driver is ranked after 30 rated sessions.</li>
+            <li>The ranking is recomputed every time the database is updated. Eras that never met are hard to compare: the all-time ranking is indicative.</li>
+        </ul>
+    </details>
+
     <section class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
         <div class="flex flex-wrap gap-2 items-center">
             <div class="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600" role="tablist">

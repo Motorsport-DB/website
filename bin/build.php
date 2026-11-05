@@ -23,7 +23,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-const BUILD_VERSION = 6;
+const BUILD_VERSION = 7;
 
 require_once __DIR__ . '/elo.php';
 
@@ -309,6 +309,22 @@ foreach (glob($dirs['races'] . '/*', GLOB_ONLYDIR) ?: [] as $champDir) {
                 }
                 $sOrd++;
                 $inSession = [];
+                // multi-class races (endurance): the result that counts is the position in the class;
+                // missing class positions are deduced from the overall order of the class
+                $classRank = [];
+                $byClass = [];
+                foreach ($cars as $car => $e) {
+                    if (is_array($e) && isset($e['other_info']['Class']) && ctype_digit((string) ($e['position'] ?? ''))) {
+                        $byClass[(string) $e['other_info']['Class']][(string) $car] = (int) $e['position'];
+                    }
+                }
+                foreach ($byClass as $cls => $list) {
+                    asort($list);
+                    $n = 0;
+                    foreach ($list as $car => $p) {
+                        $classRank[$car] = ++$n;
+                    }
+                }
                 $cOrd = 0;
                 foreach ($cars as $car => $e) {
                     if (!is_array($e)) {
@@ -338,6 +354,17 @@ foreach (glob($dirs['races'] . '/*', GLOB_ONLYDIR) ?: [] as $champDir) {
                     }
                     $pos = (string) ($e['position'] ?? '');
                     $posNum = ctype_digit($pos) ? (int) $pos : null;
+                    $statPos = $posNum;
+                    if (isset($e['other_info']['Class'])) {
+                        $cp = (string) ($e['other_info']['Class_position'] ?? '');
+                        if (!ctype_digit($cp) && isset($classRank[(string) $car])) {
+                            $e['other_info']['Class_position'] = (string) $classRank[(string) $car];
+                        }
+                        $cp = (string) ($e['other_info']['Class_position'] ?? '');
+                        if (ctype_digit($cp) && $posNum !== null) {
+                            $statPos = (int) $cp; // wins / podiums / poles are counted in the class
+                        }
+                    }
 
                     if (!$check) {
                         $insEntry->execute([
@@ -373,14 +400,14 @@ foreach (glob($dirs['races'] . '/*', GLOB_ONLYDIR) ?: [] as $champDir) {
                         }
                         if ($isRace) {
                             $s['starts']++;
-                            if ($posNum === 1) {
+                            if ($statPos === 1) {
                                 $s['wins']++;
                             }
-                            if ($posNum !== null && $posNum <= 3) {
+                            if ($statPos !== null && $statPos <= 3) {
                                 $s['podiums']++;
                             }
                         }
-                        if ($kind === 'qualifying' && $posNum === 1 && preg_match('/^(qualifying|qualifying session|qualifying 3|3rd qualifying|q3|race qualifying)?$/i', $sessionName)) {
+                        if ($kind === 'qualifying' && $statPos === 1 && preg_match('/^(qualifying|qualifying session|qualifying 3|3rd qualifying|q3|race qualifying)?$/i', $sessionName)) {
                             $s['poles']++;
                         }
                         if ($champ === 'Formula_1') {
@@ -390,7 +417,7 @@ foreach (glob($dirs['races'] . '/*', GLOB_ONLYDIR) ?: [] as $champDir) {
                             }
                             if ($isRace) {
                                 $s['f1starts']++;
-                                if ($posNum === 1) {
+                                if ($statPos === 1) {
                                     $s['f1wins']++;
                                 }
                             }
@@ -404,7 +431,7 @@ foreach (glob($dirs['races'] . '/*', GLOB_ONLYDIR) ?: [] as $champDir) {
                         $t['champs'][$champ] = true;
                         if ($isStart) {
                             $t['starts']++;
-                            if ($isRace && $posNum === 1) {
+                            if ($isRace && $statPos === 1) {
                                 $t['wins']++;
                             }
                         }

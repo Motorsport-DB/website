@@ -260,10 +260,11 @@ class ChartService {
                 ...defaults.plugins,
                 ...custom.plugins,
             },
-            scales: {
-                ...defaults.scales,
-                ...custom.scales,
-            },
+            // axis by axis, so a custom "y: { reverse }" keeps the default colours of the axis
+            scales: Object.fromEntries(
+                [...new Set([...Object.keys(defaults.scales || {}), ...Object.keys(custom.scales || {})])]
+                    .map((k) => [k, { ...(defaults.scales || {})[k], ...(custom.scales || {})[k] }])
+            ),
         };
     }
 

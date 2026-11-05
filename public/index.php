@@ -43,6 +43,18 @@ require_once __DIR__ . '/../includes/header.php';
     </section>
     
     <!-- Global Statistics Section -->
+    <section id="topRanking" class="my-16">
+        <h2 class="text-3xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">🏆 Best drivers right now</h2>
+        <p class="text-center text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
+            Rating built from every race of the database (an ELO): beating strong drivers counts more than beating weak ones,
+            and cars are only compared when it is fair (teammates, drivers around in the same class, or the whole field in identical cars).
+        </p>
+        <div id="topRankingList" class="grid grid-cols-1 sm:grid-cols-5 gap-4 max-w-5xl mx-auto"></div>
+        <p class="text-center mt-6">
+            <a href="/ranking.php" class="inline-block px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700">See every driver and how it works</a>
+        </p>
+    </section>
+
     <section id="globalStats" class="my-16">
         <h2 class="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">
             Database Overview
@@ -151,6 +163,7 @@ require_once __DIR__ . '/../includes/header.php';
 $additionalScripts = <<<HTML
 <!-- Initialize HomePage Module -->
 <script type="module" src="/assets/js/pages/HomePage.js"></script>
+<script type="module" src="/assets/js/components/TopRanking.js"></script>
 HTML;
 
 require_once __DIR__ . '/../includes/footer.php';
