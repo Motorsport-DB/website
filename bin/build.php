@@ -9,6 +9,7 @@ declare(strict_types=1);
  * generates (never committed):
  *   - var/motorsportdb.sqlite   : indexed database queried by the PHP API
  *   - var/search-index.json     : compact index used by the client-side search
+ *   - var/driverdle.json        : driver lists and statistics of the driverdle games
  *
  * Usage: php bin/build.php [--force] [--check] [--strict]
  *   --force   rebuild even if the data fingerprint did not change
@@ -21,7 +22,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-const BUILD_VERSION = 3;
+const BUILD_VERSION = 4;
 
 $root   = dirname(__DIR__);
 $varDir = rtrim(getenv('MSDB_VAR_DIR') ?: $root . '/var', '/');
@@ -70,6 +71,22 @@ function foldKey(string $s): string
         ? transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $s)
         : strtolower((string) @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', strtr($s, ['ø' => 'o', 'Ø' => 'O', 'ß' => 'ss', 'æ' => 'ae', 'ł' => 'l', 'Ł' => 'L'])));
     return preg_replace('/[^a-z0-9]+/', '', $t ?: strtolower($s));
+}
+
+/**
+ * Upper-case ASCII form of a last name for the classic driverdle: letters A-Z
+ * plus the separators shown as fixed tiles ("de Vries" -> "DE VRIES").
+ */
+function letterPattern(string $s): string
+{
+    $s = strtr($s, ['ø' => 'o', 'Ø' => 'O', 'ß' => 'ss', 'æ' => 'ae', 'Æ' => 'AE', 'ł' => 'l', 'Ł' => 'L', 'đ' => 'd', 'Đ' => 'D', 'þ' => 'th', 'œ' => 'oe']);
+    $t = function_exists('transliterator_transliterate')
+        ? transliterator_transliterate('Any-Latin; Latin-ASCII', $s)
+        : @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
+    $t = strtoupper((string) ($t ?: $s));
+    $t = preg_replace('/[_\s]+/', ' ', $t);
+    $t = preg_replace("/[^A-Z '\\-.]/", '', $t);
+    return trim((string) preg_replace('/ +/', ' ', $t));
 }
 
 function readJson(string $file): mixed
@@ -125,7 +142,7 @@ $fp = fingerprint($dirs);
 $dbFile = $varDir . '/motorsportdb.sqlite';
 $fpFile = $varDir . '/fingerprint';
 if (!$check && !$force && is_file($dbFile) && is_file($varDir . '/search-index.json')
-    && @file_get_contents($fpFile) === $fp) {
+    && is_file($varDir . '/driverdle.json') && @file_get_contents($fpFile) === $fp) {
     out('data unchanged, nothing to do');
     exit(0);
 }
@@ -539,11 +556,72 @@ foreach ($champs as $id => $years) {
 }
 file_put_contents($varDir . '/search-index.json.tmp', json_encode($index, $jsonFlags));
 
+// ---------------------------------------------------------------- driverdle
+/**
+ * Everything the three driverdle modes need, downloaded once by the browser:
+ * the daily driver, the comparisons and the validation all run client-side.
+ *   names   : letters of every known last name (classic: a guess must be one of them)
+ *   classic : [id, first, last, pattern, lastYear]   pattern = "DE VRIES" (A-Z + separators)
+ *   f1      : [id, first, last, dob, dod, firstF1, lastF1, [teams], f1Wins, [otherSeries]]
+ *   all     : [id, first, last, dob, dod, firstYear, lastYear, [series], wins]
+ *   teams   : team id => display name (for the F1 "Teams" column)
+ */
+$dlNames = [];
+$dl = ['v' => BUILD_VERSION, 'built' => gmdate('c'), 'names' => [], 'classic' => [], 'f1' => [], 'all' => [], 'teams' => []];
+foreach ($drivers as $id => $d) {
+    $parts = explode('_', (string) $id, 2);
+    $first = (string) (($d['firstName'] ?? '') ?: $parts[0]);
+    $last  = (string) (($d['lastName'] ?? '') ?: str_replace('_', ' ', $parts[1] ?? ''));
+    $pattern = letterPattern($last);
+    $letters = preg_replace('/[^A-Z]/', '', $pattern);
+    if (strlen($letters) >= 2) {
+        $dlNames[$letters] = true;
+    }
+    $s = $dStats[$id] ?? null;
+    if ($s === null) {
+        continue;
+    }
+    $years = array_keys($s['years']);
+    $dob = (string) ($d['dateOfBirth'] ?? '');
+    $dod = (string) ($d['dateOfDeath'] ?? '');
+    if ($s['sessions'] >= 30 && strlen($letters) >= 2) {
+        $dl['classic'][] = [(string) $id, $first, $last, $pattern, max($years)];
+    }
+    if ($s['f1wins'] >= 1 || $s['f1starts'] >= 14) {
+        $f1 = array_keys($s['f1years']);
+        $f1first = min($f1);
+        $other = [];
+        foreach ($s['champLast'] as $c => $lastYear) {
+            if ($c !== 'Formula_1' && $lastYear >= $f1first) {
+                $other[] = $c;
+            }
+        }
+        $f1teams = array_keys($s['f1teams']);
+        foreach ($f1teams as $t) {
+            $dl['teams'][$t] ??= str_replace('_', ' ', (string) ($teams[$t]['name'] ?? $t));
+        }
+        $dl['f1'][] = [(string) $id, $first, $last, $dob, $dod, $f1first, max($f1), $f1teams, $s['f1wins'], $other];
+    }
+    if ($s['race_sessions'] >= 150) {
+        asort($s['champs']);
+        $dl['all'][] = [(string) $id, $first, $last, $dob, $dod, min($years), max($years), array_keys($s['champs']), $s['wins']];
+    }
+}
+$dl['names'] = array_keys($dlNames);
+sort($dl['names']);
+foreach (['classic', 'f1', 'all'] as $mode) {
+    // the daily driver is picked by index: the order must be stable (sorted by id)
+    usort($dl[$mode], fn($a, $b) => strcmp($a[0], $b[0]));
+}
+file_put_contents($varDir . '/driverdle.json.tmp', json_encode($dl, $jsonFlags));
+
 rename($tmp, $dbFile);
 rename($varDir . '/search-index.json.tmp', $varDir . '/search-index.json');
+rename($varDir . '/driverdle.json.tmp', $varDir . '/driverdle.json');
 file_put_contents($fpFile, $fp);
 @chmod($dbFile, 0644);
 @chmod($varDir . '/search-index.json', 0644);
+@chmod($varDir . '/driverdle.json', 0644);
 
 out(sprintf(
     'built %d drivers, %d teams, %d championships in %.1fs (%d data problem(s), run with --check to list them)',
