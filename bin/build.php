@@ -644,6 +644,7 @@ file_put_contents($varDir . '/ranking.json.tmp', json_encode($ranking, $jsonFlag
  *   all     : [id, first, last, dob, dod, firstYear, lastYear, [series], wins]
  *   teams   : team id => display name (for the F1 "Teams" column)
  *   pictures: driver id => picture path (drivers of the three lists)
+ *   countries: driver id => country (drivers of the three lists, flag = assets/flags/<country>.png)
  */
 $dlNames = [];
 $dl = ['v' => BUILD_VERSION, 'built' => gmdate('c'), 'names' => [], 'classic' => [], 'f1' => [], 'all' => [], 'teams' => []];
@@ -691,10 +692,14 @@ foreach ($drivers as $id => $d) {
 $dl['names'] = array_keys($dlNames);
 // pictures of the drivers listed in the games (id => path), for the pickers
 $dl['pictures'] = [];
+$dl['countries'] = [];
 foreach (['classic', 'f1', 'all'] as $mode) {
     foreach ($dl[$mode] as $row) {
         if (isset($driverPics[$row[0]])) {
             $dl['pictures'][$row[0]] = $driverPics[$row[0]];
+        }
+        if (($drivers[$row[0]]['country'] ?? '') !== '') {
+            $dl['countries'][$row[0]] = (string) $drivers[$row[0]]['country'];
         }
     }
 }
