@@ -97,19 +97,18 @@ class TeamPage {
             countryElem.alt = this.team.country;
         }
 
-        // Handle creation date - can be string or array
+        // Founded / dissolved years (string or list of years). Values can be empty or
+        // missing: the label is only written when there is a year to show.
+        const years = (v) => (Array.isArray(v) ? v : [v])
+            .map((y) => String(y ?? '').trim()).filter(Boolean).join(', ');
         const foundedElem = document.getElementById('team-founded');
-        if (foundedElem && !this.team.creationDate && !this.team.endDate) foundedElem.textContent = '';
-        if (foundedElem && this.team.creationDate) {
-            const dateDisplay = Array.isArray(this.team.creationDate) 
-                ? this.team.creationDate.join(', ') 
-                : this.team.creationDate;
-            foundedElem.textContent = `Founded: ${dateDisplay}`;
-        }
-        // Year the team ended (Wikidata "dissolved")
-        if (foundedElem && this.team.endDate) {
-            const end = Array.isArray(this.team.endDate) ? this.team.endDate.join(', ') : this.team.endDate;
-            foundedElem.textContent = `${this.team.creationDate ? foundedElem.textContent + ' · ' : ''}Dissolved: ${end}`;
+        if (foundedElem) {
+            const founded = years(this.team.creationDate);
+            const dissolved = years(this.team.endDate);
+            foundedElem.textContent = [
+                founded && `Founded: ${founded}`,
+                dissolved && `Dissolved: ${dissolved}`,
+            ].filter(Boolean).join(' · ');
         }
     }
 
