@@ -1,6 +1,6 @@
 /**
  * MotorsportDB - Ranking page: ELO of the drivers (/api/ranking.php, built by bin/build.php).
- * Row: [id, name, country, elo, peak, sessions, rank, rankActive, firstYear, lastYear, picture, championships]
+ * Row: [id, name, country, elo, peak, races, rank, rankActive, firstYear, lastYear, picture, championships]
  */
 const PAGE = 100;
 const DISCIPLINE = (champs) => {

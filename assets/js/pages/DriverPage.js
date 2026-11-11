@@ -107,7 +107,7 @@ class DriverPage {
         const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
         set('elo-rating', Math.round(elo.rating));
         set('elo-peak', elo.peak ? Math.round(elo.peak) : '—');
-        set('elo-rank-active', elo.rankActive ? `#${elo.rankActive} of the active drivers` : (elo.rank ? '' : 'ranked after 30 races'));
+        set('elo-rank-active', elo.rankActive ? `#${elo.rankActive} of the active drivers` : (elo.rank ? '' : `ranked after ${elo.minRaces || 50} races (${elo.races || 0} so far)`));
         set('elo-rank', elo.rank ? `#${elo.rank} all time` : '');
         // a small badge on the picture for the best active drivers
         const badge = document.getElementById('driver-rank-badge');

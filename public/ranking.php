@@ -27,7 +27,7 @@ require_once __DIR__ . '/../includes/header.php';
             <li>A race counts fully, a sprint 60 %, a qualifying session 10 %. A retirement counts as a defeat with half the weight.</li>
             <li>A newcomer starts at the level of his championship (Formula 1 higher than Formula 4), then only his results matter.</li>
             <li><strong>Active drivers</strong>: raced this season or the last one, ranked by current rating.
-                <strong>All time</strong>: ranked by the best rating reached in the career. A driver is ranked after 30 rated sessions.</li>
+                <strong>All time</strong>: ranked by the best rating reached in the career. Every driver is rated from the first race, but only ranked after 50 races (sprints included, qualifying sessions not counted): a few good results are not a career.</li>
             <li>The ranking is recomputed every time the database is updated. Eras that never met are hard to compare: the all-time ranking is indicative.</li>
         </ul>
     </details>
