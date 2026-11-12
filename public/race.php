@@ -1,13 +1,13 @@
 <?php
-$pageTitle = 'Race Details';
-$pageDescription = 'Explore detailed information about motorsport races, results, and historical data.';
+require_once __DIR__ . '/../includes/seo.php';
+$seo = seo_race_page((string) ($_GET['id'] ?? ''), (string) ($_GET['year'] ?? ''));
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <main class="flex-grow container mx-auto px-6 py-8">
     <!-- Race Information Section -->
     <section class="mb-10">
-        <h2 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 mb-4">Race Details</h2>
+        <p class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 mb-4">Race Details</p>
         
         <!-- Year Navigation -->
         <div id="year-navigation" class="flex justify-center items-center gap-4 mb-6">
@@ -35,7 +35,7 @@ require_once __DIR__ . '/../includes/header.php';
                         class="w-full h-full object-contain p-3">
                 </div>
                 <div>
-                    <h3 id="race-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Race Name</h3>
+                    <h1 id="race-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400"><?= htmlspecialchars($seo['name'] ?? 'Season not found') ?></h1>
                     <p class="text-lg text-gray-700 dark:text-gray-300">Date: <span id="race-date" class="font-semibold">Date</span></p>
                 </div>
             </div>
@@ -126,11 +126,25 @@ require_once __DIR__ . '/../includes/header.php';
     <div id="resultsContainer" class="mt-8">
         <!-- Dynamic content will be inserted here -->
     </div>
+    <?php if ($seo): ?>
+    <!-- Winners of the season, rendered by the server (readable without JavaScript) -->
+    <section id="seo-summary" class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Winners of the <?= htmlspecialchars($seo['name']) ?> season</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4"><?= htmlspecialchars($seo['desc']) ?></p>
+        <ol class="space-y-1 text-sm list-disc list-inside">
+            <?php foreach ($seo['rows'] as $r): ?>
+            <li><span class="font-semibold text-gray-900 dark:text-gray-100"><?= htmlspecialchars($r['event']) ?></span><?php if ($r['drivers']): ?>:
+                <?= implode(', ', array_map(fn($d) => '<a class="text-blue-600 dark:text-blue-400 hover:underline" href="/driver?id=' . htmlspecialchars(rawurlencode($d)) . '">' . htmlspecialchars(seo_label($d)) . '</a>', $r['drivers'])) ?><?php if ($r['team']): ?>
+                (<a class="hover:underline" href="/team?id=<?= htmlspecialchars(rawurlencode($r['team'])) ?>"><?= htmlspecialchars(seo_label($r['team'])) ?></a>)<?php endif; ?><?php endif; ?></li>
+            <?php endforeach; ?>
+        </ol>
+    </section>
+    <?php endif; ?>
 </main>
 
 <!-- Random Cards Section -->
 <section id="section_randomCards" class="my-12 flex-grow container mx-auto px-6 py-8"></section>
 
-<script type="module" src="/assets/js/pages/RacePage.js"></script>
+<script type="module" src="<?= asset('js/pages/RacePage.js') ?>"></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

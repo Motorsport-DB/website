@@ -1,6 +1,6 @@
 <?php
-$pageTitle = 'Team Details';
-$pageDescription = 'Discover detailed information about motorsport teams, their stats, and history.';
+require_once __DIR__ . '/../includes/seo.php';
+$seo = seo_team_page((string) ($_GET['id'] ?? ''));
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -8,7 +8,7 @@ require_once __DIR__ . '/../includes/header.php';
     <!-- Team Information Section -->
     <section class="mb-10">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">Team Profile</h2>
+            <p class="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">Team Profile</p>
         </div>
         
         <div class="flex flex-col md:flex-row justify-between items-center">
@@ -19,7 +19,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <p id="team-picture-credit" class="hidden mt-2 max-w-[12rem] text-[10px] leading-tight text-gray-500 dark:text-gray-400 text-center sm:order-last"></p>
                 <div>
-                    <h3 id="team-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Team Name</h3>
+                    <h1 id="team-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400"><?= htmlspecialchars($seo['name'] ?? 'Team not found') ?></h1>
                     <p id="team-aliases" class="hidden text-xs text-gray-500 dark:text-gray-400 max-w-sm"></p>
                     <div class="flex h-12">
                         <img id="team-country-img" src="/assets/flags/default.png" alt="Team Country"
@@ -85,11 +85,19 @@ require_once __DIR__ . '/../includes/header.php';
     <div id="resultsContainer" class="mt-8">
         <!-- Dynamic content will be inserted here -->
     </div>
+    <?php if ($seo): ?>
+    <!-- Summary and seasons, rendered by the server (readable without JavaScript) -->
+    <section id="seo-summary" class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Seasons of <?= htmlspecialchars($seo['name']) ?></h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4"><?= htmlspecialchars($seo['desc']) ?></p>
+        <?= seo_seasons_html(seo_team_seasons($seo['id'])) ?>
+    </section>
+    <?php endif; ?>
 </main>
 
 <!-- Random Cards Section -->
 <section id="section_randomCards" class="my-12 flex-grow container mx-auto px-6 py-8"></section>
 
-<script type="module" src="/assets/js/pages/TeamPage.js"></script>
+<script type="module" src="<?= asset('js/pages/TeamPage.js') ?>"></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

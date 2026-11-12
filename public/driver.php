@@ -1,6 +1,6 @@
 <?php
-$pageTitle = 'Driver Details';
-$pageDescription = 'Discover detailed information about motorsport drivers, their stats, and career achievements.';
+require_once __DIR__ . '/../includes/seo.php';
+$seo = seo_driver_page((string) ($_GET['id'] ?? ''));
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -8,7 +8,7 @@ require_once __DIR__ . '/../includes/header.php';
     <!-- Driver Information Section -->
     <section class="mb-10">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">Driver Profile</h2>
+            <p class="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">Driver Profile</p>
         </div>
         
         <div class="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0 md:space-x-8">
@@ -22,7 +22,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <p id="driver-picture-credit" class="hidden mt-2 max-w-[12rem] text-[10px] leading-tight text-gray-500 dark:text-gray-400 text-center sm:order-last"></p>
                 <div>
-                    <h3 id="driver-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Driver Name</h3>
+                    <h1 id="driver-name" class="text-2xl font-bold text-blue-600 dark:text-blue-400"><?= htmlspecialchars($seo['name'] ?? 'Driver not found') ?></h1>
                     <p id="driver-nickname" class="hidden text-sm italic text-gray-600 dark:text-gray-400"></p>
                     <p id="driver-aliases" class="hidden text-xs text-gray-500 dark:text-gray-400 max-w-sm"></p>
                     <div class="flex flex-col">
@@ -126,6 +126,14 @@ require_once __DIR__ . '/../includes/header.php';
             </section>
         </div>
     </div>
+    <?php if ($seo): ?>
+    <!-- Career summary and seasons, rendered by the server (readable without JavaScript) -->
+    <section id="seo-summary" class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Seasons of <?= htmlspecialchars($seo['name']) ?></h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4"><?= htmlspecialchars($seo['desc']) ?></p>
+        <?= seo_seasons_html(seo_driver_seasons($seo['id'])) ?>
+    </section>
+    <?php endif; ?>
 </main>
 
 <!-- Other Info Section -->
@@ -141,6 +149,6 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- Random Cards Section -->
 <section id="section_randomCards" class="my-12 flex-grow container mx-auto px-6 py-8"></section>
 
-<script type="module" src="/assets/js/pages/DriverPage.js"></script>
+<script type="module" src="<?= asset('js/pages/DriverPage.js') ?>"></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -139,6 +139,6 @@ import { themeService } from '/assets/js/services/ThemeService.js';
 themeService.initToggleButton();
 </script>
 
-<script type="module" src="/assets/js/games/driverdle-classic.js"></script>
+<script type="module" src="<?= asset('js/games/driverdle-classic.js') ?>"></script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
