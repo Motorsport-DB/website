@@ -41,6 +41,6 @@ import { themeService } from '/assets/js/services/ThemeService.js';
 themeService.initToggleButton();
 </script>
 
-<script src="/assets/js/games/guess-who.js"></script>
+<script src="<?= asset('js/games/guess-who.js') ?>"></script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
