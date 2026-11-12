@@ -23,7 +23,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-const BUILD_VERSION = 8;
+const BUILD_VERSION = 9;
 
 require_once __DIR__ . '/elo.php';
 
@@ -537,6 +537,34 @@ array_walk($rank, fn(&$v) => $v++);
 array_walk($rankActive, fn(&$v) => $v++);
 // the driverdle keeps its own pool: active drivers with enough rated sessions (ranked or not)
 $dlActive = array_flip(array_filter(array_keys($elo), fn($d) => $elo[$d]['sessions'] >= $minN && $lastYear($d) >= $activeFrom));
+// World titles of the premier categories (races/titles.json, script/data/titles.py):
+// drivers' and teams' champions, shown on the driver and team pages
+$db->exec('CREATE TABLE titles (championship TEXT, year TEXT, kind TEXT, holder TEXT)');
+$titlesFile = $dirs['races'] . '/titles.json';
+if (is_file($titlesFile)) {
+    $titles = json_decode((string) file_get_contents($titlesFile), true);
+    if (!is_array($titles)) {
+        $warn('races/titles.json: invalid JSON');
+        $titles = [];
+    }
+    $db->beginTransaction();
+    $insTitle = $db->prepare('INSERT INTO titles VALUES (?,?,?,?)');
+    foreach ($titles as $champ => $kinds) {
+        if (!is_array($kinds) || str_starts_with((string) $champ, '_')) {
+            continue;
+        }
+        foreach ($kinds as $kind => $byYear) {
+            foreach ((array) $byYear as $year => $holders) {
+                foreach ((array) $holders as $holder) {
+                    $insTitle->execute([$champ, (string) $year, $kind, $holder]);
+                }
+            }
+        }
+    }
+    $db->commit();
+}
+$db->exec('CREATE INDEX idx_titles_holder ON titles (holder)');
+
 $db->exec('CREATE TABLE driver_elo (driver_id TEXT PRIMARY KEY, elo REAL, peak REAL, sessions INTEGER, races INTEGER,
     rank INTEGER, rank_active INTEGER, active INTEGER, history TEXT)');
 $meta->execute(['elo_min_races', (string) $minRaces]);

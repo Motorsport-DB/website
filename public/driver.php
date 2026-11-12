@@ -61,6 +61,9 @@ require_once __DIR__ . '/../includes/header.php';
     </section>
 
     <!-- ELO (rating built from every race, see /ranking) -->
+    <!-- Honours: world titles and Triple Crown (assets/js/utils/honours.js) -->
+    <section id="driver-honours" class="hidden container mx-auto px-6 mt-8" aria-label="Honours"></section>
+
     <section id="driver-elo" class="hidden container mx-auto px-6 mt-8">
         <div class="w-full md:w-4/5 mx-auto driver-card bg-gray-200 dark:bg-gray-800 rounded-lg p-4 shadow-md flex flex-col sm:flex-row items-center gap-4">
             <div class="text-center sm:text-left min-w-[12rem]">
