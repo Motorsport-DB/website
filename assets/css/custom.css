@@ -297,3 +297,44 @@ body {
 .accordion-icon {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ---------------------------------------------------------------- honours
+   World titles and the Triple Crown (Monaco GP, Le Mans 24h, Indy 500) */
+.honours-heading { font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: #111827; }
+.dark .honours-heading { color: #f9fafb; }
+.honour-titles { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+.honour-title {
+    display: flex; gap: .75rem; align-items: center; padding: .75rem 1rem; border-radius: .75rem;
+    background: linear-gradient(135deg, #fef3c7, #fde68a); color: #78350f; border: 1px solid #f59e0b;
+}
+.dark .honour-title { background: linear-gradient(135deg, #451a03, #78350f); color: #fde68a; border-color: #b45309; }
+.honour-trophy { font-size: 1.75rem; }
+.honour-title-name { font-weight: 800; }
+.honour-years { font-size: .8rem; }
+.honour-years a { text-decoration: underline dotted; }
+.crown-block { border-radius: .75rem; padding: 1rem; background: #f9fafb; border: 1px solid #e5e7eb; }
+.dark .crown-block { background: #1f2937; border-color: #374151; }
+.crown-heading { font-weight: 800; margin-bottom: .5rem; color: #92400e; }
+.dark .crown-heading { color: #fbbf24; }
+.crown-races { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.crown-race { display: flex; flex-direction: column; align-items: center; text-align: center; padding: .6rem .4rem; border-radius: .5rem;
+    background: #e5e7eb; color: #6b7280; }
+.dark .crown-race { background: #374151; color: #9ca3af; }
+.crown-race.won { background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #451a03; font-weight: 700; }
+.crown-race-name { font-size: .9rem; }
+.crown-race-years { font-size: .75rem; }
+.crown-complete { position: relative; overflow: hidden; border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, .35); }
+.crown-complete::after, .triple-crown::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, .45) 50%, transparent 70%);
+    transform: translateX(-100%); animation: crown-shine 4s ease-in-out infinite;
+}
+@keyframes crown-shine { 0%, 60% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+/* header of a Triple Crown race (season, driver and team pages) */
+.triple-crown { position: relative; overflow: hidden; background-image: linear-gradient(90deg, #b45309, #f59e0b, #b45309) !important; color: #fff; }
+.crown-badge { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: 9999px; font-size: .7rem; font-weight: 800;
+    background: #fde68a; color: #78350f; vertical-align: middle; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+    .crown-complete::after, .triple-crown::after { animation: none; display: none; }
+}

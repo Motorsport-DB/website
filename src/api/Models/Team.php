@@ -33,6 +33,8 @@ class Team
         $data['seasons'] = Results::forTeam($teamId);
         $data['picture'] = $row['picture'];
         $data['id'] = $teamId;
+        // titles of the premier categories and Triple Crown wins
+        $data['honours'] = \MotorsportDB\API\Data\Honours::forTeam($teamId);
         return $data;
     }
 

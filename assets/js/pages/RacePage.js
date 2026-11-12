@@ -12,6 +12,7 @@ import { showLoadingOverlay, hideLoadingOverlay } from '../components/LoadingCom
 import { isRaceSession, isQualifyingSession } from '../utils/dataProcessor.js';
 import { formatDisplayName, escapeHtml } from '../utils/helpers.js';
 import * as dom from '../utils/dom.js';
+import { crownOf, crownBadge } from '../utils/honours.js';
 
 class RacePage {
     constructor() {
@@ -208,9 +209,10 @@ class RacePage {
             html += `<div class="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">`;
             
             // Event header (clickable accordion)
-            html += `<div class="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white p-4 cursor-pointer" onclick="window.racePage.toggleAccordion('${eventId}');">`;
+            const crown = crownOf(this.raceId, event);
+            html += `<div class="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white p-4 cursor-pointer${crown ? ' triple-crown' : ''}" onclick="window.racePage.toggleAccordion('${eventId}');">`;
             html += `<div class="flex items-center justify-between">`;
-            html += `<h3 class="text-xl font-bold">${escapeHtml(event)}</h3>`;
+            html += `<h3 class="text-xl font-bold">${escapeHtml(event)}${crown ? crownBadge(crown) : ''}</h3>`;
             html += `<svg id="${eventId}-icon" class="w-6 h-6 accordion-icon rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">`;
             html += `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
             html += `</svg>`;
