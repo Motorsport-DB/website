@@ -14,6 +14,8 @@ services:
       - .:/var/www/html:ro
       # Everything the application writes (database, index, game sessions).
       - motorsportdb-var:/var/lib/motorsportdb
+      # Apache config read from the repository: a change applies on restart, without rebuilding the image
+      - ./docker/apache.conf:/etc/apache2/sites-available/000-default.conf:ro
     read_only: true
     tmpfs:
       - /tmp:size=64m,mode=1777

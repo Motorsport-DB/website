@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/assets.php'; ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -27,12 +28,15 @@
     <meta property="og:site_name" content="MotorsportDB">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="/assets/css/tailwind.min.css">
-    <link rel="stylesheet" href="/assets/css/design-system.css">
-    <link rel="stylesheet" href="/assets/css/custom.css">
+    <link rel="stylesheet" href="<?= asset('css/tailwind.min.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/design-system.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/custom.css') ?>">
     
     <!-- Chart.js (local copy, no CDN dependency) -->
-    <script src="/assets/js/chart.umd.min.js"></script>
+    <script src="<?= asset('js/chart.umd.min.js') ?>"></script>
+
+    <!-- versioned modules (see includes/assets.php) -->
+    <?= asset_import_map() ?>
     
     <?php if (isset($additionalHead)): ?>
     <?= $additionalHead ?>
