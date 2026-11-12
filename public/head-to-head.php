@@ -56,78 +56,53 @@ require_once __DIR__ . '/../includes/header.php';
     </section>
 
     <!-- Loading Indicator -->
-    <div id="loading-indicator" class="hidden mb-8 text-center py-12">
+    <div id="loading-indicator" class="hidden mb-8 text-center py-12" role="status">
         <div class="inline-block w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p class="text-gray-600 dark:text-gray-400 text-lg">Loading comparison data...</p>
     </div>
 
-    <!-- Comparison Results -->
-    <div id="comparison-results" class="space-y-8 sm:space-y-12">
-        
-        <!-- Global Statistics -->
-        <section id="global-stats" class="hidden">
-            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-                📊 Global Statistics
-            </h2>
-            <!-- Stats cards will be inserted here -->
+    <!-- Comparison Results (filled by HeadToHeadPage.js) -->
+    <div id="comparison-results" class="hidden space-y-8 sm:space-y-12">
+        <p id="mode-note" class="text-sm text-gray-600 dark:text-gray-400 text-center"></p>
+
+        <section id="h2h-summary">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">📊 Side by side</h2>
+            <div id="h2h-summary-body" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-x-auto"></div>
         </section>
 
-        <!-- Head-to-Head Battles -->
-        <section id="head-to-head-battles" class="hidden">
-            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-                ⚔️ Direct Battles
-            </h2>
-            <!-- Battle comparisons will be inserted here -->
+        <section id="h2h-duels">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">⚔️ Direct duels</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Sessions both drivers took part in: who finished (or qualified) ahead of the other. A classified driver is ahead of a retired one.</p>
+            <div id="h2h-duels-body" class="space-y-6"></div>
         </section>
 
-        <!-- Comparison Charts -->
-        <section id="comparison-charts" class="hidden">
-            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-                📈 Performance Comparison
-            </h2>
+        <section id="h2h-charts">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">📈 Performance</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6">
-                    <canvas id="wins-chart" class="w-full" style="height: 300px;"></canvas>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 lg:col-span-2" id="rating-history-box">
+                    <h3 class="font-bold text-gray-900 dark:text-white mb-1">Rating over the seasons</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">End-of-season <a href="/ranking.php" class="underline">rating</a> of each driver.</p>
+                    <div class="relative h-80"><canvas id="rating-history-chart"></canvas></div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6">
-                    <canvas id="podiums-chart" class="w-full" style="height: 300px;"></canvas>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 lg:col-span-2">
-                    <canvas id="finish-types-chart" class="w-full" style="height: 350px;"></canvas>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6">
-                    <canvas id="dnf-rate-chart" class="w-full" style="height: 300px;"></canvas>
+                    <h3 class="font-bold text-gray-900 dark:text-white mb-1">How the races ended</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Share of the races of each driver.</p>
+                    <div class="relative h-80"><canvas id="finish-types-chart"></canvas></div>
                 </div>
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6">
-                    <canvas id="avg-position-chart" class="w-full" style="height: 300px;"></canvas>
+                    <h3 class="font-bold text-gray-900 dark:text-white mb-1">Profile</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Rates in % of the races.</p>
+                    <div class="relative h-80"><canvas id="radar-chart"></canvas></div>
                 </div>
             </div>
         </section>
 
-        <!-- Performance Radar -->
-        <section id="performance-radar" class="hidden">
-            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-                🎯 Performance Radar
-            </h2>
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
-                <div class="max-w-4xl mx-auto">
-                    <canvas id="radar-chart" style="height: 400px;"></canvas>
-                </div>
-            </div>
+        <section id="h2h-races">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">🏎️ Race by race</h2>
+            <div id="h2h-races-body" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6"></div>
         </section>
-
-        <!-- Race Results Table -->
-        <section id="race-results-table" class="hidden">
-            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-                🏎️ Detailed Race Results
-            </h2>
-            <!-- Table will be inserted here -->
-        </section>
-
     </div>
 </main>
-
-<!-- Chart.js -->
 
 <!-- Head to Head Page Module -->
 <script type="module">
