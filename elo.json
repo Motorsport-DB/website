@@ -39,6 +39,7 @@
         "Grand_Prix_500cc": { "base": 1650, "mode": "teammate" },
         "World_Rally_Championship_WRC": { "base": 1600, "mode": "window", "weight": 1.5 },
         "World_Endurance_Championship_WEC": { "base": 1550, "mode": "window" },
+        "World_Sportscar_Championship_WSC": { "base": 1550, "mode": "window" },
         "Formula_2": { "base": 1550, "mode": "spec" },
         "GP2_Series": { "base": 1550, "mode": "spec" },
         "Formula_E": { "base": 1550, "mode": "window" },
