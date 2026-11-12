@@ -24,7 +24,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="flex h-12">
                         <img id="team-country-img" src="/assets/flags/default.png" alt="Team Country"
                             class="inline-block object-contain h-full aspect-[3/2] rounded p-2">
-                        <p><span id="team-founded" class="font-semibold">Founded</span></p>
+                        <p><span id="team-founded" class="font-semibold"></span></p>
                     </div>
                     <div id="other_teams"></div>
                 </div>
