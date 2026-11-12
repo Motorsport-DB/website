@@ -15,7 +15,7 @@ if (box) {
       const img = document.createElement('img');
       img.alt = '';
       img.loading = 'lazy';
-      img.className = 'w-20 h-20 rounded-full object-cover bg-gray-200 dark:bg-gray-700 mb-2';
+      img.className = 'w-20 h-20 aspect-square flex-shrink-0 rounded-full object-cover object-top bg-gray-200 dark:bg-gray-700 mb-2';
       img.src = picture ? `/${picture}` : '/drivers/picture/default.png';
       img.addEventListener('error', () => { img.src = '/drivers/picture/default.png'; }, { once: true });
       const n = document.createElement('span');
