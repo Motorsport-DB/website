@@ -1,38 +1,48 @@
+<?php require_once __DIR__ . '/assets.php'; ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="index, follow">
-    
-    <?php if (isset($pageTitle)): ?>
-    <title><?= htmlspecialchars($pageTitle) ?> - MotorsportDB</title>
-    <?php else: ?>
-    <title>MotorsportDB - Explore Motorsport Data</title>
-    <?php endif; ?>
-    
-    <?php if (isset($pageDescription)): ?>
-    <meta name="description" content="<?= htmlspecialchars($pageDescription) ?>">
-    <?php else: ?>
-    <meta name="description" content="Explore detailed information about motorsport drivers, teams, and championships worldwide.">
-    <?php endif; ?>
-    
-    <meta name="keywords" content="motorsport database, racing drivers, teams, championships, F1, Formula 1, endurance racing, driverdb, teamdb, championshipdb">
-    
+<?php
+    require_once __DIR__ . '/seo.php';
+    // pages without their own canonical address: the path asked, without the query
+    if (empty($canonicalUrl)) {
+        $seoPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+        seo_canonical(in_array($seoPath, ['', '/index.php', '/index.html'], true) ? '/' : $seoPath);
+    }
+    $seoTitle = isset($pageTitle) && $pageTitle !== 'Home' ? $pageTitle . ' - MotorsportDB' : 'MotorsportDB - Motorsport drivers, teams and results';
+    $seoDescription = $pageDescription ?? 'Explore detailed information about motorsport drivers, teams, and championships worldwide.';
+    ?>
+    <meta name="robots" content="<?= htmlspecialchars($robots ?? 'index, follow') ?>">
+    <title><?= htmlspecialchars($seoTitle) ?></title>
+    <meta name="description" content="<?= htmlspecialchars($seoDescription) ?>">
+    <link rel="canonical" href="<?= htmlspecialchars($canonicalUrl) ?>">
+
     <!-- Open Graph / Social Media -->
-    <meta property="og:title" content="<?= htmlspecialchars($pageTitle ?? 'MotorsportDB') ?> - Motorsport Statistics">
-    <meta property="og:description" content="<?= htmlspecialchars($pageDescription ?? 'Discover motorsport drivers, teams, and championships statistics') ?>">
-    <meta property="og:url" content="https://motorsportdb.org<?= htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/') ?>">
-    <meta property="og:type" content="website">
+    <meta property="og:title" content="<?= htmlspecialchars($seoTitle) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($seoDescription) ?>">
+    <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
+    <meta property="og:type" content="<?= htmlspecialchars($ogType ?? 'website') ?>">
     <meta property="og:site_name" content="MotorsportDB">
-    
+    <?php if (!empty($ogImage)): ?>
+    <meta property="og:image" content="<?= htmlspecialchars($ogImage) ?>">
+    <?php endif; ?>
+    <meta name="twitter:card" content="<?= empty($ogImage) ? 'summary' : 'summary_large_image' ?>">
+    <?php foreach ((array) ($jsonLd ?? []) as $ld): ?>
+    <?= seo_json($ld) ?>
+    <?php endforeach; ?>
+
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="/assets/css/tailwind.min.css">
-    <link rel="stylesheet" href="/assets/css/design-system.css">
-    <link rel="stylesheet" href="/assets/css/custom.css">
+    <link rel="stylesheet" href="<?= asset('css/tailwind.min.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/design-system.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/custom.css') ?>">
     
     <!-- Chart.js (local copy, no CDN dependency) -->
-    <script src="/assets/js/chart.umd.min.js"></script>
+    <script src="<?= asset('js/chart.umd.min.js') ?>"></script>
+
+    <!-- versioned modules (see includes/assets.php) -->
+    <?= asset_import_map() ?>
     
     <?php if (isset($additionalHead)): ?>
     <?= $additionalHead ?>
@@ -44,16 +54,16 @@
     <header class="bg-white dark:bg-gray-800 shadow-md dark:shadow-lg sticky top-0 z-40">
         <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
             <!-- Logo -->
-            <a href="/index.html" class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+            <a href="/" class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
                 MotorsportDB
             </a>
             
             <!-- Navigation Links (Desktop) -->
             <div class="hidden md:flex items-center gap-6">
-                <a href="/index.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+                <a href="/" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
                     Home
                 </a>
-                <a href="/head-to-head.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+                <a href="/head-to-head.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
                     Head to Head
                 </a>
                 <a href="/ranking.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
@@ -67,7 +77,7 @@
                         </svg>
                     </button>
                     <div class="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                        <a href="/games/guess-who.html" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg transition-colors">
+                        <a href="/games/guess-who.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg transition-colors">
                             Guess Who
                         </a>
                         <a href="/games/driverdle.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-semibold transition-colors">
@@ -115,10 +125,10 @@
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
             <div class="container mx-auto px-4 py-4 flex flex-col gap-4">
-                <a href="/index.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+                <a href="/" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
                     Home
                 </a>
-                <a href="/head-to-head.html" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+                <a href="/head-to-head.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
                     Head to Head
                 </a>
                 <a href="/ranking.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
