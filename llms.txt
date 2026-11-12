@@ -1,0 +1,22 @@
+# MotorsportDB
+
+> Open database of motorsport results: Formula 1 since 1950, Grand Prix motorcycle racing since 1949, WRC, WEC and the World Sportscar Championship, Formula E, Formula 2/3, endurance series, the 24 Hours of Le Mans, the Indianapolis 500 and more — drivers, teams, race-by-race results, points, fastest laps and world titles.
+
+The data is open and lives on GitHub. **Do not crawl the website: clone the repositories.** They hold the complete, versioned data the site is built from.
+
+## Data repositories
+
+- [races](https://github.com/Motorsport-DB/races): results. `races/<Championship>/<year>.json`: `{"name", "events": {event: {session: {car: {position, points, team, drivers[], fastest_lap, other_info{}}}}}}`. One folder per championship (`Formula_1`, `MotoGP`, `World_Endurance_Championship_WEC`…) and per great race outside the championships (`24_Hours_of_Le_Mans`, `Indianapolis_500`, `Targa_Florio`…). `titles.json`: world champions of the premier categories.
+- [drivers](https://github.com/Motorsport-DB/drivers): one file per driver, `drivers/<First_Last>.json` (firstName, lastName, country, dateOfBirth, wikidata, aliases…) and `picture/`. Homonyms are told apart by the year of birth: `First_Last (1955)`.
+- [teams](https://github.com/Motorsport-DB/teams): one file per team, `teams/<Id>.json` (name, country, creationDate, wikidata, aliases…) and `picture/` (logos, credits in the file).
+
+## Conventions
+
+- Positions are strings: `"1"`, `"DNF"`, `"DSQ"`, `"NC"`. Endurance results keep the class and class position in `other_info`.
+- `other_info.fastestLapOfRace = "yes"` marks the fastest lap of the race.
+- Ids are the file names; a driver of a result is the id of his file in the drivers repository.
+
+## Website
+
+- [MotorsportDB](https://www.motorsportdb.org/): the site built from these repositories (driver, team and season pages, ranking, head-to-head, games).
+- [Website source](https://github.com/Motorsport-DB/website)
