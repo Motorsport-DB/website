@@ -39,6 +39,9 @@ $routes = [
     '/race'         => '/race.php',
     '/head-to-head' => '/head-to-head.php',
     '/ranking'      => '/ranking.php',
+    '/drivers-list'  => '/public/drivers-list.php',
+    '/teams-list'    => '/public/teams-list.php',
+    '/championships' => '/public/championships.php',
 ];
 
 // Check if it's a clean URL

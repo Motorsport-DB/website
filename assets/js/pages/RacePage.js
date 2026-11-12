@@ -77,7 +77,7 @@ class RacePage {
     displayRaceInfo() {
         if (!this.raceData) return;
 
-        document.title = `${formatDisplayName(this.raceId)} ${this.year} - MotorsportDB`;
+        // the title is written by the server (includes/seo.php)
 
         const nameElem = document.getElementById('race-name');
         if (nameElem) nameElem.textContent = formatDisplayName(this.raceId);

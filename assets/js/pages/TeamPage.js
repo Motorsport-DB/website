@@ -77,7 +77,7 @@ class TeamPage {
 
         // Remove underscores from team name for display
         const teamDisplayName = (this.team.name || 'Unknown Team').replace(/_/g, ' ');
-        document.title = `${teamDisplayName} - MotorsportDB`;
+        // the title is written by the server (includes/seo.php)
 
         const nameElem = document.getElementById('team-name');
         if (nameElem) nameElem.textContent = teamDisplayName;
