@@ -78,6 +78,7 @@ function msdb_elo(Pdo\Sqlite $db, array $cfg, int $currentYear): array
 
     $R = [];      // driver => rating
     $N = [];      // driver => rated sessions
+    $NR = [];     // driver => rated races (race and sprint sessions, not the qualifying)
     $peak = [];
     $hist = [];   // driver => [year => rating]
     $rated = 0;
@@ -170,6 +171,9 @@ function msdb_elo(Pdo\Sqlite $db, array $cfg, int $currentYear): array
                     $k = $K * ($N[$d] < $provN ? $provF : 1);
                     $R[$d] += $k * $sw * $classW * $avg;
                     $N[$d]++;
+                    if ($kind !== 'qualifying') {
+                        $NR[$d] = ($NR[$d] ?? 0) + 1;
+                    }
                     if ($N[$d] >= $peakMin && $R[$d] > ($peak[$d] ?? 0)) {
                         $peak[$d] = $R[$d];
                     }
@@ -189,6 +193,7 @@ function msdb_elo(Pdo\Sqlite $db, array $cfg, int $currentYear): array
             'elo' => round($r, 1),
             'peak' => isset($peak[$d]) ? round($peak[$d], 1) : null,
             'sessions' => $N[$d],
+            'races' => $NR[$d] ?? 0,
             'history' => array_map(fn($v) => (int) round($v), $hist[$d] ?? []),
         ];
     }

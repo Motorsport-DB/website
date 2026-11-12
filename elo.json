@@ -9,7 +9,8 @@
         "Endurance and rallies: a crew shares the result of its car; cars are only compared within their class.",
         "weight: multiplier of the points of a session of this championship (a rally is one long event).",
         "class_weights: [regex on the class of the car, multiplier, offset of the newcomer rating], first match wins (no match: the top class).",
-        "Rankings: 'all' by peak rating, 'active' by current rating, only drivers with rank_min_sessions sessions.",
+        "Rankings: 'all' by peak rating, 'active' by current rating, only drivers with rank_min_sessions sessions and rank_min_races races (race + sprint).",
+        "Drivers below the thresholds are still rated (and rate their opponents): they are only hidden from the rankings.",
         "A change here rebuilds the database at the next start."
     ],
     "k": 24,
@@ -25,6 +26,7 @@
     ],
     "peak_min_sessions": 25,
     "rank_min_sessions": 30,
+    "rank_min_races": 50,
     "active_years": 2,
     "driverdle": {
         "classic": { "min_elo": 1300, "limit": 500 },

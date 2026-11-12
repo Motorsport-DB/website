@@ -23,7 +23,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-const BUILD_VERSION = 7;
+const BUILD_VERSION = 8;
 
 require_once __DIR__ . '/elo.php';
 
@@ -521,8 +521,11 @@ $thisYear = (int) gmdate('Y');
 $elo = msdb_elo($db, $eloCfg, $thisYear)['drivers'];
 $activeFrom = $thisYear - max(1, (int) ($eloCfg['active_years'] ?? 2)) + 1;
 $lastYear = fn($d) => isset($dStats[$d]) ? max(array_keys($dStats[$d]['years'])) : 0;
+// every driver is rated (and rates his opponents), but only the drivers with enough races are
+// ranked: a few good results are not enough to be compared with a whole career
 $minN = (int) ($eloCfg['rank_min_sessions'] ?? 30);
-$ranked = array_filter(array_keys($elo), fn($d) => $elo[$d]['sessions'] >= $minN);
+$minRaces = (int) ($eloCfg['rank_min_races'] ?? 50);
+$ranked = array_filter(array_keys($elo), fn($d) => $elo[$d]['sessions'] >= $minN && $elo[$d]['races'] >= $minRaces);
 // all drivers: by peak rating (a great career is not erased by its last seasons); active: current rating
 $all = $ranked;
 usort($all, fn($a, $b) => ($elo[$b]['peak'] ?? $elo[$b]['elo']) <=> ($elo[$a]['peak'] ?? $elo[$a]['elo']));
@@ -532,12 +535,15 @@ $rank = array_flip($all);
 $rankActive = array_flip($active);
 array_walk($rank, fn(&$v) => $v++);
 array_walk($rankActive, fn(&$v) => $v++);
-$db->exec('CREATE TABLE driver_elo (driver_id TEXT PRIMARY KEY, elo REAL, peak REAL, sessions INTEGER,
+// the driverdle keeps its own pool: active drivers with enough rated sessions (ranked or not)
+$dlActive = array_flip(array_filter(array_keys($elo), fn($d) => $elo[$d]['sessions'] >= $minN && $lastYear($d) >= $activeFrom));
+$db->exec('CREATE TABLE driver_elo (driver_id TEXT PRIMARY KEY, elo REAL, peak REAL, sessions INTEGER, races INTEGER,
     rank INTEGER, rank_active INTEGER, active INTEGER, history TEXT)');
+$meta->execute(['elo_min_races', (string) $minRaces]);
 $db->beginTransaction();
-$insElo = $db->prepare('INSERT INTO driver_elo VALUES (?,?,?,?,?,?,?,?)');
+$insElo = $db->prepare('INSERT INTO driver_elo VALUES (?,?,?,?,?,?,?,?,?)');
 foreach ($elo as $d => $e) {
-    $insElo->execute([$d, $e['elo'], $e['peak'], $e['sessions'], $rank[$d] ?? null, $rankActive[$d] ?? null,
+    $insElo->execute([$d, $e['elo'], $e['peak'], $e['sessions'], $e['races'], $rank[$d] ?? null, $rankActive[$d] ?? null,
         (int) ($lastYear($d) >= $activeFrom), json_encode($e['history'])]);
 }
 $db->commit();
@@ -618,8 +624,8 @@ file_put_contents($varDir . '/search-index.json.tmp', json_encode($index, $jsonF
 
 // ---------------------------------------------------------------- ELO ranking
 /**
- * Ranked drivers (elo.json "rank_min_sessions"), for the ranking page:
- * [id, name, country, elo, peak, sessions, rank (all, by peak), rank among the active
+ * Ranked drivers (elo.json "rank_min_sessions" and "rank_min_races"), for the ranking page:
+ * [id, name, country, elo, peak, races, rank (all, by peak), rank among the active
  *  drivers (by current rating) or 0, first year, last year, picture, [championships], [year, rating]…]
  */
 $ranking = ['v' => BUILD_VERSION, 'built' => gmdate('c'), 'active_from' => $activeFrom, 'd' => []];
@@ -628,7 +634,7 @@ foreach ($all as $d) {
     $id = $drivers[$d] ?? [];
     $label = trim(($id['firstName'] ?? '') . ' ' . ($id['lastName'] ?? '')) ?: str_replace('_', ' ', $d);
     $years = isset($dStats[$d]) ? array_keys($dStats[$d]['years']) : [0];
-    $ranking['d'][] = [$d, $label, $id['country'] ?? '', $e['elo'], $e['peak'] ?? $e['elo'], $e['sessions'], $rank[$d],
+    $ranking['d'][] = [$d, $label, $id['country'] ?? '', $e['elo'], $e['peak'] ?? $e['elo'], $e['races'], $rank[$d],
         $rankActive[$d] ?? 0, min($years), max($years), $driverPics[$d] ?? '',
         isset($dStats[$d]) ? array_keys($dStats[$d]['champs']) : []];
 }
@@ -665,7 +671,7 @@ foreach ($drivers as $id => $d) {
     $dod = (string) ($d['dateOfDeath'] ?? '');
     $e = $elo[$id] ?? null;
     $dlc = $eloCfg['driverdle'] ?? [];
-    if ($e && strlen($letters) >= 2 && isset($rankActive[$id]) && $e['elo'] >= ($dlc['classic']['min_elo'] ?? 0)) {
+    if ($e && strlen($letters) >= 2 && isset($dlActive[$id]) && $e['elo'] >= ($dlc['classic']['min_elo'] ?? 0)) {
         $dl['classic'][] = [(string) $id, $first, $last, $pattern, max($years), $e['elo']];
     }
     if ($s['f1wins'] >= 1 || $s['f1starts'] >= 14) {
