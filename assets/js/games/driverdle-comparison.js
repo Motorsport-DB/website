@@ -21,6 +21,7 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, cr
   let target        = null;
   let teamNames     = {};
   let pictures      = {};
+  let countries     = {};
   let picker        = null;
 
   const COLUMNS_F1 = [
@@ -28,6 +29,7 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, cr
     { key: 'lastF1Year',     label: 'Last F1 Year', type: 'number' },
     { key: 'teams',          label: 'Teams',         type: 'list'   },
     { key: 'f1Wins',         label: 'F1 Wins',       type: 'number' },
+    { key: 'country',        label: 'Nationality',   type: 'country' },
     { key: 'age',            label: 'Age',           type: 'number' },
     { key: 'lastnameLength', label: 'Name Length',   type: 'number' },
     { key: 'otherChamps',    label: 'Other Series',  type: 'list'   },
@@ -38,6 +40,7 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, cr
     { key: 'lastYear',       label: 'Last Year',    type: 'number' },
     { key: 'series',         label: 'Series',        type: 'list'   },
     { key: 'wins',           label: 'Wins',          type: 'number' },
+    { key: 'country',        label: 'Nationality',   type: 'country' },
     { key: 'age',            label: 'Age',           type: 'number' },
     { key: 'lastnameLength', label: 'Name Length',   type: 'number' },
   ];
@@ -62,11 +65,11 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, cr
     if (mode === 'f1') {
       const [id, firstname, lastname, dob, dod, firstF1Year, lastF1Year, teams, f1Wins, otherChamps] = row;
       return { id, firstname, lastname, age: ageOf(dob, dod), lastnameLength: lastnameLength(lastname),
-        firstF1Year, lastF1Year, teams, f1Wins, otherChamps };
+        country: countries[id] || '', firstF1Year, lastF1Year, teams, f1Wins, otherChamps };
     }
     const [id, firstname, lastname, dob, dod, firstYear, lastYear, series, wins] = row;
     return { id, firstname, lastname, age: ageOf(dob, dod), lastnameLength: lastnameLength(lastname),
-      firstYear, lastYear, series, wins };
+      country: countries[id] || '', firstYear, lastYear, series, wins };
   }
 
   function compareNumeric(guessVal, targetVal, threshold) {
@@ -91,6 +94,7 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, cr
     const common = {
       age:            compareNumeric(guess.age, tgt.age, 3),
       lastnameLength: compareNumeric(guess.lastnameLength, tgt.lastnameLength, 1),
+      country:        { result: guess.country && guess.country === tgt.country ? 'green' : 'red' },
     };
     if (mode === 'f1') {
       return {
@@ -127,6 +131,7 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, cr
 
     try {
       const data = await loadDriverdleData();
+      countries = data.countries || {};
       drivers   = data[mode].map(toStats);
       teamNames = data.teams || {};
       pictures  = data.pictures || {};
@@ -266,7 +271,21 @@ import { loadDriverdleData, dailyPick, todayUTC, ageOf, lastnameLength, fold, cr
     const div = document.createElement('div');
     div.className = `inline-flex flex-col items-center justify-center rounded-lg px-2 py-1 min-w-[60px] min-h-[44px] text-white text-sm font-bold ${resultClass(cmp.result)}`;
 
-    if (col.type === 'list') {
+    if (col.type === 'country') {
+      const name = value ? formatSeriesName(value) : '?';
+      if (value) {
+        const img = document.createElement('img');
+        img.src = `/assets/flags/${value.toLowerCase()}.png`;
+        img.alt = '';
+        img.className = 'h-4 aspect-[3/2] object-contain rounded-sm';
+        img.onerror = () => img.remove();
+        div.appendChild(img);
+      }
+      const span = document.createElement('span');
+      span.className = 'text-xs leading-tight text-center';
+      span.textContent = name;
+      div.appendChild(span);
+    } else if (col.type === 'list') {
       const display = Array.isArray(value) && value.length
         ? value.map((v) => formatSeriesName(col.key === 'teams' ? (teamNames[v] || v) : v)).join(', ')
         : '—';

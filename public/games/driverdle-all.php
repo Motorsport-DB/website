@@ -77,6 +77,7 @@ require_once __DIR__ . '/../../includes/header.php';
       <li><strong>Last Year</strong> — year of most recent race entry. Orange if within ±3 years.</li>
       <li><strong>Series</strong> — all championships raced in. Orange if ≥1 in common.</li>
       <li><strong>Wins</strong> — total Race victories across all series. Orange if within ±10 wins.</li>
+      <li><strong>Nationality</strong> — country of the driver (flag). Green if the same, red otherwise.</li>
       <li><strong>Age</strong> — current age (from date of birth). Orange if within ±3 years.</li>
       <li><strong>Name Length</strong> — number of letters in last name. Orange if within ±1.</li>
     </ul>

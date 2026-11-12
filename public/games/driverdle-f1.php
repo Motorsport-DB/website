@@ -77,6 +77,7 @@ require_once __DIR__ . '/../../includes/header.php';
       <li><strong>Last F1 Year</strong> — year of most recent F1 Race. Orange if within ±3 years.</li>
       <li><strong>Teams</strong> — all constructors raced with in F1. Orange if ≥1 team in common.</li>
       <li><strong>F1 Wins</strong> — total F1 Race victories. Orange if within ±10 wins.</li>
+      <li><strong>Nationality</strong> — country of the driver (flag). Green if the same, red otherwise.</li>
       <li><strong>Age</strong> — current age (from date of birth). Orange if within ±3 years.</li>
       <li><strong>Name Length</strong> — number of letters in last name. Orange if within ±1.</li>
       <li><strong>Other Series</strong> — non-F1 championships raced in during or after the F1 career. Orange if ≥1 in common.</li>
