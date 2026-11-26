@@ -135,7 +135,7 @@ class DriverPage {
         // Update page title and name - concatenate before formatName()
         const fullName = `${this.driver.firstName || ''} ${this.driver.lastName || ''}`.trim();
         const formattedName = formatName(fullName);
-        document.title = `${formattedName} - MotorsportDB`;
+        // the title is written by the server (includes/seo.php)
 
         // Driver name
         const nameElem = document.getElementById('driver-name');
