@@ -44,7 +44,7 @@ function renderRows() {
     const img = document.createElement('img');
     img.loading = 'lazy';
     img.alt = '';
-    img.className = 'w-8 h-8 rounded-full object-cover bg-gray-200 dark:bg-gray-700 flex-shrink-0';
+    img.className = 'w-8 h-8 aspect-square rounded-full object-cover object-top bg-gray-200 dark:bg-gray-700 flex-shrink-0';
     img.src = picture ? `/${picture}` : '/drivers/picture/default.png';
     img.addEventListener('error', () => { img.src = '/drivers/picture/default.png'; }, { once: true });
     const flag = document.createElement('img');
