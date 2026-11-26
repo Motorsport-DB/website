@@ -12,6 +12,7 @@ import { showLoadingOverlay, hideLoadingOverlay } from '../components/LoadingCom
 import { calculateDriverStats, getSeasonPerformance, getDriverRadarData } from '../utils/dataProcessor.js';
 import { calculateAge, formatDate, formatName, renderAliases, renderPictureCredit } from '../utils/helpers.js';
 import * as dom from '../utils/dom.js';
+import { crownOf, crownBadge, renderHonours } from '../utils/honours.js';
 
 class DriverPage {
     constructor() {
@@ -48,6 +49,7 @@ class DriverPage {
             // Display driver info
             this.displayDriverProfile();
             this.displayElo();
+            renderHonours(document.getElementById('driver-honours'), this.driver.honours, 'drivers');
             this.displayDriverStats();
             this.displayDriverCharts();
             this.displayDriverResults();
@@ -553,9 +555,10 @@ class DriverPage {
                     
                     // Event header (clickable accordion)
                     html += `<div class="border-t border-gray-200 dark:border-gray-700">`;
-                    html += `<div class="bg-gray-100 dark:bg-gray-700 px-4 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors event-accordion" onclick="window.driverPage.toggleAccordion('${eventId}');">`;
+                    const crown = crownOf(championship, event);
+                    html += `<div class="bg-gray-100 dark:bg-gray-700 px-4 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors event-accordion${crown ? ' triple-crown' : ''}" onclick="window.driverPage.toggleAccordion('${eventId}');">`;
                     html += `<div class="flex items-center justify-between">`;
-                    html += `<span class="font-bold text-gray-900 dark:text-white">${event.replace(/_/g, ' ')}</span>`;
+                    html += `<span class="font-bold ${crown ? '' : 'text-gray-900 dark:text-white'}">${event.replace(/_/g, ' ')}${crown ? crownBadge(crown) : ''}</span>`;
                     html += `<svg id="${eventId}-icon" class="w-5 h-5 text-gray-600 dark:text-gray-300 accordion-icon rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">`;
                     html += `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
                     html += `</svg>`;

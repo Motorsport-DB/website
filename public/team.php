@@ -55,6 +55,9 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     </section>
 
+    <!-- Honours: world titles and Triple Crown (assets/js/utils/honours.js) -->
+    <section id="team-honours" class="hidden container mx-auto px-6 mt-8" aria-label="Honours"></section>
+
     <!-- Charts Grid -->
     <div class="container mx-auto px-6 my-12">
         <h2 class="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-white">Team Performance</h2>

@@ -45,6 +45,8 @@ class Driver
                 'history' => json_decode((string) $elo['history'], true) ?: [],
             ];
         }
+        // titles of the premier categories and Triple Crown wins
+        $data['honours'] = \MotorsportDB\API\Data\Honours::forDriver($driverId);
         return $data;
     }
 
