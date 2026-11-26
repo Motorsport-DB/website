@@ -69,9 +69,20 @@ async function createGame() {
   }
   
   championshipSelect.classList.add("block", "bg-white", "dark:bg-gray-800", "text-black", "dark:text-white", "border", "border-gray-300", "dark:border-gray-600", "rounded", "p-2", "mt-2");
-  championshipSelect.innerHTML = list_championships.map(champ => `
-    <option value='${JSON.stringify([champ.name, champ.year])}'>${champ.name} - ${champ.year}</option>
-  `).join("");
+  // one group per championship ("Formula 1"), most recent seasons first
+  const byName = new Map();
+  list_championships.forEach(champ => {
+    if (!byName.has(champ.name)) byName.set(champ.name, []);
+    byName.get(champ.name).push(champ.year);
+  });
+  const label = (id) => String(id).replace(/_/g, " ");
+  championshipSelect.innerHTML = [...byName.entries()]
+    .sort(([a], [b]) => label(a).localeCompare(label(b)))
+    .map(([name, years]) => `
+    <optgroup label="${escapeHtml(label(name))}">
+      ${[...years].sort((a, b) => String(b).localeCompare(String(a))).map(year => `
+      <option value="${escapeHtml(JSON.stringify([name, year]))}">${escapeHtml(label(name))} – ${escapeHtml(year)}</option>`).join("")}
+    </optgroup>`).join("");
 }
 
 async function startGame() {
