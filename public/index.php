@@ -160,11 +160,9 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php
-$additionalScripts = <<<HTML
-<!-- Initialize HomePage Module -->
-<script type="module" src="/assets/js/pages/HomePage.js"></script>
-<script type="module" src="/assets/js/components/TopRanking.js"></script>
-HTML;
+$additionalScripts = '<!-- Initialize HomePage Module -->' . "\n"
+    . '<script type="module" src="' . asset('js/pages/HomePage.js') . '"></script>' . "\n"
+    . '<script type="module" src="' . asset('js/components/TopRanking.js') . '"></script>';
 
 require_once __DIR__ . '/../includes/footer.php';
 ?>

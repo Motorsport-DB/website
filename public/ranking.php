@@ -70,7 +70,7 @@ require_once __DIR__ . '/../includes/header.php';
     </section>
 </main>
 
-<script type="module" src="/assets/js/pages/RankingPage.js"></script>
+<script type="module" src="<?= asset('js/pages/RankingPage.js') ?>"></script>
 <script type="module">
   import { themeService } from '/assets/js/services/ThemeService.js';
   themeService.initToggleButton();

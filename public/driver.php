@@ -141,6 +141,6 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- Random Cards Section -->
 <section id="section_randomCards" class="my-12 flex-grow container mx-auto px-6 py-8"></section>
 
-<script type="module" src="/assets/js/pages/DriverPage.js"></script>
+<script type="module" src="<?= asset('js/pages/DriverPage.js') ?>"></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

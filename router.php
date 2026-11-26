@@ -9,6 +9,15 @@
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $query = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
 
+// Versioned scripts and styles (includes/assets.php): /assets/v<version>/js/… = /assets/js/…
+if (preg_match('#^/assets/v[0-9a-f]+/((?:js|css)/[^?]+)$#', $uri, $m) && is_file(__DIR__ . '/assets/' . $m[1])) {
+    $types = ['js' => 'text/javascript', 'css' => 'text/css'];
+    header('Content-Type: ' . ($types[pathinfo($m[1], PATHINFO_EXTENSION)] ?? 'application/octet-stream'));
+    header('Cache-Control: public, max-age=31536000, immutable');
+    readfile(__DIR__ . '/assets/' . $m[1]);
+    return true;
+}
+
 // Never serve sources, tooling or generated data
 if (preg_match('#^/(\.git|\.github|bin|docker|includes|node_modules|script|src|tests|var)(/|$)#', $uri)
     || preg_match('#/\.|\.(sqlite|py|sh|md|ya?ml)$#', $uri)

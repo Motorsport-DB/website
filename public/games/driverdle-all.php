@@ -108,6 +108,6 @@ require_once __DIR__ . '/../../includes/header.php';
   import { themeService } from '/assets/js/services/ThemeService.js';
   themeService.initToggleButton();
 </script>
-<script type="module" src="/assets/js/games/driverdle-comparison.js"></script>
+<script type="module" src="<?= asset('js/games/driverdle-comparison.js') ?>"></script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
