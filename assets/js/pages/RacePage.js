@@ -256,10 +256,14 @@ class RacePage {
                 Object.values(results || {}).forEach((r) => {
                     const pts = parseFloat(r.points) || 0;
                     const info = r.other_info || {};
+                    const perDriver = info.Driver_points || null; // points of each driver when they differ within a car
                     const win = race && String(info.Class_position || r.position) === '1';
-                    if (!pts && !win) return;
+                    if (!pts && !win && !perDriver) return;
                     const group = get(info.Class || info.class || '');
-                    (r.drivers || []).forEach((d) => add(group.drivers, d, pts, win));
+                    (r.drivers || []).forEach((d) => {
+                        const dp = perDriver && d in perDriver ? parseFloat(perDriver[d]) || 0 : pts;
+                        add(group.drivers, d, dp, win);
+                    });
                     if (r.team) add(group.teams, r.team, pts, win);
                 });
             });

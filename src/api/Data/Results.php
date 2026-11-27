@@ -33,9 +33,13 @@ final class Results
         foreach ($rows as $r) {
             $node = self::path($seasons, [$r['year'], $r['championship'], $r['event']]);
             [$position, $info] = self::classResult($r['position'], $r['other_info']);
+            $points = json_decode($r['points']);
+            if (is_object($info) && isset($info->Driver_points->{$driverId})) {
+                $points = $info->Driver_points->{$driverId}; // points scored by this driver (IMSA: not every driver of a car scores)
+            }
             $node->{$r['session']} = [
                 'position'    => $position,
-                'points'      => json_decode($r['points']),
+                'points'      => $points,
                 'team'        => $r['team'],
                 'fastest_lap' => $r['fastest_lap'],
                 'other_info'  => $info,
