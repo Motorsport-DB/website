@@ -20,7 +20,7 @@ MotorsportDB is a comprehensive database of motorsport information including:
 
 ## 🚀 **Requires**
 - **Serveur Web**: Apache2 2.4+
-- **PHP**: 8.5.12+ (fixes PHP2Shell, CVE-2026-109618 / CVE-2026-109619) with extensions:
+- **PHP**: 8.5.13+ with extensions:
   - `pdo_sqlite`
   - `mbstring`, `iconv`
   - `apcu` (optional, recommended)

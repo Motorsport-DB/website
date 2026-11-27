@@ -1,6 +1,5 @@
-# PHP 8.5.12 fixes PHP2Shell (CVE-2026-109618 / CVE-2026-109619).
 # The tag is pinned by digest: bump both together when upgrading.
-FROM docker.io/library/php:8.5.12-apache@sha256:9cc4f73d14eb46d07789a2a98b939b928f8a271a95416cb63902ebb460d31dbb
+FROM docker.io/library/php:8.5.13-apache@sha256:256c25149bca6639f538ece3c5dda90684409227dec546b87ca174950569b8f1
 
 LABEL org.opencontainers.image.title="motorsportdb" \
       org.opencontainers.image.source="https://github.com/Motorsport-DB/website"
